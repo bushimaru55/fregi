@@ -1,0 +1,44 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Laravel
+/app/storage/*
+!/app/storage/.gitignore
+/app/bootstrap/cache/*
+!/app/bootstrap/cache/.gitignore
+/app/vendor/
+/app/node_modules/
+/app/public/build/
+/app/public/hot
+/app/public/storage
+/app/.env
+/app/.env.backup
+/app/.env.production
+/app/.phpunit.result.cache
+/app/Homestead.json
+/app/Homestead.yaml
+/app/npm-debug.log
+/app/yarn-error.log
+
+# Docker
+/docker/data/
+*.log
+
+# Database
+*.sql
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
