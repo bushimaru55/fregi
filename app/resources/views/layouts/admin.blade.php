@@ -3,9 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Billing System') - F-REGI決済管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Filament Styles -->
+    <link rel="stylesheet" href="{{ asset('css/filament/support/support.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/filament/forms/forms.css') }}">
+    @livewireStyles
+    
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -15,6 +22,10 @@
         }
         .card-shadow {
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        /* Filament RichEditor 調整 */
+        .fi-fo-rich-editor .tiptap {
+            min-height: 300px;
         }
     </style>
     @stack('styles')
@@ -103,6 +114,11 @@
             </div>
         </div>
     </footer>
+    
+    <!-- Filament Scripts -->
+    <script src="{{ asset('js/filament/support/support.js') }}"></script>
+    <script src="{{ asset('js/filament/forms/components/rich-editor.js') }}"></script>
+    @livewireScripts
     @yield('scripts')
 </body>
 </html>

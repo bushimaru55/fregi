@@ -6,50 +6,37 @@ use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Mews\Purifier\Facades\Purifier;
 
 class SiteSettingController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * サニタイズ済みHTMLを表示する
      */
     public function index()
     {
+        // サニタイズ済みHTMLを取得（RichEditorで保存されたHTML）
         $termsOfService = SiteSetting::getValue('terms_of_service', '');
-        
-        // プレーンテキストとして扱う（HTMLタグの有無に関わらず）
-        // 表示はCSSのwhite-space: pre-wrapで処理する
-        $termsOfService = e($termsOfService);
         
         return view('admin.site-settings.index', compact('termsOfService'));
     }
 
     /**
      * Show the form for editing the specified resource.
+     * Livewireコンポーネントがデータ取得を担当するためシンプル化
      */
     public function edit()
     {
-        $termsOfService = SiteSetting::getValue('terms_of_service', '');
-        
-        // HTMLタグを削除してプレーンテキストに変換
-        if ($termsOfService) {
-            // <br>タグと</p>タグを改行に変換
-            $termsOfService = preg_replace('/<br\s*\/?>/i', "\n", $termsOfService);
-            $termsOfService = preg_replace('/<\/p>/i', "\n", $termsOfService);
-            // その他のHTMLタグを削除
-            $termsOfService = strip_tags($termsOfService);
-            // HTMLエンティティをデコード
-            $termsOfService = html_entity_decode($termsOfService, ENT_QUOTES, 'UTF-8');
-            // 連続する改行を整理（3つ以上の連続する改行を2つに）
-            $termsOfService = preg_replace('/\n{3,}/', "\n\n", $termsOfService);
-            // 先頭と末尾の改行を削除
-            $termsOfService = trim($termsOfService);
-        }
-        
-        return view('admin.site-settings.edit', compact('termsOfService'));
+        // Livewireコンポーネントが直接DBからデータを取得するため
+        // ここでは特にデータを渡さない
+        return view('admin.site-settings.edit');
     }
 
     /**
      * Update the specified resource in storage.
+     * 従来のフォーム経由での更新用（Livewire以外からの更新に対応）
      */
     public function update(Request $request)
     {
@@ -66,10 +53,22 @@ class SiteSettingController extends Controller
         }
 
         try {
-            SiteSetting::setValue(
-                'terms_of_service',
-                $request->input('terms_of_service'),
-                '利用規約の本文'
+            $html = $request->input('terms_of_service');
+            
+            // HTMLをサニタイズ（rich_htmlプロファイル使用）
+            $cleanHtml = Purifier::clean($html, 'rich_html');
+            
+            // プレーンテキスト版を生成
+            $plainText = Str::squish(strip_tags($cleanHtml));
+
+            // DBに保存
+            SiteSetting::updateOrCreate(
+                ['key' => 'terms_of_service'],
+                [
+                    'value' => $cleanHtml,
+                    'value_text' => $plainText,
+                    'description' => '利用規約の本文',
+                ]
             );
 
             return redirect()
