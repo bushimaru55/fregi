@@ -27,6 +27,23 @@
         .fi-fo-rich-editor .tiptap {
             min-height: 300px;
         }
+        /* 通常のselect要素がFilamentのCSSの影響を受けないようにリセット */
+        select.native-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 0.5rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.5em 1.5em !important;
+            padding-right: 2.5rem !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+        /* select要素の重複する背景画像や疑似要素をクリア */
+        select.native-select::before,
+        select.native-select::after {
+            display: none !important;
+            content: none !important;
+        }
     </style>
     @stack('styles')
 </head>

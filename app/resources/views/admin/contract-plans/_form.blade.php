@@ -6,7 +6,7 @@
             <span class="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">アプリ固有</span>
         </label>
         <select name="contract_plan_master_id" id="contract_plan_master_id" 
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contract_plan_master_id') border-red-500 @enderror">
+            class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contract_plan_master_id') border-red-500 @enderror">
             <option value="">（マスターなし）</option>
             @if(isset($masters))
                 @foreach($masters as $master)

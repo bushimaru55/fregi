@@ -99,9 +99,22 @@ width, max-width
 ### 編集画面
 
 1. 管理画面 → サイト管理 → 編集ボタン
-2. RichEditorでテキストを装飾
-3. 「更新する」ボタンをクリック
-4. HTMLがサニタイズされ、DBに保存
+2. RichEditorでテキストを装飾（ビジュアルモード）
+3. 必要に応じて「HTMLソースを編集」ボタンでソースモードに切り替え
+4. 「更新する」ボタンをクリック
+5. HTMLがサニタイズされ、DBに保存
+
+### 編集モード切り替え機能
+
+エディタには2つのモードがあり、ボタンで切り替え可能：
+
+| モード | 説明 | 用途 |
+|--------|------|------|
+| ビジュアル | Filament RichEditorでWYSIWYG編集 | 通常の編集作業 |
+| HTMLソース | テキストエリアでHTMLタグを直接編集 | 細かいHTML調整、コピペ |
+
+- モード切り替え時、内容は自動的に同期される
+- 現在のモードは色付きバッジで表示（緑: ビジュアル、オレンジ: HTMLソース）
 
 ### 表示画面
 
@@ -113,16 +126,25 @@ width, max-width
 ### TermsOfServiceEditor.php
 
 ```php
+// プロパティ
+public ?array $data = [];           // Filamentフォームデータ
+public bool $isSourceMode = false;  // HTMLソース編集モードかどうか
+public string $sourceHtml = '';     // HTMLソース編集用テキスト
+
 // 主要メソッド
 
 mount(): void
-// DBから現在の利用規約HTMLを取得してフォームにセット
+// DBから現在の利用規約HTMLを取得してフォームとソースにセット
 
 form(Form $form): Form
 // Filament RichEditorを定義
 
+toggleSourceMode(): void
+// ビジュアル ↔ ソースモードを切り替え
+// 切り替え時に内容を同期
+
 save(): void
-// 1. フォームからHTMLを取得
+// 1. 現在のモードに応じてHTMLを取得
 // 2. Purifierでサニタイズ（rich_htmlプロファイル）
 // 3. strip_tagsでプレーンテキスト版を生成
 // 4. DBに保存
@@ -154,6 +176,7 @@ save(): void
 | 日付 | 内容 |
 |------|------|
 | 2026-01-09 | 初版作成 - RichEditor機能追加 |
+| 2026-01-09 | HTMLソース編集モード追加 - ビジュアル/ソース切り替え機能 |
 
 ## 注意事項
 
