@@ -147,17 +147,116 @@
         </div>
         @endif
 
-        {{-- 4. お支払い情報 --}}
+        {{-- 4. お支払い情報（カード情報入力） --}}
         <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
                 <i class="fas fa-credit-card mr-2"></i>お支払い情報
             </h2>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p class="text-sm text-gray-700">
-                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
-                    この後、決済画面（F-REGI）へ移動します。クレジットカード情報は安全な決済代行システムで入力いただきます。
+                    <i class="fas fa-shield-alt text-yellow-500 mr-2"></i>
+                    クレジットカード情報はSSL暗号化通信により安全に送信されます。
                 </p>
+            </div>
+
+            <div class="space-y-6">
+                {{-- カード番号 --}}
+                <div>
+                    <label for="card_number" class="block text-sm font-semibold text-gray-700 mb-2">
+                        カード番号 <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" name="pan1" id="pan1" maxlength="4" pattern="\d{4}" 
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('pan1') border-red-500 @enderror" 
+                            placeholder="1234" required autocomplete="cc-number">
+                        <span class="text-gray-400">-</span>
+                        <input type="text" name="pan2" id="pan2" maxlength="4" pattern="\d{4}" 
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('pan2') border-red-500 @enderror" 
+                            placeholder="5678" required>
+                        <span class="text-gray-400">-</span>
+                        <input type="text" name="pan3" id="pan3" maxlength="4" pattern="\d{4}" 
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('pan3') border-red-500 @enderror" 
+                            placeholder="9012" required>
+                        <span class="text-gray-400">-</span>
+                        <input type="text" name="pan4" id="pan4" maxlength="4" pattern="\d{4}" 
+                            class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('pan4') border-red-500 @enderror" 
+                            placeholder="3456" required>
+                    </div>
+                    @error('pan1')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('pan2')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('pan3')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('pan4')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1">16桁のカード番号を4桁ずつ入力してください</p>
+                </div>
+
+                {{-- 有効期限 --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="card_expiry_month" class="block text-sm font-semibold text-gray-700 mb-2">
+                            有効期限（月） <span class="text-red-500">*</span>
+                        </label>
+                        <select name="card_expiry_month" id="card_expiry_month" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('card_expiry_month') border-red-500 @enderror" 
+                            required>
+                            <option value="">--</option>
+                            @for($i = 1; $i <= 12; $i++)
+                                <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</option>
+                            @endfor
+                        </select>
+                        @error('card_expiry_month')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="card_expiry_year" class="block text-sm font-semibold text-gray-700 mb-2">
+                            有効期限（年） <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" name="card_expiry_year" id="card_expiry_year" maxlength="4" pattern="\d{2,4}" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('card_expiry_year') border-red-500 @enderror" 
+                            placeholder="25 または 2025" required autocomplete="cc-exp-year">
+                        @error('card_expiry_year')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                        <p class="text-xs text-gray-500 mt-1">2桁または4桁で入力（例: 25 または 2025）</p>
+                    </div>
+                </div>
+
+                {{-- カード名義 --}}
+                <div>
+                    <label for="card_name" class="block text-sm font-semibold text-gray-700 mb-2">
+                        カード名義 <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="card_name" id="card_name" maxlength="45" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('card_name') border-red-500 @enderror" 
+                        placeholder="TARO YAMADA" required autocomplete="cc-name">
+                    @error('card_name')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1">カード表面に記載されている名義をアルファベット（大文字）で入力してください（45文字以内）</p>
+                </div>
+
+                {{-- セキュリティコード --}}
+                <div>
+                    <label for="scode" class="block text-sm font-semibold text-gray-700 mb-2">
+                        セキュリティコード
+                    </label>
+                    <input type="text" name="scode" id="scode" maxlength="4" pattern="\d{3,4}" 
+                        class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('scode') border-red-500 @enderror" 
+                        placeholder="123" autocomplete="cc-csc">
+                    @error('scode')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1">カード裏面の3桁または4桁の数字（任意）</p>
+                </div>
             </div>
         </div>
 

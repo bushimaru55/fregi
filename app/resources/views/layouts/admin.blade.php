@@ -11,7 +11,6 @@
     <!-- Filament Styles -->
     <link rel="stylesheet" href="{{ asset('css/filament/support/support.css') }}">
     <link rel="stylesheet" href="{{ asset('css/filament/forms/forms.css') }}">
-    @livewireStyles
     
     <style>
         body {
@@ -45,6 +44,7 @@
             content: none !important;
         }
     </style>
+    @livewireStyles
     @stack('styles')
 </head>
 <body class="bg-gray-50">
@@ -77,6 +77,9 @@
                     </a>
                     <a href="{{ route('admin.contract-plans.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-layer-group mr-2"></i>契約プラン管理
+                    </a>
+                    <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
+                        <i class="fas fa-link mr-2"></i>新規申込フォーム管理
                     </a>
                     <a href="{{ route('admin.fregi-configs.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-cog mr-2"></i>F-REGI設定
@@ -136,6 +139,50 @@
     <script src="{{ asset('js/filament/support/support.js') }}"></script>
     <script src="{{ asset('js/filament/forms/components/rich-editor.js') }}"></script>
     @livewireScripts
+    
+    <!-- Fix for native-select elements -->
+    <script>
+        function applyNativeSelectStyles() {
+            // すべてのnative-selectクラスを持つselect要素にスタイルを適用
+            const nativeSelects = document.querySelectorAll('select.native-select');
+            nativeSelects.forEach(function(select) {
+                // インラインスタイルで強制的に適用
+                select.style.setProperty('background-image', "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", 'important');
+                select.style.setProperty('background-position', 'right 0.5rem center', 'important');
+                select.style.setProperty('background-repeat', 'no-repeat', 'important');
+                select.style.setProperty('background-size', '1.5em 1.5em', 'important');
+                select.style.setProperty('padding-right', '2.5rem', 'important');
+                select.style.setProperty('appearance', 'none', 'important');
+                select.style.setProperty('-webkit-appearance', 'none', 'important');
+                select.style.setProperty('-moz-appearance', 'none', 'important');
+            });
+        }
+        
+        // DOMContentLoaded時に実行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyNativeSelectStyles);
+        } else {
+            applyNativeSelectStyles();
+        }
+        
+        // Livewireの更新後にも実行
+        document.addEventListener('livewire:init', function() {
+            Livewire.hook('morph.updated', function() {
+                setTimeout(applyNativeSelectStyles, 100);
+            });
+        });
+        
+        // DOM変更を監視（MutationObserver）
+        const observer = new MutationObserver(function(mutations) {
+            applyNativeSelectStyles();
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+    
     @yield('scripts')
 </body>
 </html>

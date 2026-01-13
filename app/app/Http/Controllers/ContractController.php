@@ -46,6 +46,7 @@ class ContractController extends Controller
         try {
             $query = ContractPlan::active();
             $planIds = [];
+            $hasPlanIdsParam = false;
             
             // plansパラメータによる絞り込み（複数プランID）
             if ($request->has('plans')) {
@@ -53,10 +54,24 @@ class ContractController extends Controller
                 $planIds = array_filter(array_map('intval', explode(',', $planIdsString)));
                 if (!empty($planIds)) {
                     $query->whereIn('id', $planIds);
+                    $hasPlanIdsParam = true;
                 }
             }
             
             $plans = $query->orderBy('display_order')->get();
+            
+            // プランIDが指定されているのに、該当するプランが見つからない場合は404
+            if ($hasPlanIdsParam && $plans->isEmpty()) {
+                Log::channel('contract_payment')->warning('指定されたプランが見つかりません', [
+                    'url' => $request->fullUrl(),
+                    'plan_ids' => $planIds,
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+                abort(404, '指定されたプランが見つかりません。プランが存在しないか、現在公開されていません。');
+            }
+            
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
             
             // ログ記録
@@ -237,94 +252,137 @@ class ContractController extends Controller
                     throw new \Exception('F-REGI設定が見つかりません');
                 }
 
-                // 接続パスワードを復号
-                $connectPassword = $this->encryptionService->decryptSecret($fregiConfig->connect_password_enc);
-
                 // 決済タイプに応じた処理
                 $billingType = $plan->billing_type ?? 'one_time';
                 
-                // 発行受付APIのパラメータを構築
-                // 注意: リダイレクト決済（SaaS型）ではMONTHLYMODEパラメータを指定できない
-                // F-REGIエラーコード CSA1-1-107: "リダイレクト決済（SaaS型）発行処理時の洗替利用フラグは指定できません"
+                // カード情報を取得
+                $pan1 = $validated['pan1'];
+                $pan2 = $validated['pan2'];
+                $pan3 = $validated['pan3'];
+                $pan4 = $validated['pan4'];
+                $cardExpiryMonth = $validated['card_expiry_month'];
+                $cardExpiryYear = $validated['card_expiry_year'];
+                // 年を2桁に変換（4桁の場合は下2桁を取得）
+                if (strlen($cardExpiryYear) === 4) {
+                    $cardExpiryYear = substr($cardExpiryYear, -2);
+                }
+                $cardName = strtoupper($validated['card_name']); // 大文字に変換
+                $scode = $validated['scode'] ?? null;
+
+                // オーソリ処理（authm.cgi）のパラメータを構築
                 $apiParams = [
                     'SHOPID' => $fregiConfig->shopid,
                     'ID' => $payment->orderid,
                     'PAY' => (string)$payment->amount,
+                    'PAN1' => $pan1,
+                    'PAN2' => $pan2,
+                    'PAN3' => $pan3,
+                    'PAN4' => $pan4,
+                    'CARDEXPIRY1' => $cardExpiryMonth,
+                    'CARDEXPIRY2' => $cardExpiryYear,
+                    'CARDNAME' => $cardName,
+                    'IP' => $request->ip(),
                 ];
                 
-                // 月額課金の場合も、リダイレクト決済ではMONTHLYMODEを送信しない
-                // 月額課金の実装が必要な場合は、別のAPIを使用する必要がある
-                // if ($billingType === 'monthly') {
-                //     $apiParams['MONTHLYMODE'] = '0'; // リダイレクト決済では指定不可
-                // }
+                // セキュリティコードがある場合は追加
+                if ($scode) {
+                    $apiParams['SCODE'] = $scode;
+                }
+                
+                // 決済タイプに応じてMONTHLYパラメータを設定
+                $customerId = null; // 月額課金の場合のみ設定
+                if ($billingType === 'monthly') {
+                    // 月額課金の場合
+                    $customerId = $contract->generateCustomerId();
+                    $apiParams['MONTHLY'] = '1';
+                    $apiParams['MONTHLYMODE'] = '0'; // 月次課金
+                    $apiParams['CUSTOMERID'] = $customerId;
+                } else {
+                    // 一回限りの決済の場合
+                    $apiParams['MONTHLY'] = '0'; // 即時決済
+                }
 
-                Log::channel('contract_payment')->info('F-REGI API呼び出し開始', [
+                // ログ用にマスクしたパラメータを作成
+                $logParams = $apiParams;
+                $logParams['PAN1'] = '****';
+                $logParams['PAN2'] = '****';
+                $logParams['PAN3'] = '****';
+                $logParams['PAN4'] = '****';
+                if (isset($logParams['SCODE'])) {
+                    $logParams['SCODE'] = '****';
+                }
+                
+                Log::channel('contract_payment')->info('F-REGIオーソリ処理開始', [
                     'payment_id' => $payment->id,
                     'orderid' => $payment->orderid,
-                    'api_params' => $apiParams,
                     'billing_type' => $billingType,
                     'environment' => $environment,
+                    'api_params' => $logParams, // ログにはマスクした値を出力
                 ]);
 
-                // 発行受付APIを呼び出し
-                $apiResult = $this->apiService->issuePayment($apiParams, $fregiConfig);
+                // オーソリ処理（authm.cgi）を呼び出し
+                $apiResult = $this->apiService->authorizePayment($apiParams, $fregiConfig);
 
-                Log::channel('contract_payment')->info('F-REGI API呼び出し結果', [
+                Log::channel('contract_payment')->info('F-REGIオーソリ処理結果', [
                     'payment_id' => $payment->id,
                     'result' => $apiResult['result'] ?? 'UNKNOWN',
-                    'settleno' => $apiResult['settleno'] ?? null,
+                    'auth_code' => $apiResult['auth_code'] ?? null,
+                    'seqno' => $apiResult['seqno'] ?? null,
+                    'customer_id' => ($billingType === 'monthly') ? $customerId : null,
                     'error_message' => $apiResult['error_message'] ?? null,
                 ]);
 
                 if ($apiResult['result'] !== 'OK') {
-                    Log::channel('contract_payment')->error('F-REGI API呼び出し失敗', [
+                    Log::channel('contract_payment')->error('F-REGIオーソリ処理失敗', [
                         'payment_id' => $payment->id,
                         'error_message' => $apiResult['error_message'] ?? '不明なエラー',
                         'api_result' => $apiResult,
                     ]);
                     
                     return back()->withErrors([
-                        'error' => '決済の発行に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'),
+                        'error' => '決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'),
                     ]);
                 }
 
-                // 発行番号を取得
-                $settleno = $apiResult['settleno'];
+                // 承認番号、取引番号を取得
+                $authCode = $apiResult['auth_code'];
+                $seqno = $apiResult['seqno'];
 
-                // Paymentに発行番号を保存
+                // Paymentに承認番号、取引番号を保存
                 $payment->update([
-                    'settleno' => $settleno,
-                    'status' => 'redirect_issued',
+                    'receiptno' => $authCode, // 承認番号
+                    'slipno' => $seqno, // 取引番号
+                    'status' => 'paid', // ENUM値: created, redirect_issued, waiting_notify, paid, failed, canceled, expired
+                    'completed_at' => now(),
                 ]);
 
-                // チェックサムを生成（お支払い方法選択画面URL用）
-                $checksum = $this->paymentService->generatePaymentPageChecksum(
-                    $fregiConfig->shopid,
-                    $connectPassword,
-                    $settleno,
-                    $payment->orderid
-                );
-
-                // お支払い方法選択画面URLを生成
-                $paymentPageUrl = $this->apiService->getPaymentPageUrlWithParams(
-                    $settleno,
-                    $checksum,
-                    $fregiConfig
-                );
+                // 月額課金の場合はCUSTOMERIDを保存（送信したCUSTOMERIDを保存）
+                if ($billingType === 'monthly') {
+                    $contract->update([
+                        'customer_id' => $customerId, // 送信したCUSTOMERIDを保存
+                        'status' => 'active',
+                    ]);
+                } else {
+                    // 一回限りの決済の場合も契約を有効化
+                    $contract->update([
+                        'status' => 'active',
+                    ]);
+                }
 
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
 
-                Log::channel('contract_payment')->info('決済処理完了・リダイレクト', [
+                Log::channel('contract_payment')->info('決済処理完了', [
                     'payment_id' => $payment->id,
                     'contract_id' => $contract->id,
                     'orderid' => $payment->orderid,
-                    'settleno' => $settleno,
-                    'payment_page_url' => $paymentPageUrl,
+                    'auth_code' => $authCode,
+                    'seqno' => $seqno,
+                    'customer_id' => $contract->customer_id,
                     'processing_time_ms' => $processingTime,
                 ]);
 
-                // リダイレクト
-                return redirect($paymentPageUrl);
+                // 完了画面にリダイレクト
+                return redirect()->route('contract.complete', ['orderid' => $payment->orderid]);
             } catch (\Exception $e) {
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
                 

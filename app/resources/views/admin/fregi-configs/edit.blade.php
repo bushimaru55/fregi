@@ -35,7 +35,7 @@
                         <i class="fas fa-server text-indigo-500 mr-2"></i>環境
                     </label>
                     <select name="environment" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            class="native-select w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             required>
                         <option value="test" {{ old('environment', $fregiConfig->environment) === 'test' ? 'selected' : '' }}>テスト環境</option>
                         <option value="prod" {{ old('environment', $fregiConfig->environment) === 'prod' ? 'selected' : '' }}>本番環境</option>

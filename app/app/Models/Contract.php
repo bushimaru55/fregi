@@ -14,6 +14,7 @@ class Contract extends Model
     protected $fillable = [
         'contract_plan_id',
         'payment_id',
+        'customer_id',
         'status',
         'company_name',
         'company_name_kana',
@@ -78,6 +79,25 @@ class Contract extends Model
         ]);
         
         return implode(' ', $parts);
+    }
+
+    /**
+     * CUSTOMERIDを生成
+     * 形式: CUST + 契約ID（パディング）+ タイムスタンプ
+     * 最大20文字以内
+     */
+    public function generateCustomerId(): string
+    {
+        $contractId = str_pad((string)$this->id, 6, '0', STR_PAD_LEFT); // 6桁
+        $timestamp = now()->format('YmdHis'); // 14文字
+        $customerId = 'CUST' . $contractId . $timestamp; // 4 + 6 + 14 = 24文字
+        
+        // 20文字を超える場合は末尾を切り詰める
+        if (strlen($customerId) > 20) {
+            $customerId = substr($customerId, 0, 20);
+        }
+        
+        return $customerId;
     }
 
     /**

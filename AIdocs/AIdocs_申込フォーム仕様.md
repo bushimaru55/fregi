@@ -11,17 +11,23 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
 | id | BIGINT UNSIGNED | PK, AUTO_INCREMENT | プランID |
+| contract_plan_master_id | BIGINT UNSIGNED | FK(contract_plan_masters.id), NULL | 契約プランマスターID |
+| item | VARCHAR(50) | NOT NULL, UNIQUE | プランコード（F-REGI標準: ITEM） |
 | name | VARCHAR(255) | NOT NULL | プラン名 |
-| page_count | INT UNSIGNED | NOT NULL, UNIQUE | 学習ページ数 |
 | price | INT UNSIGNED | NOT NULL | 料金（税込） |
+| billing_type | ENUM | NOT NULL, DEFAULT 'one_time' | 決済タイプ（one_time: 一回限り, monthly: 月額課金） |
 | description | TEXT | NULL | プラン説明 |
 | is_active | BOOLEAN | DEFAULT TRUE | 有効フラグ |
 | display_order | INT UNSIGNED | DEFAULT 0 | 表示順 |
 | created_at | TIMESTAMP | NULL | 作成日時 |
 | updated_at | TIMESTAMP | NULL | 更新日時 |
 
+**決済タイプ（billing_type）:**
+- `one_time`: 一回限りの決済（リダイレクト決済）
+- `monthly`: 月額課金（F-REGI月次課金サービス）※実装中
+
 **インデックス:**
-- `UNIQUE(page_count)`
+- `UNIQUE(item)`
 - `INDEX(is_active, display_order)`
 
 **初期データ:**
@@ -117,9 +123,12 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
    - currency: JPY
    - payment_method: credit_card
 3. ContractにPayment IDを紐付け（status: pending_payment）
-4. F-REGI設定取得
-5. F-REGIへのPOSTパラメータ生成
-6. F-REGI決済画面へリダイレクト
+4. プランの決済タイプ（billing_type）を確認
+   - `one_time`（一回限り）: F-REGI発行受付API（`compsettleapply.cgi`）を使用
+   - `monthly`（月額課金）: 暫定実装としてエラーメッセージを表示（F-REGI月次課金サービスAPI実装が必要）
+5. F-REGI設定取得
+6. F-REGIへのPOSTパラメータ生成
+7. F-REGI決済画面へリダイレクト
 
 ### 4. F-REGI決済画面
 

@@ -21,7 +21,9 @@ class ContractRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $routeName = $this->route()->getName();
+        
+        $rules = [
             // 契約プラン
             'contract_plan_id' => ['required', 'exists:contract_plans,id'],
             
@@ -46,6 +48,24 @@ class ContractRequest extends FormRequest
             // 利用規約への同意
             'terms_agreed' => ['required', 'accepted'],
         ];
+        
+        // カード情報は決済処理（store）時のみ必須
+        // 確認画面表示（confirm）時は不要
+        if ($routeName === 'contract.store') {
+            $rules = array_merge($rules, [
+                // カード情報（authm.cgi用）
+                'pan1' => ['required', 'string', 'regex:/^\d{4}$/'],
+                'pan2' => ['required', 'string', 'regex:/^\d{4}$/'],
+                'pan3' => ['required', 'string', 'regex:/^\d{4}$/'],
+                'pan4' => ['required', 'string', 'regex:/^\d{4}$/'],
+                'card_expiry_month' => ['required', 'string', 'regex:/^(0[1-9]|1[0-2])$/'],
+                'card_expiry_year' => ['required', 'string', 'regex:/^\d{2,4}$/'],
+                'card_name' => ['required', 'string', 'max:45'],
+                'scode' => ['nullable', 'string', 'regex:/^\d{3,4}$/'],
+            ]);
+        }
+        
+        return $rules;
     }
 
     /**
@@ -70,6 +90,14 @@ class ContractRequest extends FormRequest
             'address_line2' => '建物名',
             'desired_start_date' => '利用開始希望日',
             'terms_agreed' => '利用規約への同意',
+            'pan1' => 'カード番号（1〜4桁目）',
+            'pan2' => 'カード番号（5〜8桁目）',
+            'pan3' => 'カード番号（9〜12桁目）',
+            'pan4' => 'カード番号（13〜16桁目）',
+            'card_expiry_month' => 'カード有効期限（月）',
+            'card_expiry_year' => 'カード有効期限（年）',
+            'card_name' => 'カード名義',
+            'scode' => 'セキュリティコード',
         ];
     }
 
@@ -86,6 +114,14 @@ class ContractRequest extends FormRequest
             'desired_start_date.after_or_equal' => '利用開始希望日は本日以降の日付を選択してください。',
             'terms_agreed.required' => '利用規約への同意が必要です。',
             'terms_agreed.accepted' => '利用規約への同意が必要です。',
+            'pan1.regex' => 'カード番号（1〜4桁目）は4桁の数字で入力してください。',
+            'pan2.regex' => 'カード番号（5〜8桁目）は4桁の数字で入力してください。',
+            'pan3.regex' => 'カード番号（9〜12桁目）は4桁の数字で入力してください。',
+            'pan4.regex' => 'カード番号（13〜16桁目）は4桁の数字で入力してください。',
+            'card_expiry_month.regex' => 'カード有効期限（月）は01〜12の2桁の数字で入力してください。',
+            'card_expiry_year.regex' => 'カード有効期限（年）は2桁または4桁の数字で入力してください。',
+            'card_name.max' => 'カード名義は45文字以内で入力してください。',
+            'scode.regex' => 'セキュリティコードは3桁または4桁の数字で入力してください。',
         ];
     }
 }
