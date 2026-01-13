@@ -14,9 +14,10 @@ class Payment extends Model
     protected $fillable = [
         'company_id',
         'contract_id',
-        'orderid', // F-REGI標準: ORDERID
-        'receiptno', // F-REGI標準: RECEIPTNO
-        'slipno', // F-REGI標準: SLIPNO
+        'orderid', // F-REGI標準: ORDERID（伝票番号）
+        'settleno', // F-REGI標準: SETTLENO（発行番号）
+        'receiptno', // F-REGI標準: RECEIPTNO（承認番号）
+        'slipno', // F-REGI標準: SLIPNO（取引番号）
         'amount',
         'currency',
         'payment_method',

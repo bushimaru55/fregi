@@ -16,6 +16,7 @@ class ContractPlan extends Model
         'item', // F-REGI標準: ITEM（商品コード）
         'name',
         'price',
+        'billing_type', // 決済タイプ（one_time: 一回限り, monthly: 月額課金）
         'description',
         'is_active',
         'display_order',
@@ -56,6 +57,38 @@ class ContractPlan extends Model
      */
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->price) . '円';
+        $price = number_format($this->price) . '円';
+        if ($this->billing_type === 'monthly') {
+            $price .= '/月';
+        }
+        return $price;
+    }
+
+    /**
+     * 決済タイプのラベルを取得
+     */
+    public function getBillingTypeLabelAttribute(): string
+    {
+        return match($this->billing_type) {
+            'one_time' => '一回限り',
+            'monthly' => '月額課金',
+            default => '不明',
+        };
+    }
+
+    /**
+     * 一回限りの決済プランのみを取得するスコープ
+     */
+    public function scopeOneTime($query)
+    {
+        return $query->where('billing_type', 'one_time');
+    }
+
+    /**
+     * 月額課金プランのみを取得するスコープ
+     */
+    public function scopeMonthly($query)
+    {
+        return $query->where('billing_type', 'monthly');
     }
 }

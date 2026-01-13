@@ -25,6 +25,7 @@ Route::get('/about', function () {
 // 申込フォーム（公開）
 Route::prefix('contract')->name('contract.')->group(function () {
     Route::get('/create', [\App\Http\Controllers\ContractController::class, 'create'])->name('create');
+    Route::get('/confirm', [\App\Http\Controllers\ContractController::class, 'confirmGet'])->name('confirm.get');
     Route::post('/confirm', [\App\Http\Controllers\ContractController::class, 'confirm'])->name('confirm');
     Route::post('/store', [\App\Http\Controllers\ContractController::class, 'store'])->name('store');
     Route::get('/complete', [\App\Http\Controllers\ContractController::class, 'complete'])->name('complete');
@@ -39,8 +40,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // 契約管理
     Route::prefix('contracts')->name('contracts.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ContractController::class, 'index'])->name('index');
-        Route::get('/{contract}', [\App\Http\Controllers\ContractController::class, 'show'])->name('show');
+        Route::get('/', [\App\Http\Controllers\Admin\ContractController::class, 'index'])->name('index');
+        Route::get('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'show'])->name('show');
     });
 
     // F-REGI設定
@@ -61,6 +62,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // 契約プランマスター管理
     Route::resource('contract-plan-masters', \App\Http\Controllers\Admin\ContractPlanMasterController::class);
 
+    // 新規申込フォーム管理
+    Route::prefix('contract-forms')->name('contract-forms.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ContractFormController::class, 'index'])->name('index');
+        Route::post('/generate', [\App\Http\Controllers\Admin\ContractFormController::class, 'generate'])->name('generate');
+        Route::delete('/{contractFormUrl}', [\App\Http\Controllers\Admin\ContractFormController::class, 'destroy'])->name('destroy');
+    });
+
     // サイト管理
     Route::prefix('site-settings')->name('site-settings.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\SiteSettingController::class, 'index'])->name('index');
@@ -74,7 +82,9 @@ Route::prefix('payment')->name('payment.')->group(function () {
     Route::get('/{payment}/initiate', [\App\Http\Controllers\PaymentController::class, 'initiate'])->name('initiate');
 });
 
-// 戻りURL
+// 戻りURL（F-REGIから戻ってくるURL、STATUSパラメータで処理を分岐）
+Route::get('/return', [\App\Http\Controllers\ReturnController::class, 'handle'])->name('return.handle');
+// 後方互換性のため残す（必要に応じて削除可能）
 Route::prefix('return')->name('return.')->group(function () {
     Route::get('/success', [\App\Http\Controllers\ReturnController::class, 'success'])->name('success');
     Route::get('/cancel', [\App\Http\Controllers\ReturnController::class, 'cancel'])->name('cancel');

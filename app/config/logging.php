@@ -126,6 +126,15 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+
+        // 決済フロー専用ログチャンネル
+        'contract_payment' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/contract-payment.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30, // 30日間保持
+            'replace_placeholders' => true,
+        ],
     ],
 
 ];

@@ -9,6 +9,14 @@
         <p class="text-gray-600">必要事項をご入力の上、お申し込みください</p>
     </div>
 
+    @if(session('error'))
+        <div class="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-6">
+            <p class="text-red-600">
+                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+            </p>
+        </div>
+    @endif
+
     <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-8">
         @csrf
 
@@ -207,7 +215,7 @@
                             <div class="border-2 border-gray-300 rounded-lg p-4 transition-all peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-indigo-300">
                                 <div class="text-center">
                                     <div class="text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
-                                    <div class="text-3xl font-bold text-indigo-600 mb-2">{{ number_format($plan->price) }}<span class="text-lg">円</span></div>
+                                    <div class="text-3xl font-bold text-indigo-600 mb-2">{{ $plan->formatted_price }}</div>
                                     <div class="text-sm text-gray-600">{{ $plan->description }}</div>
                                 </div>
                             </div>

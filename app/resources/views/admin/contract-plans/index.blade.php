@@ -33,6 +33,7 @@
                         <th class="py-3 px-6 text-left">プランコード</th>
                         <th class="py-3 px-6 text-left">プラン名</th>
                         <th class="py-3 px-6 text-left">料金</th>
+                        <th class="py-3 px-6 text-left">決済タイプ</th>
                         <th class="py-3 px-6 text-left">状態</th>
                         <th class="py-3 px-6 text-center">アクション</th>
                     </tr>
@@ -46,6 +47,13 @@
                             <td class="py-3 px-6 text-left whitespace-nowrap font-mono font-semibold">{{ $plan->item }}</td>
                             <td class="py-3 px-6 text-left">{{ $plan->name }}</td>
                             <td class="py-3 px-6 text-left font-semibold text-indigo-600">{{ $plan->formatted_price }}</td>
+                            <td class="py-3 px-6 text-left">
+                                @if($plan->billing_type === 'monthly')
+                                    <span class="bg-blue-200 text-blue-600 py-1 px-3 rounded-full text-xs font-semibold">月額課金</span>
+                                @else
+                                    <span class="bg-gray-200 text-gray-600 py-1 px-3 rounded-full text-xs font-semibold">一回限り</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-6 text-left">
                                 @if($plan->is_active)
                                     <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">有効</span>

@@ -27,7 +27,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-gray-600 mb-1">料金</p>
-                        <p class="text-xl font-bold text-green-600">{{ number_format($contract->contractPlan->price) }}円（税込）</p>
+                        <p class="text-xl font-bold text-green-600">{{ $contract->contractPlan->formatted_price }}（税込）</p>
                     </div>
                     <div>
                         <p class="text-sm text-gray-600 mb-1">利用開始希望日</p>

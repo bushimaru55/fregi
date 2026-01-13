@@ -6,9 +6,18 @@
 <div class="max-w-4xl mx-auto">
     <div class="mb-8 text-center">
         <h1 class="text-4xl font-bold text-gray-800 mb-2">申込内容確認</h1>
-        <p class="text-gray-600">以下の内容でお申し込みします。よろしければ「決済へ進む」ボタンをクリックしてください。</p>
+        @if(isset($isViewOnly) && $isViewOnly)
+            <div class="bg-blue-50 border-2 border-blue-400 rounded-lg p-4 mb-4">
+                <p class="text-blue-800 font-semibold">
+                    <i class="fas fa-eye mr-2"></i>閲覧画面（この画面は閲覧専用です。実際の申込処理には使用できません）
+                </p>
+            </div>
+        @else
+            <p class="text-gray-600">以下の内容でお申し込みします。よろしければ「決済へ進む」ボタンをクリックしてください。</p>
+        @endif
     </div>
 
+    @if(!isset($isViewOnly) || !$isViewOnly)
     <form action="{{ route('contract.store') }}" method="POST">
         @csrf
 
@@ -107,7 +116,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-600 mb-1">料金</p>
-                            <p class="text-4xl font-bold text-indigo-600">{{ number_format($plan->price) }}<span class="text-xl">円</span></p>
+                            <p class="text-4xl font-bold text-indigo-600">{{ $plan->formatted_price }}</p>
                             <p class="text-xs text-gray-500 mt-1">（税込）</p>
                         </div>
                     </div>
@@ -154,14 +163,23 @@
 
         {{-- ボタン --}}
         <div class="flex justify-center space-x-4">
-            <a href="{{ route('contract.create') }}" class="px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300">
-                <i class="fas fa-arrow-left mr-2"></i>戻る
-            </a>
-            <button type="submit" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-300">
-                <i class="fas fa-lock mr-2"></i>決済へ進む
-            </button>
+            @if(isset($isViewOnly) && $isViewOnly)
+                <a href="{{ route('contract.create') }}" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+                    <i class="fas fa-file-alt mr-2"></i>申込フォームへ
+                </a>
+            @else
+                <a href="{{ route('contract.create') }}" class="px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>戻る
+                </a>
+                <button type="submit" class="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+                    <i class="fas fa-lock mr-2"></i>決済へ進む
+                </button>
+            @endif
         </div>
+    @endif
+    @if(!isset($isViewOnly) || !$isViewOnly)
     </form>
+    @endif
 </div>
 @endsection
 
