@@ -63,9 +63,6 @@
                     <a href="{{ url('/billing/') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-home mr-2"></i>ホーム
                     </a>
-                    <a href="{{ route('contract.create') }}" target="_blank" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-file-signature mr-2"></i>新規申込
-                    </a>
                     <a href="{{ route('admin.dashboard') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
                     </a>

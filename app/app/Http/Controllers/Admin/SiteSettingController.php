@@ -19,8 +19,12 @@ class SiteSettingController extends Controller
     {
         // サニタイズ済みHTMLを取得（RichEditorで保存されたHTML）
         $termsOfService = SiteSetting::getValue('terms_of_service', '');
+        // トップページのURLを取得
+        $topPageUrl = SiteSetting::getTextValue('top_page_url', '');
+        // 製品ページのURLを取得
+        $productPageUrl = SiteSetting::getTextValue('product_page_url', '');
         
-        return view('admin.site-settings.index', compact('termsOfService'));
+        return view('admin.site-settings.index', compact('termsOfService', 'topPageUrl', 'productPageUrl'));
     }
 
     /**
@@ -74,6 +78,104 @@ class SiteSettingController extends Controller
             return redirect()
                 ->route('admin.site-settings.index')
                 ->with('success', '利用規約を更新しました。');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => '更新に失敗しました: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * トップページのURL編集画面を表示
+     */
+    public function editTopPageUrl()
+    {
+        $topPageUrl = SiteSetting::getTextValue('top_page_url', '');
+        
+        return view('admin.site-settings.edit-top-page-url', compact('topPageUrl'));
+    }
+
+    /**
+     * トップページのURLを更新
+     */
+    public function updateTopPageUrl(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'top_page_url' => ['required', 'url', 'max:255'],
+        ], [
+            'top_page_url.required' => 'トップページのURLを入力してください。',
+            'top_page_url.url' => '有効なURL形式で入力してください。',
+            'top_page_url.max' => 'URLは255文字以内で入力してください。',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            $url = $request->input('top_page_url');
+            
+            // DBに保存（テキスト形式）
+            SiteSetting::setTextValue(
+                'top_page_url',
+                $url,
+                '決済完了画面の「トップへ戻る」ボタンのリンク先URL'
+            );
+
+            return redirect()
+                ->route('admin.site-settings.index')
+                ->with('success', 'トップページのURLを更新しました。');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => '更新に失敗しました: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 製品ページのURL編集画面を表示
+     */
+    public function editProductPageUrl()
+    {
+        $productPageUrl = SiteSetting::getTextValue('product_page_url', '');
+        
+        return view('admin.site-settings.edit-product-page-url', compact('productPageUrl'));
+    }
+
+    /**
+     * 製品ページのURLを更新
+     */
+    public function updateProductPageUrl(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'product_page_url' => ['required', 'url', 'max:255'],
+        ], [
+            'product_page_url.required' => '製品ページのURLを入力してください。',
+            'product_page_url.url' => '有効なURL形式で入力してください。',
+            'product_page_url.max' => 'URLは255文字以内で入力してください。',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            $url = $request->input('product_page_url');
+            
+            // DBに保存（テキスト形式）
+            SiteSetting::setTextValue(
+                'product_page_url',
+                $url,
+                '公開ページヘッダーの「製品ページへ戻る」ボタンのリンク先URL'
+            );
+
+            return redirect()
+                ->route('admin.site-settings.index')
+                ->with('success', '製品ページのURLを更新しました。');
         } catch (\Exception $e) {
             return back()
                 ->withInput()

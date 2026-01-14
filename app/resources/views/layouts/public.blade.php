@@ -32,7 +32,11 @@
                     </div>
                 </div>
                 <nav class="hidden md:flex space-x-6">
-                    <a href="https://www.dschatbot.ai/" target="_blank" class="hover:text-indigo-200 transition">
+                    @php
+                        // 管理画面で設定された製品ページのURLを取得（設定がない場合はデフォルト）
+                        $productPageUrl = \App\Models\SiteSetting::getTextValue('product_page_url', 'https://www.dschatbot.ai/');
+                    @endphp
+                    <a href="{{ $productPageUrl }}" target="_blank" class="hover:text-indigo-200 transition">
                         <i class="fas fa-arrow-left mr-2"></i>製品ページへ戻る
                     </a>
                 </nav>

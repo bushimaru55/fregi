@@ -74,6 +74,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/', [\App\Http\Controllers\Admin\SiteSettingController::class, 'index'])->name('index');
         Route::get('/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'edit'])->name('edit');
         Route::put('/', [\App\Http\Controllers\Admin\SiteSettingController::class, 'update'])->name('update');
+        // トップページのURL設定
+        Route::get('/top-page-url/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'editTopPageUrl'])->name('top-page-url.edit');
+        Route::put('/top-page-url', [\App\Http\Controllers\Admin\SiteSettingController::class, 'updateTopPageUrl'])->name('top-page-url.update');
+        // 製品ページのURL設定
+        Route::get('/product-page-url/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'editProductPageUrl'])->name('product-page-url.edit');
+        Route::put('/product-page-url', [\App\Http\Controllers\Admin\SiteSettingController::class, 'updateProductPageUrl'])->name('product-page-url.update');
     });
 });
 

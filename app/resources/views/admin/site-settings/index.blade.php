@@ -41,6 +41,72 @@
                     @endif
                 </div>
             </div>
+
+            <!-- Top Page URL Section -->
+            <div class="border-b border-gray-200 pb-6 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-home text-indigo-500 mr-2"></i>トップページのURL
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">決済完了画面の「トップへ戻る」ボタンのリンク先URLを設定します</p>
+                    </div>
+                    <a href="{{ route('admin.site-settings.top-page-url.edit') }}" 
+                       class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>編集
+                    </a>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    @if($topPageUrl)
+                        <div class="flex items-center">
+                            <i class="fas fa-link text-indigo-500 mr-2"></i>
+                            <a href="{{ $topPageUrl }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 break-all">
+                                {{ $topPageUrl }}
+                            </a>
+                        </div>
+                    @else
+                        <p class="text-gray-500 italic">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            トップページのURLが設定されていません。編集ボタンから設定してください。<br>
+                            <span class="text-xs">（未設定の場合は、デフォルトでトップページ（{{ url('/') }}）にリンクします）</span>
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Product Page URL Section -->
+            <div class="pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-globe text-indigo-500 mr-2"></i>製品ページのURL
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">公開ページヘッダーの「製品ページへ戻る」ボタンのリンク先URLを設定します</p>
+                    </div>
+                    <a href="{{ route('admin.site-settings.product-page-url.edit') }}" 
+                       class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg">
+                        <i class="fas fa-edit mr-2"></i>編集
+                    </a>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    @if($productPageUrl)
+                        <div class="flex items-center">
+                            <i class="fas fa-link text-indigo-500 mr-2"></i>
+                            <a href="{{ $productPageUrl }}" target="_blank" class="text-indigo-600 hover:text-indigo-800 break-all">
+                                {{ $productPageUrl }}
+                            </a>
+                        </div>
+                    @else
+                        <p class="text-gray-500 italic">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            製品ページのURLが設定されていません。編集ボタンから設定してください。<br>
+                            <span class="text-xs">（未設定の場合は、デフォルトで https://www.dschatbot.ai/ にリンクします）</span>
+                        </p>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </div>

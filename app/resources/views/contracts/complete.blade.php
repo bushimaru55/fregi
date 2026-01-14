@@ -105,7 +105,11 @@
 
     {{-- ボタン --}}
     <div class="flex justify-center">
-        <a href="{{ url('/') }}" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+        @php
+            // 管理画面で設定されたトップページのURLを取得（設定がない場合はデフォルトでトップページ）
+            $topPageUrl = \App\Models\SiteSetting::getTextValue('top_page_url', url('/'));
+        @endphp
+        <a href="{{ $topPageUrl }}" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300">
             <i class="fas fa-home mr-2"></i>トップページへ
         </a>
     </div>
