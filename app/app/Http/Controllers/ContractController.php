@@ -139,7 +139,7 @@ class ContractController extends Controller
     }
 
     /**
-     * 申込内容確認画面（GETリクエスト: トークンベースで閲覧可能）
+     * 申込内容確認画面（GETリクエスト: トークンベースで閲覧可能、またはエラー時の再表示）
      */
     public function confirmGet(Request $request)
     {
@@ -165,7 +165,27 @@ class ContractController extends Controller
             ]);
         }
         
-        // トークンがない場合は通常通りエラー
+        // セッションに確認画面のデータがある場合（エラー時の再表示）
+        if ($request->session()->has('contract_confirm_data')) {
+            $viewData = $request->session()->get('contract_confirm_data');
+            $errorMessage = $request->session()->get('contract_confirm_error');
+            
+            // セッションからデータを削除（一度だけ表示）
+            $request->session()->forget('contract_confirm_data');
+            $request->session()->forget('contract_confirm_error');
+            
+            $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
+            $termsOfService = SiteSetting::getValue('terms_of_service', '');
+            
+            return view('contracts.confirm', [
+                'data' => $viewData,
+                'plan' => $plan,
+                'termsOfService' => $termsOfService,
+                'error' => $errorMessage, // エラーメッセージを渡す
+            ]);
+        }
+        
+        // トークンもセッションデータもない場合は通常通りエラー
         return redirect()->route('contract.create')
             ->with('error', '確認画面に直接アクセスすることはできません。フォームからお申し込みください。');
     }
@@ -339,9 +359,9 @@ class ContractController extends Controller
                         'api_result' => $apiResult,
                     ]);
                     
-                    return back()->withErrors([
-                        'error' => '決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'),
-                    ]);
+                    // トランザクションをロールバック（例外をスロー）
+                    // これにより、契約と決済情報が作成されない
+                    throw new \Exception('決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'));
                 }
 
                 // 承認番号、取引番号を取得
@@ -395,7 +415,19 @@ class ContractController extends Controller
                     'processing_time_ms' => $processingTime,
                 ]);
                 
-                throw $e;
+                // トランザクションは自動的にロールバックされる
+                // 確認画面のデータをセッションに保存して確認画面にリダイレクト
+                // （back()だとGETリクエストになり、confirmGet()でエラーになるため）
+                try {
+                    $validated = $request->validated();
+                    $request->session()->put('contract_confirm_data', $validated);
+                    $request->session()->put('contract_confirm_error', $e->getMessage());
+                    
+                    return redirect()->route('contract.confirm.get');
+                } catch (\Illuminate\Validation\ValidationException $validationException) {
+                    // バリデーションエラーの場合は、元のフォームに戻す
+                    return back()->withErrors($validationException->errors())->withInput();
+                }
             }
         });
     }
@@ -406,8 +438,32 @@ class ContractController extends Controller
     public function complete(Request $request): View
     {
         $orderId = $request->input('orderid');
-        $payment = Payment::where('orderid', $orderId)->with('contract.contractPlan')->firstOrFail();
+        
+        if (!$orderId) {
+            Log::channel('contract_payment')->error('完了画面: orderidパラメータがありません', [
+                'request_params' => $request->all(),
+            ]);
+            abort(404, '決済情報が見つかりません。');
+        }
+        
+        $payment = Payment::where('orderid', $orderId)->with('contract.contractPlan')->first();
+        
+        if (!$payment) {
+            Log::channel('contract_payment')->error('完了画面: Paymentが見つかりません', [
+                'orderid' => $orderId,
+            ]);
+            abort(404, '決済情報が見つかりません。');
+        }
+        
         $contract = $payment->contract;
+        
+        if (!$contract) {
+            Log::channel('contract_payment')->error('完了画面: Contractが見つかりません', [
+                'payment_id' => $payment->id,
+                'orderid' => $orderId,
+            ]);
+            abort(404, '契約情報が見つかりません。');
+        }
 
         return view('contracts.complete', [
             'contract' => $contract,

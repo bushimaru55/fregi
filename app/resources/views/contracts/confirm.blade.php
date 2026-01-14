@@ -17,6 +17,16 @@
         @endif
     </div>
 
+    {{-- エラーメッセージ表示（決済処理失敗時など） --}}
+    @if(isset($error) && $error)
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle mr-3"></i>
+                <p class="font-semibold">{{ $error }}</p>
+            </div>
+        </div>
+    @endif
+
     @if(!isset($isViewOnly) || !$isViewOnly)
     <form action="{{ route('contract.store') }}" method="POST">
         @csrf
