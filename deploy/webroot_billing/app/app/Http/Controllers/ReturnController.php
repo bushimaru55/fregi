@@ -67,8 +67,9 @@ class ReturnController extends Controller
             }
 
             // F-REGI設定を取得
-            $environment = env('APP_ENV') === 'production' ? 'prod' : 'test';
-            $config = $this->configService->getActiveConfig($companyId, $environment);
+            // FREGI_ENVを使用して設定を検索（APP_ENVとは独立）
+            $targetEnv = config('fregi.environment', 'test');
+            $config = $this->configService->getActiveConfig($companyId, $targetEnv);
             $connectPassword = $this->encryptionService->decryptSecret($config->connect_password_enc);
 
             // チェックサム検証

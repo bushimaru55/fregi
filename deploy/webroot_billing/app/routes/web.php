@@ -44,15 +44,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'show'])->name('show');
     });
 
-    // F-REGI設定
+    // F-REGI設定（編集のみ運用：単一レコード）
     Route::prefix('fregi-configs')->name('fregi-configs.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\FregiConfigController::class, 'index'])->name('index');
-        Route::get('/create', [\App\Http\Controllers\Admin\FregiConfigController::class, 'create'])->name('create');
-        Route::post('/', [\App\Http\Controllers\Admin\FregiConfigController::class, 'store'])->name('store');
-        Route::get('/{fregiConfig}', [\App\Http\Controllers\Admin\FregiConfigController::class, 'show'])->name('show');
-        Route::get('/{fregiConfig}/edit', [\App\Http\Controllers\Admin\FregiConfigController::class, 'edit'])->name('edit');
-        Route::put('/{fregiConfig}', [\App\Http\Controllers\Admin\FregiConfigController::class, 'update'])->name('update');
-        Route::delete('/{fregiConfig}', [\App\Http\Controllers\Admin\FregiConfigController::class, 'destroy'])->name('destroy');
+        Route::get('/edit', [\App\Http\Controllers\Admin\FregiConfigController::class, 'edit'])->name('edit');
+        Route::put('/update', [\App\Http\Controllers\Admin\FregiConfigController::class, 'update'])->name('update');
+        Route::get('/show', [\App\Http\Controllers\Admin\FregiConfigController::class, 'show'])->name('show');
     });
 
     // 契約プラン管理

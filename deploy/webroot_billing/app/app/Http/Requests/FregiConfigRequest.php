@@ -23,9 +23,8 @@ class FregiConfigRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'company_id' => ['required', 'integer'],
             'environment' => ['required', 'string', 'in:test,prod'],
-            'shop_id' => ['required', 'string'],
+            'shopid' => ['required', 'string', 'max:255'],
             'notify_url' => ['required', 'url'],
             'return_url_success' => ['required', 'url'],
             'return_url_cancel' => ['required', 'url'],
@@ -33,14 +32,17 @@ class FregiConfigRequest extends FormRequest
             'change_reason' => ['nullable', 'string', 'max:500'],
         ];
 
-        // 新規作成時はパスワード必須、更新時は変更する場合のみ必須
-        if ($this->isMethod('POST')) {
+        // パスワードバリデーション
+        // 1. パスワード変更チェックボックスが有効な場合：必須
+        // 2. 初回保存時（connect_password_encが空の場合）：必須
+        $config = \App\Models\FregiConfig::where('company_id', 1)->first();
+        $isFirstTime = !$config || empty($config->connect_password_enc);
+        
+        if ($this->has('change_password') && $this->input('change_password')) {
             $rules['connect_password'] = ['required', 'string'];
-        } else {
-            // 更新時: パスワード変更チェックボックスが有効な場合のみ必須
-            if ($this->has('change_password') && $this->input('change_password')) {
-                $rules['connect_password'] = ['required', 'string'];
-            }
+        } elseif ($isFirstTime) {
+            // 初回保存時はconnect_passwordが必須
+            $rules['connect_password'] = ['required', 'string'];
         }
 
         return $rules;
@@ -55,8 +57,24 @@ class FregiConfigRequest extends FormRequest
     {
         return [
             'connect_password.required' => '接続パスワードは必須です。',
-            'company_id.required' => '会社IDは必須です。',
+            'shopid.required' => 'SHOP IDは必須です。',
             'environment.in' => '環境はtestまたはprodである必要があります。',
+        ];
+    }
+
+    /**
+     * Get custom attribute names for validator errors.
+     *
+     * @return array
+     */
+    public function attributes(): array
+    {
+        return [
+            'shopid' => 'SHOP ID',
+            'connect_password' => '接続パスワード',
+            'notify_url' => '通知URL',
+            'return_url_success' => '成功時戻りURL',
+            'return_url_cancel' => 'キャンセル時戻りURL',
         ];
     }
 }

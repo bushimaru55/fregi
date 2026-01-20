@@ -11,19 +11,16 @@ class FregiApiService
     /**
      * APIエンドポイントURLを取得
      *
-     * @param string $environment 環境（test/prod）
      * @param string $apiType APIタイプ（issue/cancel/change/info/authm/salem）
      * @return string
      */
-    private function getApiUrl(string $environment, string $apiType): string
+    private function getApiUrl(string $apiType): string
     {
         $baseUrl = 'https://ssl.f-regi.com';
         
-        if ($environment === 'test') {
-            $basePath = '/connecttest';
-        } else {
-            $basePath = '/connect';
-        }
+        // FREGI_ENVを使用（APP_ENVとは独立）
+        $fregiEnv = config('fregi.environment', 'test');
+        $basePath = $fregiEnv === 'test' ? '/connecttest' : '/connect';
         
         $apiPaths = [
             'issue' => $basePath . '/compsettleapply.cgi',
@@ -40,16 +37,13 @@ class FregiApiService
     /**
      * お支払い方法選択画面のURLを取得
      *
-     * @param string $environment 環境（test/prod）
      * @return string
      */
-    private function getPaymentPageUrl(string $environment): string
+    private function getPaymentPageUrl(): string
     {
-        if ($environment === 'test') {
-            return 'https://pay.f-regi.com/usertest/';
-        } else {
-            return 'https://pay.f-regi.com/user/';
-        }
+        // FREGI_ENVを使用（APP_ENVとは独立）
+        $fregiEnv = config('fregi.environment', 'test');
+        return $fregiEnv === 'test' ? 'https://pay.f-regi.com/usertest/' : 'https://pay.f-regi.com/user/';
     }
 
     /**
@@ -62,7 +56,7 @@ class FregiApiService
      */
     public function issuePayment(array $params, FregiConfig $config): array
     {
-        $url = $this->getApiUrl($config->environment, 'issue');
+        $url = $this->getApiUrl('issue');
         
         // 必須パラメータの確認
         if (empty($params['SHOPID']) || empty($params['ID']) || empty($params['PAY'])) {
@@ -167,7 +161,7 @@ class FregiApiService
      */
     public function getPaymentPageUrlWithParams(string $settleno, string $checksum, FregiConfig $config): string
     {
-        $baseUrl = $this->getPaymentPageUrl($config->environment);
+        $baseUrl = $this->getPaymentPageUrl();
         return $baseUrl . '?SETTLENO=' . urlencode($settleno) . '&CHECKSUM=' . urlencode($checksum);
     }
 
@@ -181,7 +175,9 @@ class FregiApiService
      */
     public function authorizePayment(array $params, FregiConfig $config): array
     {
-        $url = $this->getApiUrl($config->environment, 'authm');
+        // config('fregi.auth_url')を使用（FREGI_ENVに応じて自動設定）
+        $url = config('fregi.auth_url');
+        $fregiEnv = config('fregi.environment', 'test');
         
         // 必須パラメータの確認（カード情報がある場合とCUSTOMERIDのみの場合で分岐）
         $hasCardInfo = !empty($params['PAN1']) && !empty($params['PAN2']) && !empty($params['PAN3']) && !empty($params['PAN4']);
@@ -207,12 +203,54 @@ class FregiApiService
             $params['CHARCODE'] = 'euc';
         }
         
+        // ログ用にマスクしたパラメータを作成（秘密情報をマスク）
+        $logParams = $params;
+        if (isset($logParams['PAN1'])) $logParams['PAN1'] = '****';
+        if (isset($logParams['PAN2'])) $logParams['PAN2'] = '****';
+        if (isset($logParams['PAN3'])) $logParams['PAN3'] = '****';
+        if (isset($logParams['PAN4'])) $logParams['PAN4'] = '****';
+        if (isset($logParams['SCODE'])) $logParams['SCODE'] = '****';
+        
+        // リクエストの先頭情報（デバッグ用、安全な情報のみ）
+        $requestPreview = [
+            'SHOPID' => $params['SHOPID'] ?? null,
+            'ID' => $params['ID'] ?? null,
+            'PAY' => $params['PAY'] ?? null,
+            'MONTHLY' => $params['MONTHLY'] ?? null,
+            'CUSTOMERID' => $params['CUSTOMERID'] ?? null,
+            'has_card_info' => $hasCardInfo,
+        ];
+        
+        Log::info('F-REGIオーソリ処理送信前', [
+            'url' => $url,
+            'fregi_env' => $fregiEnv,
+            'auth_url' => $url,
+            'config_environment' => $config->environment, // DB上の設定値（参考用）
+            'request_preview' => $requestPreview,
+            'params_count' => count($params),
+        ]);
+        
         try {
             // POSTリクエストを送信（application/x-www-form-urlencoded）
             $response = Http::asForm()->post($url, $params);
             
+            // HTTPステータスコードを記録
+            $httpStatus = $response->status();
+            Log::info('F-REGIオーソリ処理HTTPレスポンス受信', [
+                'url' => $url,
+                'http_status' => $httpStatus,
+                'response_size' => strlen($response->body()),
+            ]);
+            
             if (!$response->successful()) {
-                throw new \Exception('HTTPリクエストが失敗しました: ' . $response->status());
+                $errorBody = $response->body();
+                $errorPreview = mb_substr($errorBody, 0, 200);
+                Log::error('F-REGIオーソリ処理HTTPエラー', [
+                    'url' => $url,
+                    'http_status' => $httpStatus,
+                    'response_preview' => $errorPreview,
+                ]);
+                throw new \Exception('HTTPリクエストが失敗しました: ' . $httpStatus);
             }
             
             // レスポンスボディを取得（EUC-JPからUTF-8に変換）
@@ -221,6 +259,14 @@ class FregiApiService
             if (!mb_check_encoding($body, 'UTF-8')) {
                 $body = mb_convert_encoding($body, 'UTF-8', 'EUC-JP');
             }
+            
+            // レスポンスの先頭200文字を記録（デバッグ用、安全な情報のみ）
+            $responsePreview = mb_substr($body, 0, 200);
+            Log::info('F-REGIオーソリ処理レスポンス受信', [
+                'url' => $url,
+                'response_preview' => $responsePreview,
+                'response_length' => strlen($body),
+            ]);
             
             // レスポンスを改行区切りで分割
             $lines = explode("\n", $body);
@@ -304,7 +350,7 @@ class FregiApiService
      */
     public function processMonthlySale(array $params, FregiConfig $config): array
     {
-        $url = $this->getApiUrl($config->environment, 'salem');
+        $url = $this->getApiUrl('salem');
         
         // 必須パラメータの確認
         if (empty($params['SHOPID']) || empty($params['CUSTOMERID']) || empty($params['PAY'])) {

@@ -86,11 +86,27 @@ class ContractController extends Controller
             
             return view('contracts.create', compact('plans', 'termsOfService'));
         } catch (\Exception $e) {
-            Log::channel('contract_payment')->error('申込フォーム表示エラー', [
-                'url' => $request->fullUrl(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            // 詳細なエラーログを記録
+            Log::channel('contract_payment')->error('申込フォーム表示エラー（詳細）', [
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_class' => get_class($e),
+                'stack_trace' => $e->getTraceAsString(),
+                'request_method' => $request->method(),
+                'request_url' => $request->fullUrl(),
+                'request_path' => $request->path(),
+                'request_headers' => [
+                    'user-agent' => $request->userAgent(),
+                    'referer' => $request->header('referer'),
+                ],
+                'session_id' => $request->session()->getId(),
                 'ip' => $request->ip(),
+                'fregi_env' => config('fregi.environment', 'unknown'),
+                'app_env' => config('app.env', 'unknown'),
+                'php_version' => PHP_VERSION,
+                'timestamp' => now()->toIso8601String(),
             ]);
             throw $e;
         }
@@ -98,13 +114,20 @@ class ContractController extends Controller
 
     /**
      * 申込内容確認画面を表示
+     * POSTリクエスト時は必ず確認画面を表示する
      */
     public function confirm(ContractRequest $request): View
     {
         try {
+            // POSTリクエストであることを確認（GETリクエストの場合はconfirmGet()に処理を委譲）
+            if (!$request->isMethod('post')) {
+                return $this->confirmGet($request);
+            }
+            
             // セッションからエラーメッセージをクリア（正常なPOSTリクエストなので）
             $request->session()->forget('error');
             
+            // バリデーション済みデータを取得（バリデーションエラー時はfailedValidation()でハンドリング）
             $validated = $request->validated();
             $plan = ContractPlan::findOrFail($validated['contract_plan_id']);
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
@@ -120,19 +143,49 @@ class ContractController extends Controller
                 'user_agent' => $request->userAgent(),
                 'timestamp' => now()->toIso8601String(),
             ];
-            Log::channel('contract_payment')->info('確認画面表示', $logData);
+            Log::channel('contract_payment')->info('確認画面表示（POST）', $logData);
             
             return view('contracts.confirm', [
                 'data' => $validated,
                 'plan' => $plan,
                 'termsOfService' => $termsOfService,
+                'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
             ]);
         } catch (\Exception $e) {
-            Log::channel('contract_payment')->error('確認画面表示エラー', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            // 詳細なエラーログを記録
+            Log::channel('contract_payment')->error('確認画面表示エラー（詳細）', [
+                'error_message' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'error_class' => get_class($e),
+                'stack_trace' => $e->getTraceAsString(),
+                'previous_exception' => $e->getPrevious() ? [
+                    'message' => $e->getPrevious()->getMessage(),
+                    'file' => $e->getPrevious()->getFile(),
+                    'line' => $e->getPrevious()->getLine(),
+                ] : null,
+                'request_method' => $request->method(),
+                'request_url' => $request->fullUrl(),
+                'request_path' => $request->path(),
+                'request_query' => $request->query(),
+                'request_headers' => [
+                    'user-agent' => $request->userAgent(),
+                    'referer' => $request->header('referer'),
+                    'accept' => $request->header('accept'),
+                ],
+                'request_data' => $request->except(['password', '_token', 'pan1', 'pan2', 'pan3', 'pan4', 'scode']),
+                'session_id' => $request->session()->getId(),
+                'session_data' => $request->session()->all(),
                 'ip' => $request->ip(),
-                'request_data' => $request->except(['password', '_token']),
+                'fregi_env' => config('fregi.environment', 'unknown'),
+                'app_env' => config('app.env', 'unknown'),
+                'app_debug' => config('app.debug', false),
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'memory_usage' => memory_get_usage(true),
+                'memory_peak' => memory_get_peak_usage(true),
+                'timestamp' => now()->toIso8601String(),
             ]);
             throw $e;
         }
@@ -162,6 +215,7 @@ class ContractController extends Controller
                 'plan' => $plan,
                 'termsOfService' => $termsOfService,
                 'isViewOnly' => true, // 閲覧専用フラグ（フォーム送信を無効化）
+                'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
             ]);
         }
         
@@ -169,20 +223,46 @@ class ContractController extends Controller
         if ($request->session()->has('contract_confirm_data')) {
             $viewData = $request->session()->get('contract_confirm_data');
             $errorMessage = $request->session()->get('contract_confirm_error');
+            $validationErrors = $request->session()->get('contract_confirm_errors');
             
             // セッションからデータを削除（一度だけ表示）
             $request->session()->forget('contract_confirm_data');
             $request->session()->forget('contract_confirm_error');
+            $request->session()->forget('contract_confirm_errors');
             
-            $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
-            $termsOfService = SiteSetting::getValue('terms_of_service', '');
-            
-            return view('contracts.confirm', [
-                'data' => $viewData,
-                'plan' => $plan,
-                'termsOfService' => $termsOfService,
-                'error' => $errorMessage, // エラーメッセージを渡す
-            ]);
+            try {
+                $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
+                $termsOfService = SiteSetting::getValue('terms_of_service', '');
+                
+                return view('contracts.confirm', [
+                    'data' => $viewData,
+                    'plan' => $plan,
+                    'termsOfService' => $termsOfService,
+                    'error' => $errorMessage, // エラーメッセージを渡す
+                    'validation_errors' => $validationErrors, // バリデーションエラーを渡す
+                    'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
+                ]);
+            } catch (\Exception $e) {
+                // プランが見つからない場合はcreateに戻る
+                Log::channel('contract_payment')->error('確認画面表示：プランが見つかりません（詳細）', [
+                    'error_message' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
+                    'error_file' => $e->getFile(),
+                    'error_line' => $e->getLine(),
+                    'error_class' => get_class($e),
+                    'stack_trace' => $e->getTraceAsString(),
+                    'contract_plan_id' => $viewData['contract_plan_id'] ?? null,
+                    'view_data_keys' => array_keys($viewData ?? []),
+                    'request_method' => $request->method(),
+                    'request_url' => $request->fullUrl(),
+                    'session_id' => $request->session()->getId(),
+                    'fregi_env' => config('fregi.environment', 'unknown'),
+                    'app_env' => config('app.env', 'unknown'),
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+                return redirect()->route('contract.create')
+                    ->with('error', '選択されたプランが見つかりませんでした。もう一度お試しください。');
+            }
         }
         
         // トークンもセッションデータもない場合は通常通りエラー
@@ -257,19 +337,22 @@ class ContractController extends Controller
                 ]);
 
                 // F-REGI設定を取得
-                $environment = env('APP_ENV') === 'production' ? 'prod' : 'test';
+                // FREGI_ENVを使用して設定を検索（APP_ENVとは独立）
+                $targetEnv = config('fregi.environment', 'test');
                 $fregiConfig = $this->configService->getActiveConfig(
                     $payment->company_id,
-                    $environment
+                    $targetEnv
                 );
 
                 if (!$fregiConfig) {
                     Log::channel('contract_payment')->error('F-REGI設定が見つかりません', [
                         'company_id' => $payment->company_id,
-                        'environment' => $environment,
+                        'target_env' => $targetEnv,
                         'payment_id' => $payment->id,
+                        'fregi_env_config' => config('fregi.environment', 'test'),
                     ]);
-                    throw new \Exception('F-REGI設定が見つかりません');
+                    // エラーメッセージはFregiConfigServiceから投げられるため、ここでは再スローしない
+                    // （実際にはgetActiveConfig()内で例外が投げられる）
                 }
 
                 // 決済タイプに応じた処理
@@ -336,8 +419,25 @@ class ContractController extends Controller
                     'payment_id' => $payment->id,
                     'orderid' => $payment->orderid,
                     'billing_type' => $billingType,
-                    'environment' => $environment,
+                    'environment' => $targetEnv, // $targetEnvを使用（config('fregi.environment', 'test')）
                     'api_params' => $logParams, // ログにはマスクした値を出力
+                ]);
+
+                // payment_events: fregi_authorize_request を記録
+                DB::table('payment_events')->insert([
+                    'payment_id' => $payment->id,
+                    'event_type' => 'fregi_authorize_request',
+                    'payload' => json_encode([
+                        'url' => config('fregi.auth_url'),
+                        'fregi_env' => $targetEnv,
+                        'shopid' => $fregiConfig->shopid,
+                        'orderid' => $payment->orderid,
+                        'amount' => $payment->amount,
+                        'billing_type' => $billingType,
+                        'has_card_info' => true,
+                        'has_customer_id' => !empty($customerId),
+                    ]),
+                    'created_at' => now(),
                 ]);
 
                 // オーソリ処理（authm.cgi）を呼び出し
@@ -352,11 +452,36 @@ class ContractController extends Controller
                     'error_message' => $apiResult['error_message'] ?? null,
                 ]);
 
+                // payment_events: fregi_authorize_response を記録
+                DB::table('payment_events')->insert([
+                    'payment_id' => $payment->id,
+                    'event_type' => 'fregi_authorize_response',
+                    'payload' => json_encode([
+                        'result' => $apiResult['result'] ?? 'UNKNOWN',
+                        'auth_code' => $apiResult['auth_code'] ?? null,
+                        'seqno' => $apiResult['seqno'] ?? null,
+                        'customer_id' => ($billingType === 'monthly') ? $customerId : null,
+                        'error_message' => $apiResult['error_message'] ?? null,
+                    ]),
+                    'created_at' => now(),
+                ]);
+
                 if ($apiResult['result'] !== 'OK') {
                     Log::channel('contract_payment')->error('F-REGIオーソリ処理失敗', [
                         'payment_id' => $payment->id,
                         'error_message' => $apiResult['error_message'] ?? '不明なエラー',
                         'api_result' => $apiResult,
+                    ]);
+                    
+                    // payment_events: fregi_authorize_failed を記録
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $payment->id,
+                        'event_type' => 'fregi_authorize_failed',
+                        'payload' => json_encode([
+                            'error_message' => $apiResult['error_message'] ?? '不明なエラー',
+                            'error_code' => $apiResult['error_code'] ?? null,
+                        ]),
+                        'created_at' => now(),
                     ]);
                     
                     // トランザクションをロールバック（例外をスロー）
@@ -367,6 +492,18 @@ class ContractController extends Controller
                 // 承認番号、取引番号を取得
                 $authCode = $apiResult['auth_code'];
                 $seqno = $apiResult['seqno'];
+
+                // payment_events: fregi_authorize_success を記録
+                DB::table('payment_events')->insert([
+                    'payment_id' => $payment->id,
+                    'event_type' => 'fregi_authorize_success',
+                    'payload' => json_encode([
+                        'auth_code' => $authCode,
+                        'seqno' => $seqno,
+                        'customer_id' => ($billingType === 'monthly') ? $customerId : null,
+                    ]),
+                    'created_at' => now(),
+                ]);
 
                 // Paymentに承認番号、取引番号を保存
                 $payment->update([
@@ -406,13 +543,38 @@ class ContractController extends Controller
             } catch (\Exception $e) {
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
                 
-                Log::channel('contract_payment')->error('決済処理エラー', [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
+                // 詳細なエラーログを記録
+                Log::channel('contract_payment')->error('決済処理エラー（詳細）', [
+                    'error_message' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
+                    'error_file' => $e->getFile(),
+                    'error_line' => $e->getLine(),
+                    'error_class' => get_class($e),
+                    'stack_trace' => $e->getTraceAsString(),
+                    'previous_exception' => $e->getPrevious() ? [
+                        'message' => $e->getPrevious()->getMessage(),
+                        'file' => $e->getPrevious()->getFile(),
+                        'line' => $e->getPrevious()->getLine(),
+                    ] : null,
+                    'request_method' => $request->method(),
+                    'request_url' => $request->fullUrl(),
+                    'request_path' => $request->path(),
+                    'request_headers' => [
+                        'user-agent' => $request->userAgent(),
+                        'referer' => $request->header('referer'),
+                    ],
+                    'request_data_keys' => array_keys($request->except(['password', '_token'])),
+                    'session_id' => $request->session()->getId(),
+                    'session_keys' => array_keys($request->session()->all()),
                     'ip' => $request->ip(),
+                    'fregi_env' => config('fregi.environment', 'unknown'),
+                    'app_env' => config('app.env', 'unknown'),
+                    'app_debug' => config('app.debug', false),
+                    'php_version' => PHP_VERSION,
                     'processing_time_ms' => $processingTime,
+                    'memory_usage' => memory_get_usage(true),
+                    'memory_peak' => memory_get_peak_usage(true),
+                    'timestamp' => now()->toIso8601String(),
                 ]);
                 
                 // トランザクションは自動的にロールバックされる

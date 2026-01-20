@@ -20,6 +20,62 @@
     @stack('styles')
 </head>
 <body class="bg-gray-50">
+    {{-- フロントエンドエラーログ用のスクリプト（本番環境でも有効） --}}
+    <script>
+        // グローバルエラーハンドラ：未処理のJavaScriptエラーをキャッチ
+        window.addEventListener('error', function(event) {
+            console.error('JavaScriptエラー:', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error ? event.error.stack : null,
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString(),
+            });
+            
+            // エラー詳細をサーバーに送信（オプション：必要に応じて有効化）
+            // fetch('/api/error-log', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            //     },
+            //     body: JSON.stringify({
+            //         message: event.message,
+            //         filename: event.filename,
+            //         lineno: event.lineno,
+            //         colno: event.colno,
+            //         stack: event.error ? event.error.stack : null,
+            //         url: window.location.href,
+            //         userAgent: navigator.userAgent,
+            //     })
+            // }).catch(err => console.error('エラーログ送信失敗:', err));
+        });
+        
+        // Promise rejection のハンドリング
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('未処理のPromise rejection:', {
+                reason: event.reason,
+                promise: event.promise,
+                url: window.location.href,
+                userAgent: navigator.userAgent,
+                timestamp: new Date().toISOString(),
+            });
+        });
+        
+        // ページロード完了時にデバッグ情報をログに記録（本番環境では最小限）
+        window.addEventListener('load', function() {
+            if (window.console && window.console.log) {
+                console.log('ページロード完了:', {
+                    url: window.location.href,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                });
+            }
+        });
+    </script>
     <!-- Header -->
     <header class="gradient-bg text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">

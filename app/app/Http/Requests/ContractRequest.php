@@ -124,4 +124,29 @@ class ContractRequest extends FormRequest
             'scode.regex' => 'セキュリティコードは3桁または4桁の数字で入力してください。',
         ];
     }
+
+    /**
+     * Handle a failed validation attempt.
+     * POSTリクエスト時は、バリデーションエラーがあってもconfirm画面に進むようにする
+     *
+     * @param  \Illuminate\Contracts\Validation\Validator  $validator
+     * @return void
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        // POSTリクエストで、confirm画面へのアクセスの場合は、エラーをセッションに保存してconfirm画面に進む
+        if ($this->isMethod('post') && $this->routeIs('contract.confirm')) {
+            $this->session()->put('contract_confirm_data', $this->all());
+            $this->session()->put('contract_confirm_errors', $validator->errors());
+            
+            throw (new \Illuminate\Validation\ValidationException($validator))
+                ->errorBag($this->errorBag)
+                ->redirectTo(route('contract.confirm.get'));
+        }
+        
+        // それ以外の場合は通常の処理（back()に戻る）
+        parent::failedValidation($validator);
+    }
 }

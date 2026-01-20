@@ -27,6 +27,23 @@
         </div>
     @endif
 
+    {{-- バリデーションエラー表示 --}}
+    @if(isset($validation_errors) && $validation_errors)
+        <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-circle mr-3 mt-1"></i>
+                <div>
+                    <p class="font-semibold mb-2">入力内容に誤りがあります。以下の項目を確認してください：</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($validation_errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if(!isset($isViewOnly) || !$isViewOnly)
     <form action="{{ route('contract.store') }}" method="POST">
         @csrf

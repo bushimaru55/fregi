@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\Log;
 class FregiConfigService
 {
     /**
+     * 単一設定を取得（編集のみ運用）
+     * レコードが存在しない場合はnullを返す（DBには作成しない）
+     *
+     * @return FregiConfig|null
+     */
+    public function getSingleConfig(): ?FregiConfig
+    {
+        return FregiConfig::where('company_id', 1)->first();
+    }
+
+    /**
      * アクティブな設定を取得
      *
      * @param int $companyId 会社ID
@@ -24,8 +35,26 @@ class FregiConfigService
             ->where('is_active', true)
             ->get();
 
+        $found = !$configs->isEmpty();
+        
+        Log::info('F-REGI設定取得', [
+            'company_id' => $companyId,
+            'target_env' => $environment,
+            'found' => $found,
+            'count' => $configs->count(),
+        ]);
+
         if ($configs->isEmpty()) {
-            throw new \Exception("F-REGI設定が未登録です（company_id: {$companyId}, environment: {$environment}）");
+            // より詳細なエラーメッセージを生成
+            $fregiEnv = config('fregi.environment', 'test');
+            $errorMessage = "F-REGI設定が未登録です（company_id: {$companyId}, environment: {$environment}）";
+            $errorMessage .= "\n現在のFREGI_ENV設定: {$fregiEnv}";
+            $errorMessage .= "\n\n対処方法:";
+            $errorMessage .= "\n1. DBに environment='{$environment}' の設定が存在することを確認";
+            $errorMessage .= "\n2. または、.env に FREGI_ENV={$environment} を設定してConfig Cacheを再生成";
+            $errorMessage .= "\n   （Pleskの場合: bootstrap/cache/config.php を削除）";
+            
+            throw new \Exception($errorMessage);
         }
 
         if ($configs->count() > 1) {
@@ -43,15 +72,28 @@ class FregiConfigService
 
     /**
      * 設定を作成
+     * 初回保存時のみ使用。connect_passwordは必須で、暗号化してconnect_password_encに保存
      *
      * @param array $data
      * @return FregiConfig
+     * @throws \Exception connect_passwordが空の場合
      */
     public function createConfig(array $data): FregiConfig
     {
         return DB::transaction(function () use ($data) {
+            // connect_passwordが必須であることを確認
+            if (empty($data['connect_password'])) {
+                throw new \Exception('初回保存時は接続パスワードが必須です。');
+            }
+
+            // connect_passwordを暗号化してconnect_password_encに設定
+            $password = $data['connect_password'];
+            unset($data['connect_password']);
+            
             // 新しい設定を作成
-            $config = FregiConfig::create($data);
+            $config = new FregiConfig($data);
+            $config->connect_password = $password; // アクセサで自動暗号化
+            $config->save();
 
             // 変更履歴を保存
             $this->saveVersion($config, 1, '初期登録');
@@ -79,10 +121,16 @@ class FregiConfigService
                     ->update(['is_active' => false]);
             }
 
-            // パスワードが変更されない場合は、connect_password_encを保持
-            if (isset($data['connect_password']) && empty($data['connect_password'])) {
-                unset($data['connect_password']);
+            // パスワード処理：connect_passwordが空の場合は既存値を保持
+            $passwordChanged = false;
+            if (isset($data['connect_password']) && !empty($data['connect_password'])) {
+                // 入力がある場合は暗号化してconnect_password_encに設定
+                // connect_passwordアクセサを使用して暗号化
+                $config->connect_password = $data['connect_password'];
+                $passwordChanged = true;
             }
+            // connect_passwordは$dataから除外（アクセサで処理済み）
+            unset($data['connect_password']);
 
             // 既存のバージョン番号を取得
             $currentVersion = $config->versions()->max('version_no') ?? 0;
@@ -93,6 +141,12 @@ class FregiConfigService
             
             // 設定を更新
             $config->update($data);
+            
+            // パスワードが変更された場合は、アクセサで設定されたconnect_password_encを保存
+            if ($passwordChanged) {
+                $config->save(); // connect_password_encを保存
+            }
+            
             $config->refresh();
 
             // 変更履歴を保存

@@ -196,6 +196,63 @@ SESSION_PATH=/billing
 FREGI_SECRET_KEY=Y1AExhmfYZYSwOJ24QRTEV1YoD87NxzwBNLmMdZsUSc=
 ```
 
+### FREGI_SECRET_KEY（必須）
+
+F-REGI設定の接続パスワードを暗号化するために使用する秘密鍵です。**ローカル・本番ともに必須**です。
+
+#### キーの生成方法
+
+以下のいずれかのコマンドで32バイトのBase64エンコードされたキーを生成できます：
+
+**macOS/Linux:**
+```bash
+# opensslを使用（推奨）
+openssl rand -base64 32
+
+# Pythonを使用
+python3 - <<'PY'
+import os
+import base64
+print(base64.b64encode(os.urandom(32)).decode('utf-8'))
+PY
+```
+
+**生成例:**
+```
+Y1AExhmfYZYSwOJ24QRTEV1YoD87NxzwBNLmMdZsUSc=
+```
+
+#### .envへの設定
+
+生成したキーを`.env`ファイルに追加：
+
+```env
+FREGI_SECRET_KEY=Y1AExhmfYZYSwOJ24QRTEV1YoD87NxzwBNLmMdZsUSc=
+```
+
+#### 重要な注意事項
+
+1. **本番環境でのキー管理**
+   - 本番環境の`FREGI_SECRET_KEY`は**パスワードと同等の機密情報**として管理してください
+   - 安全なパスワードマネージャー等に保管し、バックアップ・移行時に使用できるようにしておいてください
+
+2. **環境間でのキー共有**
+   - 本番とローカルで**同じキーを使う必要があるか？**
+     - 現仕様では、`connect_password_enc`を復号してF-REGI APIに送信するため、**本番DBの復号には本番キーが必要**です
+     - 環境ごとに別キーにすることは可能ですが、**DBを移送する場合は注意**が必要です
+   - 推奨：本番とローカルで**別キーを使用**し、本番DBをローカルに移行する場合は、一時的に本番キーを設定して復号・再暗号化を行う
+
+3. **キーローテーション時の注意**
+   - キーを変更すると、既存の`connect_password_enc`を復号できなくなる可能性があります
+   - ローテーション時は、以下の手順が必要です：
+     1. 旧キーで既存の`connect_password_enc`を復号
+     2. 新キーで再暗号化
+     3. 管理画面からF-REGI設定を再保存（パスワードを再入力）
+
+4. **未設定時のエラー**
+   - `FREGI_SECRET_KEY`が未設定のままF-REGI設定を保存しようとすると、管理画面に以下のエラーが表示されます：
+     - `F-REGI暗号化キー（FREGI_SECRET_KEY）が未設定です。.env に設定してから再度保存してください。`
+
 ## 開発ガイド
 
 ### コーディング規約

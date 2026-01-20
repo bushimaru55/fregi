@@ -78,7 +78,7 @@
                     <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-link mr-2"></i>新規申込フォーム管理
                     </a>
-                    <a href="{{ route('admin.fregi-configs.index') }}" class="hover:text-indigo-200 transition">
+                    <a href="{{ route('admin.fregi-configs.edit') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-cog mr-2"></i>F-REGI設定
                     </a>
                     <a href="{{ route('admin.site-settings.index') }}" class="hover:text-indigo-200 transition">
