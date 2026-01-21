@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContractPlan extends Model
@@ -90,5 +91,17 @@ class ContractPlan extends Model
     public function scopeMonthly($query)
     {
         return $query->where('billing_type', 'monthly');
+    }
+
+    /**
+     * このベース商品に紐づくオプション商品
+     */
+    public function optionProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'contract_plan_option_products', 'contract_plan_id', 'product_id')
+            ->where('products.type', 'option')
+            ->where('products.is_active', true)
+            ->orderBy('products.display_order')
+            ->withTimestamps();
     }
 }

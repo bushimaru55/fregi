@@ -201,10 +201,10 @@
                 <i class="fas fa-file-contract mr-2"></i>2. 契約内容の選択
             </h2>
 
-            {{-- 契約プラン選択 --}}
+            {{-- 製品選択 --}}
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-4">
-                    契約プラン <span class="text-red-500">*</span>
+                    製品 <span class="text-red-500">*</span>
                 </label>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach($plans as $plan)
@@ -225,6 +225,26 @@
                 @error('contract_plan_id')
                     <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- オプション製品選択（動的に表示） --}}
+            <div class="mb-6" id="option-products-section" style="display: none;">
+                <label class="block text-sm font-semibold text-gray-700 mb-4">
+                    オプション製品
+                </label>
+                <div id="option-products-container" class="space-y-3">
+                    {{-- JavaScriptで動的に追加 --}}
+                </div>
+                <p id="option-products-empty" class="text-sm text-gray-500 mt-2" style="display: none;">
+                    この製品に対応するオプション製品はありません。
+                </p>
+                @error('option_product_ids')
+                    <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                @enderror
+                @error('option_product_ids.*')
+                    <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                @enderror
+                <p class="text-xs text-gray-500 mt-2">必要なオプション製品にチェックを入れてください</p>
             </div>
 
             {{-- 利用開始希望日 --}}
@@ -284,6 +304,151 @@
 </div>
 
 <script>
+// オプション製品の動的表示
+(function() {
+    const planRadios = document.querySelectorAll('input[name="contract_plan_id"]');
+    const optionProductsSection = document.getElementById('option-products-section');
+    const optionProductsContainer = document.getElementById('option-products-container');
+    const optionProductsEmpty = document.getElementById('option-products-empty');
+    
+    if (!planRadios.length || !optionProductsSection) return;
+    
+    // 製品選択時の処理
+    planRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                loadOptionProducts(this.value);
+            }
+        });
+        
+        // 初期状態で選択されている場合はオプション製品を読み込む
+        if (radio.checked) {
+            loadOptionProducts(radio.value);
+        }
+    });
+    
+    // オプション製品を取得して表示
+    function loadOptionProducts(contractPlanId) {
+        if (!contractPlanId) {
+            optionProductsSection.style.display = 'none';
+            return;
+        }
+        
+        // ローディング表示
+        optionProductsContainer.innerHTML = '<p class="text-sm text-gray-500">読み込み中...</p>';
+        optionProductsSection.style.display = 'block';
+        optionProductsEmpty.style.display = 'none';
+        
+        // APIからオプション製品を取得
+        // URLを動的に構築（url()ヘルパーを使用してベースパスを取得）
+        const apiBaseUrlTemplate = '{{ url("/contract/api/option-products") }}';
+        // 絶対URLからパス部分のみを取得（ドメイン部分を除く）
+        const apiBaseUrl = apiBaseUrlTemplate.replace(window.location.origin, '');
+        const apiPath = apiBaseUrl + '/' + contractPlanId;
+        
+        console.log('オプション製品取得API呼び出し:', {
+            apiBaseUrlTemplate: apiBaseUrlTemplate,
+            apiBaseUrl: apiBaseUrl,
+            apiPath: apiPath,
+            contractPlanId: contractPlanId,
+            fullUrl: window.location.origin + apiPath,
+            currentPath: window.location.pathname
+        });
+        
+        fetch(apiPath, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            console.log('APIレスポンス:', response.status, response.statusText, response.url);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('APIエラーレスポンス:', text);
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(text);
+                    } catch (e) {
+                        errorData = { message: 'HTTP error! status: ' + response.status };
+                    }
+                    throw new Error(errorData.message || 'HTTP error! status: ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('APIレスポンスデータ:', data);
+            if (data.success && data.option_products && data.option_products.length > 0) {
+                console.log('オプション製品数:', data.option_products.length);
+                // オプション製品を表示
+                optionProductsContainer.innerHTML = '';
+                data.option_products.forEach(function(product) {
+                    console.log('オプション製品:', product);
+                    const label = document.createElement('label');
+                    label.className = 'flex items-start cursor-pointer border border-gray-300 rounded-lg p-4 hover:bg-gray-50 hover:border-indigo-300 transition';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'option_product_ids[]';
+                    checkbox.value = product.id;
+                    checkbox.className = 'mt-1 mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded';
+                    
+                    // old()の値を復元
+                    const oldValues = @json(old('option_product_ids', []));
+                    if (oldValues.includes(parseInt(product.id))) {
+                        checkbox.checked = true;
+                    }
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex-1';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold text-gray-800">${escapeHtml(product.name)}</p>
+                                ${product.description ? `<p class="text-sm text-gray-600 mt-1">${escapeHtml(product.description)}</p>` : ''}
+                            </div>
+                            <div class="text-right ml-4">
+                                <p class="text-lg font-bold text-indigo-600">${formatNumber(product.unit_price)}円</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(div);
+                    optionProductsContainer.appendChild(label);
+                });
+                optionProductsEmpty.style.display = 'none';
+            } else {
+                // オプション製品がない場合
+                optionProductsContainer.innerHTML = '';
+                optionProductsEmpty.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('オプション製品の取得に失敗しました:', error);
+            console.error('エラー詳細:', error.message, error.stack);
+            optionProductsContainer.innerHTML = '<p class="text-sm text-red-500">オプション製品の取得に失敗しました: ' + escapeHtml(error.message) + '。ページを再読み込みしてください。</p>';
+            optionProductsEmpty.style.display = 'none';
+        });
+    }
+    
+    // HTMLエスケープ関数
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // 数値フォーマット関数
+    function formatNumber(num) {
+        return new Intl.NumberFormat('ja-JP').format(num);
+    }
+})();
+
     // 今日の日付を最小値に設定
     document.getElementById('desired_start_date').min = new Date().toISOString().split('T')[0];
 

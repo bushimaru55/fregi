@@ -43,6 +43,26 @@
             display: none !important;
             content: none !important;
         }
+        /* Filamentのselectスタイルをリセット（管理画面の通常のselect要素用） */
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select]) {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 0.5rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.5em 1.5em !important;
+            padding-right: 2.5rem !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+        /* Filamentの疑似要素を無効化 */
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])::before,
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])::after,
+        select.native-select::before,
+        select.native-select::after {
+            display: none !important;
+            content: none !important;
+            background: none !important;
+        }
     </style>
     @livewireStyles
     @stack('styles')
@@ -73,7 +93,7 @@
                         <i class="fas fa-folder-open mr-2"></i>契約プランマスター管理
                     </a>
                     <a href="{{ route('admin.contract-plans.index') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-layer-group mr-2"></i>契約プラン管理
+                        <i class="fas fa-layer-group mr-2"></i>製品管理
                     </a>
                     <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-link mr-2"></i>新規申込フォーム管理
@@ -140,18 +160,21 @@
     <!-- Fix for native-select elements -->
     <script>
         function applyNativeSelectStyles() {
-            // すべてのnative-selectクラスを持つselect要素にスタイルを適用
-            const nativeSelects = document.querySelectorAll('select.native-select');
-            nativeSelects.forEach(function(select) {
-                // インラインスタイルで強制的に適用
-                select.style.setProperty('background-image', "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", 'important');
-                select.style.setProperty('background-position', 'right 0.5rem center', 'important');
-                select.style.setProperty('background-repeat', 'no-repeat', 'important');
-                select.style.setProperty('background-size', '1.5em 1.5em', 'important');
-                select.style.setProperty('padding-right', '2.5rem', 'important');
-                select.style.setProperty('appearance', 'none', 'important');
-                select.style.setProperty('-webkit-appearance', 'none', 'important');
-                select.style.setProperty('-moz-appearance', 'none', 'important');
+            // すべてのselect要素（Filamentのものを除く）にスタイルを適用
+            const allSelects = document.querySelectorAll('select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])');
+            allSelects.forEach(function(select) {
+                // Filamentのコンポーネント内でないことを確認
+                if (!select.closest('.fi-fo-field-wrapper') && !select.closest('[wire\\:id]')) {
+                    // インラインスタイルで強制的に適用（既存の背景画像を上書き）
+                    select.style.setProperty('background-image', "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", 'important');
+                    select.style.setProperty('background-position', 'right 0.5rem center', 'important');
+                    select.style.setProperty('background-repeat', 'no-repeat', 'important');
+                    select.style.setProperty('background-size', '1.5em 1.5em', 'important');
+                    select.style.setProperty('padding-right', '2.5rem', 'important');
+                    select.style.setProperty('appearance', 'none', 'important');
+                    select.style.setProperty('-webkit-appearance', 'none', 'important');
+                    select.style.setProperty('-moz-appearance', 'none', 'important');
+                }
             });
         }
         

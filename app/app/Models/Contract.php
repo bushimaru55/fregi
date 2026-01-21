@@ -50,11 +50,19 @@ class Contract extends Model
     }
 
     /**
-     * 決済情報
+     * 決済情報（主決済 - 後方互換性のため維持）
      */
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id');
+    }
+
+    /**
+     * 決済情報（複数決済に対応）
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'contract_id');
     }
 
     /**

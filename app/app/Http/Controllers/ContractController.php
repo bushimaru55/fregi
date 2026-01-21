@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ContractRequest;
 use App\Models\Contract;
+use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Models\SiteSetting;
 use App\Services\EncryptionService;
 use App\Services\FregiApiService;
@@ -74,6 +76,10 @@ class ContractController extends Controller
             
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
             
+            // オプション商品は後でJavaScriptで動的に取得（選択されたベース商品に応じて）
+            // 初期表示時は空のコレクションを渡す
+            $optionProducts = collect();
+            
             // ログ記録
             Log::channel('contract_payment')->info('申込フォーム表示', [
                 'url' => $request->fullUrl(),
@@ -84,7 +90,7 @@ class ContractController extends Controller
                 'timestamp' => now()->toIso8601String(),
             ]);
             
-            return view('contracts.create', compact('plans', 'termsOfService'));
+            return view('contracts.create', compact('plans', 'termsOfService', 'optionProducts'));
         } catch (\Exception $e) {
             // 詳細なエラーログを記録
             Log::channel('contract_payment')->error('申込フォーム表示エラー（詳細）', [
@@ -145,10 +151,24 @@ class ContractController extends Controller
             ];
             Log::channel('contract_payment')->info('確認画面表示（POST）', $logData);
             
+            // オプション商品を取得
+            $optionProductIds = $validated['option_product_ids'] ?? [];
+            $optionProducts = collect();
+            $optionTotalAmount = 0;
+            if (!empty($optionProductIds)) {
+                $optionProducts = Product::whereIn('id', $optionProductIds)
+                    ->where('type', 'option')
+                    ->where('is_active', true)
+                    ->get();
+                $optionTotalAmount = $optionProducts->sum('unit_price');
+            }
+            
             return view('contracts.confirm', [
                 'data' => $validated,
                 'plan' => $plan,
                 'termsOfService' => $termsOfService,
+                'optionProducts' => $optionProducts,
+                'optionTotalAmount' => $optionTotalAmount,
                 'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
             ]);
         } catch (\Exception $e) {
@@ -210,10 +230,24 @@ class ContractController extends Controller
             $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
             
+            // オプション商品を取得
+            $optionProductIds = $viewData['option_product_ids'] ?? [];
+            $optionProducts = collect();
+            $optionTotalAmount = 0;
+            if (!empty($optionProductIds)) {
+                $optionProducts = Product::whereIn('id', $optionProductIds)
+                    ->where('type', 'option')
+                    ->where('is_active', true)
+                    ->get();
+                $optionTotalAmount = $optionProducts->sum('unit_price');
+            }
+            
             return view('contracts.confirm', [
                 'data' => $viewData,
                 'plan' => $plan,
                 'termsOfService' => $termsOfService,
+                'optionProducts' => $optionProducts,
+                'optionTotalAmount' => $optionTotalAmount,
                 'isViewOnly' => true, // 閲覧専用フラグ（フォーム送信を無効化）
                 'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
             ]);
@@ -234,10 +268,24 @@ class ContractController extends Controller
                 $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
                 $termsOfService = SiteSetting::getValue('terms_of_service', '');
                 
+                // オプション商品を取得
+                $optionProductIds = $viewData['option_product_ids'] ?? [];
+                $optionProducts = collect();
+                $optionTotalAmount = 0;
+                if (!empty($optionProductIds)) {
+                    $optionProducts = Product::whereIn('id', $optionProductIds)
+                        ->where('type', 'option')
+                        ->where('is_active', true)
+                        ->get();
+                    $optionTotalAmount = $optionProducts->sum('unit_price');
+                }
+                
                 return view('contracts.confirm', [
                     'data' => $viewData,
                     'plan' => $plan,
                     'termsOfService' => $termsOfService,
+                    'optionProducts' => $optionProducts,
+                    'optionTotalAmount' => $optionTotalAmount,
                     'error' => $errorMessage, // エラーメッセージを渡す
                     'validation_errors' => $validationErrors, // バリデーションエラーを渡す
                     'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
@@ -300,63 +348,409 @@ class ContractController extends Controller
                     'status' => $contract->status,
                 ]);
 
-                // 決済情報を作成
+                // プラン情報を取得
                 $plan = $contract->contractPlan;
-                // 伝票番号（ID）は最大20文字（F-REGI仕様）
-                // 形式: ORD + YmdHis + 契約ID（パディング）
-                $timestamp = now()->format('YmdHis'); // 14文字
-                $contractId = str_pad((string)$contract->id, 4, '0', STR_PAD_LEFT); // 最大4桁
-                $orderId = 'ORD' . $timestamp . $contractId; // 最大21文字（契約IDが4桁の場合）
-                // 20文字を超える場合は切り詰める（末尾を優先）
-                if (strlen($orderId) > 20) {
-                    $orderId = substr($orderId, -20);
+                $billingType = $plan->billing_type ?? 'one_time';
+
+                // 契約明細（contract_items）を作成
+                // 1. ベース商品の明細（必須・自動生成）
+                ContractItem::create([
+                    'contract_id' => $contract->id,
+                    'contract_plan_id' => $plan->id,
+                    'product_id' => null,
+                    'product_name' => $plan->name,
+                    'product_code' => $plan->item,
+                    'quantity' => 1,
+                    'unit_price' => $plan->price,
+                    'subtotal' => $plan->price,
+                ]);
+
+                // 2. オプション商品の明細（任意・ユーザー選択）
+                $optionProductIds = $validated['option_product_ids'] ?? [];
+                foreach ($optionProductIds as $productId) {
+                    $product = Product::where('id', $productId)
+                        ->where('type', 'option')
+                        ->where('is_active', true)
+                        ->firstOrFail();
+                    
+                    ContractItem::create([
+                        'contract_id' => $contract->id,
+                        'contract_plan_id' => null,
+                        'product_id' => $product->id,
+                        'product_name' => $product->name,
+                        'product_code' => $product->code,
+                        'quantity' => 1,
+                        'unit_price' => $product->unit_price,
+                        'subtotal' => $product->unit_price,
+                    ]);
                 }
-                
-                $payment = Payment::create([
-                    'company_id' => 1, // 仮のcompany_id（マルチテナント対応時に変更）
-                    'contract_id' => $contract->id,
-                    'orderid' => $orderId,
-                    'amount' => $plan->price,
-                    'currency' => 'JPY',
-                    'payment_method' => 'credit_card',
-                    'status' => 'created',
-                ]);
 
-                Log::channel('contract_payment')->info('決済情報作成完了', [
-                    'payment_id' => $payment->id,
+                Log::channel('contract_payment')->info('契約明細作成完了', [
                     'contract_id' => $contract->id,
-                    'orderid' => $orderId,
-                    'amount' => $payment->amount,
-                    'status' => $payment->status,
-                ]);
-
-                // 契約に決済IDを紐付け、ステータスを更新
-                $contract->update([
-                    'payment_id' => $payment->id,
-                    'status' => 'pending_payment',
+                    'option_count' => count($optionProductIds),
                 ]);
 
                 // F-REGI設定を取得
-                // FREGI_ENVを使用して設定を検索（APP_ENVとは独立）
                 $targetEnv = config('fregi.environment', 'test');
                 $fregiConfig = $this->configService->getActiveConfig(
-                    $payment->company_id,
+                    1, // company_id（マルチテナント対応時に変更）
                     $targetEnv
                 );
 
-                if (!$fregiConfig) {
-                    Log::channel('contract_payment')->error('F-REGI設定が見つかりません', [
-                        'company_id' => $payment->company_id,
-                        'target_env' => $targetEnv,
-                        'payment_id' => $payment->id,
-                        'fregi_env_config' => config('fregi.environment', 'test'),
-                    ]);
-                    // エラーメッセージはFregiConfigServiceから投げられるため、ここでは再スローしない
-                    // （実際にはgetActiveConfig()内で例外が投げられる）
+                // カード情報を取得
+                $pan1 = $validated['pan1'];
+                $pan2 = $validated['pan2'];
+                $pan3 = $validated['pan3'];
+                $pan4 = $validated['pan4'];
+                $cardExpiryMonth = $validated['card_expiry_month'];
+                $cardExpiryYear = $validated['card_expiry_year'];
+                // 年を2桁に変換（4桁の場合は下2桁を取得）
+                if (strlen($cardExpiryYear) === 4) {
+                    $cardExpiryYear = substr($cardExpiryYear, -2);
+                }
+                $cardName = strtoupper($validated['card_name']); // 大文字に変換
+                $scode = $validated['scode'] ?? null;
+
+                // 月額商品と買い切り商品を分離
+                // 月額商品：ベース商品が月額課金の場合
+                $monthlyItems = collect();
+                $monthlyAmount = 0;
+                if ($billingType === 'monthly') {
+                    $monthlyItems = $contract->contractItems()
+                        ->whereNotNull('contract_plan_id')
+                        ->get();
+                    $monthlyAmount = $monthlyItems->sum('subtotal');
                 }
 
-                // 決済タイプに応じた処理
-                $billingType = $plan->billing_type ?? 'one_time';
+                // 買い切り商品：ベース商品が買い切り + オプション商品（全て買い切り）
+                $oneTimeItems = collect();
+                $oneTimeAmount = 0;
+                if ($billingType === 'one_time') {
+                    // ベース商品が買い切りの場合、ベース商品 + オプション商品
+                    $oneTimeItems = $contract->contractItems()->get();
+                    $oneTimeAmount = $oneTimeItems->sum('subtotal');
+                } else {
+                    // ベース商品が月額の場合、オプション商品のみ
+                    $oneTimeItems = $contract->contractItems()
+                        ->whereNotNull('product_id')
+                        ->get();
+                    $oneTimeAmount = $oneTimeItems->sum('subtotal');
+                }
+
+                $monthlyPayment = null;
+                $oneTimePayment = null;
+                $customerId = null;
+
+                // 1. 月額商品のオーソリ処理（MONTHLY=1, CUSTOMERID付き）
+                if ($monthlyItems->isNotEmpty() && $monthlyAmount > 0) {
+                    // 伝票番号を生成
+                    $timestamp = now()->format('YmdHis');
+                    $contractId = str_pad((string)$contract->id, 4, '0', STR_PAD_LEFT);
+                    $orderId = 'ORD' . $timestamp . $contractId . '-M';
+                    if (strlen($orderId) > 20) {
+                        $orderId = substr($orderId, -20);
+                    }
+
+                    $monthlyPayment = Payment::create([
+                        'company_id' => 1,
+                        'contract_id' => $contract->id,
+                        'orderid' => $orderId,
+                        'amount' => $monthlyAmount,
+                        'currency' => 'JPY',
+                        'payment_method' => 'credit_card',
+                        'status' => 'created',
+                    ]);
+
+                    $customerId = $contract->generateCustomerId();
+                    
+                    $apiParams = [
+                        'SHOPID' => $fregiConfig->shopid,
+                        'ID' => $monthlyPayment->orderid,
+                        'PAY' => (string)$monthlyAmount,
+                        'MONTHLY' => '1',
+                        'MONTHLYMODE' => '0',
+                        'CUSTOMERID' => $customerId,
+                        'PAN1' => $pan1,
+                        'PAN2' => $pan2,
+                        'PAN3' => $pan3,
+                        'PAN4' => $pan4,
+                        'CARDEXPIRY1' => $cardExpiryMonth,
+                        'CARDEXPIRY2' => $cardExpiryYear,
+                        'CARDNAME' => $cardName,
+                        'IP' => $request->ip(),
+                    ];
+                    
+                    if ($scode) {
+                        $apiParams['SCODE'] = $scode;
+                    }
+
+                    // ログ記録
+                    $logParams = $apiParams;
+                    $logParams['PAN1'] = '****';
+                    $logParams['PAN2'] = '****';
+                    $logParams['PAN3'] = '****';
+                    $logParams['PAN4'] = '****';
+                    if (isset($logParams['SCODE'])) {
+                        $logParams['SCODE'] = '****';
+                    }
+
+                    Log::channel('contract_payment')->info('F-REGIオーソリ処理開始（月額商品）', [
+                        'payment_id' => $monthlyPayment->id,
+                        'orderid' => $monthlyPayment->orderid,
+                        'amount' => $monthlyAmount,
+                        'environment' => $targetEnv,
+                        'api_params' => $logParams,
+                    ]);
+
+                    // payment_events記録
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $monthlyPayment->id,
+                        'event_type' => 'fregi_authorize_request_monthly',
+                        'payload' => json_encode([
+                            'url' => config('fregi.auth_url'),
+                            'fregi_env' => $targetEnv,
+                            'shopid' => $fregiConfig->shopid,
+                            'orderid' => $monthlyPayment->orderid,
+                            'amount' => $monthlyAmount,
+                            'billing_type' => 'monthly',
+                            'has_card_info' => true,
+                            'has_customer_id' => true,
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    // オーソリ処理実行
+                    $apiResult = $this->apiService->authorizePayment($apiParams, $fregiConfig);
+
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $monthlyPayment->id,
+                        'event_type' => 'fregi_authorize_response_monthly',
+                        'payload' => json_encode([
+                            'result' => $apiResult['result'] ?? 'UNKNOWN',
+                            'auth_code' => $apiResult['auth_code'] ?? null,
+                            'seqno' => $apiResult['seqno'] ?? null,
+                            'customer_id' => $customerId,
+                            'error_message' => $apiResult['error_message'] ?? null,
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    if ($apiResult['result'] !== 'OK') {
+                        Log::channel('contract_payment')->error('F-REGIオーソリ処理失敗（月額商品）', [
+                            'payment_id' => $monthlyPayment->id,
+                            'error_message' => $apiResult['error_message'] ?? '不明なエラー',
+                        ]);
+                        
+                        DB::table('payment_events')->insert([
+                            'payment_id' => $monthlyPayment->id,
+                            'event_type' => 'fregi_authorize_failed_monthly',
+                            'payload' => json_encode([
+                                'error_message' => $apiResult['error_message'] ?? '不明なエラー',
+                            ]),
+                            'created_at' => now(),
+                        ]);
+                        
+                        throw new \Exception('月額商品の決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'));
+                    }
+
+                    // 成功時の処理
+                    $monthlyPayment->update([
+                        'receiptno' => $apiResult['auth_code'],
+                        'slipno' => $apiResult['seqno'],
+                        'status' => 'paid',
+                        'completed_at' => now(),
+                    ]);
+
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $monthlyPayment->id,
+                        'event_type' => 'fregi_authorize_success_monthly',
+                        'payload' => json_encode([
+                            'auth_code' => $apiResult['auth_code'],
+                            'seqno' => $apiResult['seqno'],
+                            'customer_id' => $customerId,
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    // CUSTOMERIDを保存
+                    $contract->update([
+                        'customer_id' => $customerId,
+                        'payment_id' => $monthlyPayment->id, // 主決済として設定（後方互換性）
+                    ]);
+
+                    Log::channel('contract_payment')->info('F-REGIオーソリ処理成功（月額商品）', [
+                        'payment_id' => $monthlyPayment->id,
+                        'customer_id' => $customerId,
+                    ]);
+                }
+
+                // 2. 買い切り商品のオーソリ処理（MONTHLY=0）
+                if ($oneTimeItems->isNotEmpty() && $oneTimeAmount > 0) {
+                    // 伝票番号を生成
+                    $timestamp = now()->format('YmdHis');
+                    $contractId = str_pad((string)$contract->id, 4, '0', STR_PAD_LEFT);
+                    $orderId = 'ORD' . $timestamp . $contractId . '-OT';
+                    if (strlen($orderId) > 20) {
+                        $orderId = substr($orderId, -20);
+                    }
+
+                    $oneTimePayment = Payment::create([
+                        'company_id' => 1,
+                        'contract_id' => $contract->id,
+                        'orderid' => $orderId,
+                        'amount' => $oneTimeAmount,
+                        'currency' => 'JPY',
+                        'payment_method' => 'credit_card',
+                        'status' => 'created',
+                    ]);
+
+                    $apiParams = [
+                        'SHOPID' => $fregiConfig->shopid,
+                        'ID' => $oneTimePayment->orderid,
+                        'PAY' => (string)$oneTimeAmount,
+                        'MONTHLY' => '0',
+                        'PAN1' => $pan1,
+                        'PAN2' => $pan2,
+                        'PAN3' => $pan3,
+                        'PAN4' => $pan4,
+                        'CARDEXPIRY1' => $cardExpiryMonth,
+                        'CARDEXPIRY2' => $cardExpiryYear,
+                        'CARDNAME' => $cardName,
+                        'IP' => $request->ip(),
+                    ];
+                    
+                    if ($scode) {
+                        $apiParams['SCODE'] = $scode;
+                    }
+
+                    // ログ記録
+                    $logParams = $apiParams;
+                    $logParams['PAN1'] = '****';
+                    $logParams['PAN2'] = '****';
+                    $logParams['PAN3'] = '****';
+                    $logParams['PAN4'] = '****';
+                    if (isset($logParams['SCODE'])) {
+                        $logParams['SCODE'] = '****';
+                    }
+
+                    Log::channel('contract_payment')->info('F-REGIオーソリ処理開始（買い切り商品）', [
+                        'payment_id' => $oneTimePayment->id,
+                        'orderid' => $oneTimePayment->orderid,
+                        'amount' => $oneTimeAmount,
+                        'environment' => $targetEnv,
+                        'api_params' => $logParams,
+                    ]);
+
+                    // payment_events記録
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $oneTimePayment->id,
+                        'event_type' => 'fregi_authorize_request_one_time',
+                        'payload' => json_encode([
+                            'url' => config('fregi.auth_url'),
+                            'fregi_env' => $targetEnv,
+                            'shopid' => $fregiConfig->shopid,
+                            'orderid' => $oneTimePayment->orderid,
+                            'amount' => $oneTimeAmount,
+                            'billing_type' => 'one_time',
+                            'has_card_info' => true,
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    // オーソリ処理実行
+                    $apiResult = $this->apiService->authorizePayment($apiParams, $fregiConfig);
+
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $oneTimePayment->id,
+                        'event_type' => 'fregi_authorize_response_one_time',
+                        'payload' => json_encode([
+                            'result' => $apiResult['result'] ?? 'UNKNOWN',
+                            'auth_code' => $apiResult['auth_code'] ?? null,
+                            'seqno' => $apiResult['seqno'] ?? null,
+                            'error_message' => $apiResult['error_message'] ?? null,
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    if ($apiResult['result'] !== 'OK') {
+                        Log::channel('contract_payment')->error('F-REGIオーソリ処理失敗（買い切り商品）', [
+                            'payment_id' => $oneTimePayment->id,
+                            'error_message' => $apiResult['error_message'] ?? '不明なエラー',
+                        ]);
+                        
+                        // 月額商品のオーソリが成功している場合は警告ログ
+                        if ($monthlyPayment && $monthlyPayment->status === 'paid') {
+                            Log::channel('contract_payment')->warning('買い切り商品の決済失敗（月額商品は成功）', [
+                                'monthly_payment_id' => $monthlyPayment->id,
+                                'one_time_payment_id' => $oneTimePayment->id,
+                                'customer_id' => $customerId,
+                                'note' => '月額商品のオーソリは成功しています。F-REGI側でのキャンセル処理が必要な場合があります。',
+                            ]);
+                        }
+                        
+                        DB::table('payment_events')->insert([
+                            'payment_id' => $oneTimePayment->id,
+                            'event_type' => 'fregi_authorize_failed_one_time',
+                            'payload' => json_encode([
+                                'error_message' => $apiResult['error_message'] ?? '不明なエラー',
+                            ]),
+                            'created_at' => now(),
+                        ]);
+                        
+                        throw new \Exception('買い切り商品の決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'));
+                    }
+
+                    // 成功時の処理
+                    $oneTimePayment->update([
+                        'receiptno' => $apiResult['auth_code'],
+                        'slipno' => $apiResult['seqno'],
+                        'status' => 'paid',
+                        'completed_at' => now(),
+                    ]);
+
+                    DB::table('payment_events')->insert([
+                        'payment_id' => $oneTimePayment->id,
+                        'event_type' => 'fregi_authorize_success_one_time',
+                        'payload' => json_encode([
+                            'auth_code' => $apiResult['auth_code'],
+                            'seqno' => $apiResult['seqno'],
+                        ]),
+                        'created_at' => now(),
+                    ]);
+
+                    Log::channel('contract_payment')->info('F-REGIオーソリ処理成功（買い切り商品）', [
+                        'payment_id' => $oneTimePayment->id,
+                    ]);
+                }
+
+                // 両方の決済が成功した場合、契約を有効化
+                $contract->update([
+                    'status' => 'active',
+                ]);
+
+                // 主決済IDを設定（月額があれば月額、なければ買い切り）
+                if ($monthlyPayment) {
+                    $contract->update(['payment_id' => $monthlyPayment->id]);
+                } elseif ($oneTimePayment) {
+                    $contract->update(['payment_id' => $oneTimePayment->id]);
+                }
+
+                $processingTime = round((microtime(true) - $startTime) * 1000, 2);
+
+                Log::channel('contract_payment')->info('決済処理完了', [
+                    'contract_id' => $contract->id,
+                    'monthly_payment_id' => $monthlyPayment?->id,
+                    'one_time_payment_id' => $oneTimePayment?->id,
+                    'customer_id' => $customerId,
+                    'processing_time_ms' => $processingTime,
+                ]);
+
+                // 完了画面にリダイレクト（主決済のorderidを使用）
+                $primaryOrderId = $monthlyPayment?->orderid ?? $oneTimePayment?->orderid;
+                if (!$primaryOrderId) {
+                    throw new \Exception('決済情報が見つかりません');
+                }
+                return redirect()->route('contract.complete', ['orderid' => $primaryOrderId]);
                 
                 // カード情報を取得
                 $pan1 = $validated['pan1'];
@@ -592,6 +986,54 @@ class ContractController extends Controller
                 }
             }
         });
+    }
+
+    /**
+     * オプション製品取得API（選択されたベース製品に紐づくオプション製品を取得）
+     */
+    public function getOptionProducts($contractPlanId)
+    {
+        try {
+            $plan = ContractPlan::findOrFail($contractPlanId);
+            
+            // このベース製品に紐づくオプション製品を取得
+            $optionProducts = $plan->optionProducts()
+                ->orderBy('products.display_order')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'code' => $product->code,
+                        'unit_price' => $product->unit_price,
+                        'formatted_price' => $product->formatted_price,
+                        'description' => $product->description,
+                    ];
+                });
+            
+            Log::channel('contract_payment')->info('オプション製品取得', [
+                'contract_plan_id' => $contractPlanId,
+                'plan_name' => $plan->name,
+                'option_count' => $optionProducts->count(),
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'option_products' => $optionProducts,
+            ]);
+        } catch (\Exception $e) {
+            Log::channel('contract_payment')->error('オプション製品取得エラー', [
+                'contract_plan_id' => $contractPlanId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'オプション製品の取得に失敗しました。',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 
     /**

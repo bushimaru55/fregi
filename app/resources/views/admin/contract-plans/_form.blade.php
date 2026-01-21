@@ -1,8 +1,30 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {{-- 契約プランマスター選択（アプリ固有項目） --}}
+    {{-- 製品種別（新規作成時のみ） --}}
+    @if(!isset($contractPlan))
     <div class="md:col-span-2">
+        <label for="product_type" class="block text-sm font-semibold text-gray-700 mb-2">
+            製品種別 <span class="text-red-500">*</span>
+        </label>
+        <select name="product_type" id="product_type" 
+            class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('product_type') border-red-500 @enderror" required>
+            <option value="base" {{ old('product_type', 'base') === 'base' ? 'selected' : '' }}>ベース製品</option>
+            <option value="option" {{ old('product_type') === 'option' ? 'selected' : '' }}>オプション製品</option>
+        </select>
+        @error('product_type')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        <p class="text-xs text-gray-600 mt-1">
+            <i class="fas fa-info-circle mr-1"></i>
+            <strong>ベース製品</strong>: 基本となる製品（contract_plansテーブルに保存）<br>
+            <strong>オプション製品</strong>: ベース製品に追加できるオプション（productsテーブルに保存、常に一回限り）
+        </p>
+    </div>
+    @endif
+
+    {{-- 製品マスター選択（アプリ固有項目・ベース製品のみ） --}}
+    <div class="md:col-span-2" id="contract-plan-master-field">
         <label for="contract_plan_master_id" class="block text-sm font-semibold text-gray-700 mb-2">
-            契約プランマスター
+            製品マスター
             <span class="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">アプリ固有</span>
         </label>
         <select name="contract_plan_master_id" id="contract_plan_master_id" 
@@ -21,7 +43,7 @@
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
         <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-folder-open mr-1"></i>このプランが所属するマスターを選択してください
+            <i class="fas fa-folder-open mr-1"></i>この製品が所属するマスターを選択してください
         </p>
     </div>
 
@@ -35,10 +57,10 @@
         </div>
     </div>
 
-    {{-- プランコード（ITEM） - F-REGI標準項目 --}}
+    {{-- 製品コード（ITEM） - F-REGI標準項目 --}}
     <div>
         <label for="item" class="block text-sm font-semibold text-gray-700 mb-2">
-            プランコード（ITEM） <span class="text-red-500">*</span>
+            製品コード（ITEM） <span class="text-red-500">*</span>
             <span class="ml-2 text-xs font-normal text-blue-600 bg-blue-100 px-2 py-0.5 rounded">F-REGI標準</span>
         </label>
         <input type="text" name="item" id="item" 
@@ -48,15 +70,15 @@
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
         <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-tag mr-1"></i>F-REGI標準: <strong>ITEM</strong> - 商品コード（一意の識別子）
+            <i class="fas fa-tag mr-1"></i>F-REGI標準: <strong>ITEM</strong> - 製品コード（一意の識別子）
             <br>例: PLAN-050, PLAN-100, PLAN-150
         </p>
     </div>
 
-    {{-- プラン名（ITEMNAME相当） - F-REGI標準項目 --}}
+    {{-- 製品名（ITEMNAME相当） - F-REGI標準項目 --}}
     <div>
         <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
-            プラン名（ITEMNAME相当） <span class="text-red-500">*</span>
+            製品名（ITEMNAME相当） <span class="text-red-500">*</span>
             <span class="ml-2 text-xs font-normal text-blue-600 bg-blue-100 px-2 py-0.5 rounded">F-REGI標準</span>
         </label>
         <input type="text" name="name" id="name" 
@@ -66,7 +88,7 @@
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
         <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-file-signature mr-1"></i>F-REGI標準: <strong>ITEMNAME</strong> - 商品名（決済画面に表示）
+            <i class="fas fa-file-signature mr-1"></i>F-REGI標準: <strong>ITEMNAME</strong> - 製品名（決済画面に表示）
         </p>
     </div>
 
@@ -90,13 +112,13 @@
         </p>
     </div>
 
-    {{-- 決済タイプ --}}
-    <div>
+    {{-- 決済タイプ（ベース製品のみ） --}}
+    <div id="billing-type-field">
         <label for="billing_type" class="block text-sm font-semibold text-gray-700 mb-2">
             決済タイプ <span class="text-red-500">*</span>
         </label>
         <select name="billing_type" id="billing_type" 
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('billing_type') border-red-500 @enderror" required>
+            class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('billing_type') border-red-500 @enderror">
             <option value="one_time" {{ old('billing_type', $contractPlan->billing_type ?? 'one_time') === 'one_time' ? 'selected' : '' }}>
                 一回限り
             </option>
@@ -125,10 +147,10 @@
         @enderror
     </div>
 
-    {{-- プラン説明 --}}
+    {{-- 製品説明 --}}
     <div class="md:col-span-2">
         <label for="description" class="block text-sm font-semibold text-gray-700 mb-2">
-            プラン説明
+            製品説明
         </label>
         <textarea name="description" id="description" rows="4"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('description') border-red-500 @enderror">{{ old('description', $contractPlan->description ?? '') }}</textarea>
@@ -137,23 +159,141 @@
         @enderror
     </div>
 
+    {{-- オプション製品選択（ベース製品編集時のみ） --}}
+    @if(isset($contractPlan))
+    <div class="md:col-span-2">
+        <label for="option_product_ids" class="block text-sm font-semibold text-gray-700 mb-2">
+            紐づけるオプション製品
+        </label>
+        <div class="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50">
+            @if(isset($optionProducts) && $optionProducts->isNotEmpty())
+                @foreach($optionProducts as $product)
+                    <label class="flex items-center mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                        <input type="checkbox" 
+                            name="option_product_ids[]" 
+                            value="{{ $product->id }}"
+                            class="mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            {{ in_array($product->id, old('option_product_ids', $linkedOptionProductIds ?? [])) ? 'checked' : '' }}>
+                        <div class="flex-1">
+                            <span class="font-semibold text-gray-800">{{ $product->name }}</span>
+                            <span class="text-sm text-gray-600 ml-2">({{ $product->code }})</span>
+                            <span class="text-sm text-gray-500 ml-2">
+                                <span class="text-indigo-600 font-semibold">{{ $product->formatted_price }}</span>
+                            </span>
+                        </div>
+                    </label>
+                @endforeach
+            @else
+                <p class="text-sm text-gray-600">オプション製品が登録されていません。</p>
+            @endif
+        </div>
+        @error('option_product_ids')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        @error('option_product_ids.*')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        <p class="text-xs text-gray-600 mt-1">
+            <i class="fas fa-info-circle mr-1"></i>
+            このベース製品に紐づけるオプション製品を選択してください。複数選択可能です。
+        </p>
+    </div>
+    @endif
+
+    {{-- ベース製品選択（オプション製品作成時のみ） --}}
+    @if(!isset($contractPlan))
+    <div class="md:col-span-2" id="base-plan-selection-field" style="display: none;">
+        <label for="base_plan_ids" class="block text-sm font-semibold text-gray-700 mb-2">
+            紐づけるベース製品 <span class="text-red-500">*</span>
+        </label>
+        <div class="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto bg-gray-50">
+            @if(isset($basePlans) && $basePlans->isNotEmpty())
+                @foreach($basePlans as $plan)
+                    <label class="flex items-center mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded">
+                        <input type="checkbox" 
+                            name="base_plan_ids[]" 
+                            value="{{ $plan->id }}"
+                            class="mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                            {{ in_array($plan->id, old('base_plan_ids', [])) ? 'checked' : '' }}>
+                        <div class="flex-1">
+                            <span class="font-semibold text-gray-800">{{ $plan->name }}</span>
+                            <span class="text-sm text-gray-600 ml-2">({{ $plan->item }})</span>
+                            <span class="text-sm text-gray-500 ml-2">
+                                @if($plan->billing_type === 'monthly')
+                                    <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs">月額</span>
+                                @else
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">一回限り</span>
+                                @endif
+                            </span>
+                        </div>
+                    </label>
+                @endforeach
+            @else
+                <p class="text-sm text-gray-600">ベース製品が登録されていません。先にベース製品を作成してください。</p>
+            @endif
+        </div>
+        @error('base_plan_ids')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        <p class="text-xs text-gray-600 mt-1">
+            <i class="fas fa-info-circle mr-1"></i>
+            このオプション製品をどのベース製品に紐づけるかを選択してください。複数選択可能です。
+        </p>
+    </div>
+    @endif
+
     {{-- 有効フラグ --}}
     <div class="md:col-span-2">
         <label class="flex items-center">
             <input type="checkbox" name="is_active" value="1" 
                 class="mr-2 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                 {{ old('is_active', $contractPlan->is_active ?? true) ? 'checked' : '' }}>
-            <span class="text-sm font-semibold text-gray-700">このプランを有効にする</span>
+            <span class="text-sm font-semibold text-gray-700">この製品を有効にする</span>
         </label>
     </div>
 </div>
 
 <script>
-// 決済タイプに応じて料金の単位表示を変更
+// 製品種別に応じてフィールドの表示/非表示を切り替え
 document.addEventListener('DOMContentLoaded', function() {
+    const productTypeSelect = document.getElementById('product_type');
+    const contractPlanMasterField = document.getElementById('contract-plan-master-field');
+    const billingTypeField = document.getElementById('billing-type-field');
     const billingTypeSelect = document.getElementById('billing_type');
     const priceUnit = document.getElementById('price-unit');
     
+    function toggleFields() {
+        if (!productTypeSelect) return;
+        
+        const isOption = productTypeSelect.value === 'option';
+        const basePlanSelectionField = document.getElementById('base-plan-selection-field');
+        
+        // 契約プランマスターと決済タイプはオプション商品の場合は非表示
+        if (contractPlanMasterField) {
+            contractPlanMasterField.style.display = isOption ? 'none' : 'block';
+        }
+        if (billingTypeField) {
+            billingTypeField.style.display = isOption ? 'none' : 'block';
+        }
+        
+        // ベース商品選択はオプション商品の場合のみ表示
+        if (basePlanSelectionField) {
+            basePlanSelectionField.style.display = isOption ? 'block' : 'none';
+        }
+        
+        // オプション商品の場合は決済タイプを必須から外す
+        if (billingTypeSelect) {
+            billingTypeSelect.required = !isOption;
+        }
+    }
+    
+    // 商品種別変更時にフィールドを切り替え
+    if (productTypeSelect) {
+        productTypeSelect.addEventListener('change', toggleFields);
+        toggleFields(); // 初期状態を反映
+    }
+    
+    // 決済タイプに応じて料金の単位表示を変更
     if (billingTypeSelect && priceUnit) {
         billingTypeSelect.addEventListener('change', function() {
             if (this.value === 'monthly') {

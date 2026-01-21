@@ -29,6 +29,9 @@ Route::prefix('contract')->name('contract.')->group(function () {
     Route::post('/confirm', [\App\Http\Controllers\ContractController::class, 'confirm'])->name('confirm');
     Route::post('/store', [\App\Http\Controllers\ContractController::class, 'store'])->name('store');
     Route::get('/complete', [\App\Http\Controllers\ContractController::class, 'complete'])->name('complete');
+    
+    // オプション商品取得API（選択されたベース商品に紐づくオプション商品を取得）
+    Route::get('/api/option-products/{contractPlanId}', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
 });
 
 // 管理画面（認証必須）
@@ -58,6 +61,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     // 契約プランマスター管理
     Route::resource('contract-plan-masters', \App\Http\Controllers\Admin\ContractPlanMasterController::class);
+
+    // 商品管理
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
 
     // 新規申込フォーム管理
     Route::prefix('contract-forms')->name('contract-forms.')->group(function () {
