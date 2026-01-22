@@ -1,9 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', '契約プラン新規作成')
+@section('title', '製品新規作成')
 
 @section('content')
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">契約プラン新規作成</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">製品新規作成</h1>
 
     <div class="bg-white shadow-lg rounded-lg p-6">
         <form action="{{ route('admin.contract-plans.store') }}" method="POST">

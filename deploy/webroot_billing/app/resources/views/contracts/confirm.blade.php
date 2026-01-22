@@ -50,7 +50,14 @@
 
         {{-- 隠しフィールドで全データを送信 --}}
         @foreach($data as $key => $value)
-            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+            @if(is_array($value))
+                {{-- 配列の場合は各要素を個別のhiddenフィールドとして送信 --}}
+                @foreach($value as $item)
+                    <input type="hidden" name="{{ $key }}[]" value="{{ $item }}">
+                @endforeach
+            @else
+                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+            @endif
         @endforeach
 
         {{-- 1. 申込企業情報 --}}
@@ -137,16 +144,55 @@
                 <div class="bg-indigo-50 border-2 border-indigo-500 rounded-lg p-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="text-sm text-gray-600 mb-1">契約プラン</p>
-                            <p class="text-2xl font-bold text-gray-800">{{ $plan->name }}</p>
+                            <p class="text-sm text-gray-600 mb-1">製品</p>
+                            <p class="text-2xl font-bold text-gray-800">{{ $plan->name ?? '' }}</p>
+                            @if(!empty($plan->description))
                             <p class="text-sm text-gray-600 mt-2">{{ $plan->description }}</p>
+                            @endif
                         </div>
                         <div class="text-right">
                             <p class="text-sm text-gray-600 mb-1">料金</p>
-                            <p class="text-4xl font-bold text-indigo-600">{{ $plan->formatted_price }}</p>
-                            <p class="text-xs text-gray-500 mt-1">（税込）</p>
+                            <p class="text-3xl font-bold text-indigo-600">{{ number_format($plan->price ?? 0) }}円</p>
+                            @if(isset($plan->billing_type) && $plan->billing_type === 'monthly')
+                                <p class="text-xs text-gray-500 mt-1">（税込・月額）</p>
+                            @else
+                                <p class="text-xs text-gray-500 mt-1">（税込）</p>
+                            @endif
                         </div>
                     </div>
+                </div>
+
+                {{-- オプション製品の表示 --}}
+                @if(isset($optionProducts) && $optionProducts->isNotEmpty())
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600 mb-3 font-semibold">オプション製品</p>
+                    <div class="space-y-2">
+                        @foreach($optionProducts as $option)
+                            <div class="flex justify-between items-center bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-800">{{ $option->name }}</span>
+                                <span class="font-semibold text-gray-800">{{ number_format($option->unit_price) }}円</span>
+                            </div>
+                        @endforeach
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-300">
+                            <span class="text-sm text-gray-600">オプション製品合計</span>
+                            <span class="font-semibold text-gray-800">{{ number_format($optionTotalAmount ?? 0) }}円</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- 合計金額の表示 --}}
+                @php
+                    $baseAmount = $plan->price ?? 0;
+                    $optionTotal = $optionTotalAmount ?? 0;
+                    $totalAmount = $baseAmount + $optionTotal;
+                @endphp
+                <div class="mt-4 pt-4 border-t-2 border-indigo-500">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-semibold text-gray-800">合計金額</span>
+                        <span class="text-3xl font-bold text-indigo-600">{{ number_format($totalAmount) }}円</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
                 </div>
 
                 <div>

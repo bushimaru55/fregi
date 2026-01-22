@@ -12,12 +12,67 @@ class FregiConfigService
     /**
      * 単一設定を取得（編集のみ運用）
      * レコードが存在しない場合はnullを返す（DBには作成しない）
+     * 優先順位: is_active=true の設定 > 最初の1件
      *
      * @return FregiConfig|null
      */
     public function getSingleConfig(): ?FregiConfig
     {
+        // まず、is_active=true の設定を取得（優先）
+        $activeConfig = FregiConfig::where('company_id', 1)
+            ->where('is_active', true)
+            ->orderBy('environment') // test を優先
+            ->first();
+        
+        if ($activeConfig) {
+            return $activeConfig;
+        }
+        
+        // is_active=true の設定がない場合は、最初の1件を取得
         return FregiConfig::where('company_id', 1)->first();
+    }
+
+    /**
+     * すべての設定を取得（テスト環境と本番環境の両方）
+     *
+     * @param int $companyId 会社ID
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAllConfigs(int $companyId = 1): \Illuminate\Database\Eloquent\Collection
+    {
+        return FregiConfig::where('company_id', $companyId)
+            ->orderBy('environment')
+            ->orderBy('is_active', 'desc')
+            ->get();
+    }
+
+    /**
+     * 環境別の設定を取得（編集用：is_activeに関係なく取得）
+     *
+     * @param int $companyId 会社ID
+     * @param string $environment 環境（test/prod）
+     * @return FregiConfig|null
+     */
+    public function getConfigByEnvironment(int $companyId, string $environment): ?FregiConfig
+    {
+        return FregiConfig::where('company_id', $companyId)
+            ->where('environment', $environment)
+            ->first();
+    }
+
+    /**
+     * 環境別のアクティブな設定を取得（決済処理用）
+     *
+     * @param int $companyId 会社ID
+     * @param string $environment 環境（test/prod）
+     * @return FregiConfig|null
+     */
+    public function getActiveConfigByEnvironment(int $companyId, string $environment): ?FregiConfig
+    {
+        return FregiConfig::where('company_id', $companyId)
+            ->where('environment', $environment)
+            ->where('is_active', true)
+            ->first();
     }
 
     /**
@@ -90,6 +145,12 @@ class FregiConfigService
             $password = $data['connect_password'];
             unset($data['connect_password']);
             
+            // is_activeがtrueの場合、すべての環境の他の設定をfalseにする（環境切り替え機能）
+            if (isset($data['is_active']) && $data['is_active'] === true) {
+                FregiConfig::where('company_id', $data['company_id'] ?? 1)
+                    ->update(['is_active' => false]);
+            }
+            
             // 新しい設定を作成
             $config = new FregiConfig($data);
             $config->connect_password = $password; // アクセサで自動暗号化
@@ -117,6 +178,12 @@ class FregiConfigService
                 // 同じcompany_id, environmentの他の設定をfalseにする
                 FregiConfig::where('company_id', $config->company_id)
                     ->where('environment', $config->environment)
+                    ->where('id', '!=', $config->id)
+                    ->update(['is_active' => false]);
+                
+                // 環境切り替え: すべての環境の他の設定をfalseにする（使用環境を切り替えるため）
+                // これにより、is_active=true の設定が1件のみになる（環境切り替え機能）
+                FregiConfig::where('company_id', $config->company_id)
                     ->where('id', '!=', $config->id)
                     ->update(['is_active' => false]);
             }

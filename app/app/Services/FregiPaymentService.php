@@ -30,12 +30,17 @@ class FregiPaymentService
     public function initiatePayment(Payment $payment): array
     {
         // アクティブな設定を取得
-        // FREGI_ENVを使用して設定を検索（APP_ENVとは独立）
-        $targetEnv = config('fregi.environment', 'test');
-        $config = $this->configService->getActiveConfig(
-            $payment->company_id,
-            $targetEnv
-        );
+        // まず、DBから単一設定を取得（設定画面で変更可能）
+        $config = $this->configService->getSingleConfig();
+        
+        if (!$config) {
+            // 設定が存在しない場合は、.envのFREGI_ENVをフォールバックとして使用
+            $targetEnv = config('fregi.environment', 'test');
+            $config = $this->configService->getActiveConfig(
+                $payment->company_id,
+                $targetEnv
+            );
+        }
 
         // パスワードを復号
         $connectPassword = $this->encryptionService->decryptSecret($config->connect_password_enc);

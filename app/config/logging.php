@@ -128,10 +128,11 @@ return [
         ],
 
         // 決済フロー専用ログチャンネル
+        // 本番環境でもinfoレベルのログを記録するため、ログレベルをinfoに固定
         'contract_payment' => [
             'driver' => 'daily',
             'path' => storage_path('logs/contract-payment.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
+            'level' => 'info', // 本番環境でもinfoログを記録するため固定値に設定
             'days' => 30, // 30日間保持
             'replace_placeholders' => true,
         ],

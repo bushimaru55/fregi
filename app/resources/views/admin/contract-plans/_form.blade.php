@@ -33,7 +33,7 @@
             @if(isset($masters))
                 @foreach($masters as $master)
                     <option value="{{ $master->id }}" 
-                        {{ old('contract_plan_master_id', $contractPlan->contract_plan_master_id ?? ($selectedMasterId ?? '')) == $master->id ? 'selected' : '' }}>
+                        {{ old('contract_plan_master_id', optional($contractPlan)->contract_plan_master_id ?? ($selectedMasterId ?? '')) == $master->id ? 'selected' : '' }}>
                         {{ $master->name }}
                     </option>
                 @endforeach
@@ -65,7 +65,7 @@
         </label>
         <input type="text" name="item" id="item" 
             class="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono @error('item') border-red-500 @enderror" 
-            value="{{ old('item', $contractPlan->item ?? '') }}" required placeholder="例: PLAN-050">
+            value="{{ old('item', optional($contractPlan)->item ?? '') }}" required placeholder="例: PLAN-050">
         @error('item')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
@@ -83,7 +83,7 @@
         </label>
         <input type="text" name="name" id="name" 
             class="w-full px-4 py-2 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('name') border-red-500 @enderror" 
-            value="{{ old('name', $contractPlan->name ?? '') }}" required placeholder="例: 学習ページ数 50">
+            value="{{ old('name', optional($contractPlan)->name ?? '') }}" required placeholder="例: 学習ページ数 50">
         @error('name')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
@@ -101,7 +101,7 @@
         <div class="relative">
             <input type="number" name="price" id="price" min="0" step="1"
                 class="w-full px-4 py-2 pr-12 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('price') border-red-500 @enderror" 
-                value="{{ old('price', $contractPlan->price ?? '') }}" required placeholder="0">
+                value="{{ old('price', optional($contractPlan)->price ?? '') }}" required placeholder="0">
             <span class="absolute right-4 top-2.5 text-gray-500 font-semibold" id="price-unit">円</span>
         </div>
         @error('price')
@@ -119,10 +119,10 @@
         </label>
         <select name="billing_type" id="billing_type" 
             class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('billing_type') border-red-500 @enderror">
-            <option value="one_time" {{ old('billing_type', $contractPlan->billing_type ?? 'one_time') === 'one_time' ? 'selected' : '' }}>
+            <option value="one_time" {{ old('billing_type', optional($contractPlan)->billing_type ?? 'one_time') === 'one_time' ? 'selected' : '' }}>
                 一回限り
             </option>
-            <option value="monthly" {{ old('billing_type', $contractPlan->billing_type ?? 'one_time') === 'monthly' ? 'selected' : '' }}>
+            <option value="monthly" {{ old('billing_type', optional($contractPlan)->billing_type ?? 'one_time') === 'monthly' ? 'selected' : '' }}>
                 月額課金
             </option>
         </select>
@@ -141,7 +141,7 @@
         </label>
         <input type="number" name="display_order" id="display_order" min="0" step="1"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('display_order') border-red-500 @enderror" 
-            value="{{ old('display_order', $contractPlan->display_order ?? 0) }}" required>
+            value="{{ old('display_order', optional($contractPlan)->display_order ?? 0) }}" required>
         @error('display_order')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
@@ -153,7 +153,7 @@
             製品説明
         </label>
         <textarea name="description" id="description" rows="4"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('description') border-red-500 @enderror">{{ old('description', $contractPlan->description ?? '') }}</textarea>
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('description') border-red-500 @enderror">{{ old('description', optional($contractPlan)->description ?? '') }}</textarea>
         @error('description')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
@@ -247,7 +247,7 @@
         <label class="flex items-center">
             <input type="checkbox" name="is_active" value="1" 
                 class="mr-2 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                {{ old('is_active', $contractPlan->is_active ?? true) ? 'checked' : '' }}>
+                {{ old('is_active', optional($contractPlan)->is_active ?? true) ? 'checked' : '' }}>
             <span class="text-sm font-semibold text-gray-700">この製品を有効にする</span>
         </label>
     </div>

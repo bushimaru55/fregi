@@ -1,9 +1,9 @@
 @extends('layouts.admin')
 
-@section('title', '契約プラン編集')
+@section('title', '製品編集')
 
 @section('content')
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">契約プラン編集</h1>
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">製品編集</h1>
 
     <div class="bg-white shadow-lg rounded-lg p-6">
         <form action="{{ route('admin.contract-plans.update', $contractPlan->id) }}" method="POST">

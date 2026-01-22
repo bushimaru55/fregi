@@ -3,6 +3,18 @@
 @section('title', '商品管理')
 
 @section('content')
+    @if(session('success'))
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">商品管理</h1>
         <a href="{{ route('admin.products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">

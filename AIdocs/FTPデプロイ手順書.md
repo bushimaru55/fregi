@@ -1,6 +1,7 @@
 # FTPデプロイ手順書
 
-作成日: 2026-01-15
+作成日: 2026-01-15  
+最終更新: 2026-01-21（オプション製品機能対応版）
 
 ## 前提条件
 
@@ -41,73 +42,39 @@
 
 ### ステップ1: ローカルで準備
 
-#### 1.1 本番環境用index.phpの準備
+#### 1.1 デプロイパッケージの再生成（重要）
+
+**重要**: デプロイパッケージ（`deploy/webroot_billing/`）が最新のコードを反映していることを確認してください。
+
+**確認項目**:
+- `app/resources/views/contracts/create.blade.php` に最新の修正が含まれているか（`url()`ヘルパーを使用したURL生成）
+- `app/app/Http/Controllers/ContractController.php` に `getOptionProducts()` メソッドが含まれているか
+- `app/routes/web.php` に `contract.api.option-products` ルートが含まれているか
+
+**デプロイパッケージが古い場合**:
+1. 最新のコードを確認（コミット: `778ef57` 以降）
+2. デプロイパッケージを再生成
+3. 必要なファイルが最新であることを確認
+
+#### 1.2 本番環境用index.phpの準備
 
 `app/public/index.production.php` を `app/public/index.php` として本番環境にアップロードします。
 
 **注意**: ローカルの `app/public/index.php` は相対パスを使用しているため、本番環境では `index.production.php` を使用してください。
 
-#### 1.2 .envファイルの準備
+#### 1.3 .envファイルの準備
 
-本番環境用の `.env` ファイルを準備します。
+本番環境用の `.env` ファイルを準備します。`AIdocs/本番環境.envテンプレート.txt` をコピーして使用してください。
 
-```env
-APP_NAME="Billing System"
-APP_ENV=production
-APP_KEY=base64:YOUR_APP_KEY_HERE
-APP_DEBUG=false
-APP_URL=https://dschatbot.ai/billing
-
-LOG_CHANNEL=stack
-LOG_DEPRECATIONS_CHANNEL=null
-LOG_LEVEL=debug
-
-DB_CONNECTION=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=your_database_name
-DB_USERNAME=your_database_user
-DB_PASSWORD=your_database_password
-
-BROADCAST_DRIVER=log
-CACHE_DRIVER=file
-FILESYSTEM_DISK=local
-QUEUE_CONNECTION=sync
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-SESSION_COOKIE=billing_session
-SESSION_PATH=/billing
-
-MEMCACHED_HOST=127.0.0.1
-
-REDIS_HOST=127.0.0.1
-REDIS_PASSWORD=null
-REDIS_PORT=6379
-
-MAIL_MAILER=smtp
-MAIL_HOST=mailpit
-MAIL_PORT=1025
-MAIL_USERNAME=null
-MAIL_PASSWORD=null
-MAIL_ENCRYPTION=null
-MAIL_FROM_ADDRESS="hello@example.com"
-MAIL_FROM_NAME="${APP_NAME}"
-
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_DEFAULT_REGION=us-east-1
-AWS_BUCKET=
-AWS_USE_PATH_STYLE_ENDPOINT=false
-
-VITE_APP_NAME="${APP_NAME}"
-
-# F-REGI暗号化キー（必ず設定）
-FREGI_SECRET_KEY=your_secret_key_here
-```
+**必須設定項目**:
+- `APP_KEY`: `php artisan key:generate` で生成した値
+- `FREGI_SECRET_KEY`: ローカル環境と同じ値（既存の暗号化データと互換性を保つため）
+- `FREGI_ENV=prod`: 本番環境では `prod` を設定
+- データベース接続情報（DB_DATABASE, DB_USERNAME, DB_PASSWORD）
 
 **重要**: 
-- `APP_KEY` は `php artisan key:generate` で生成した値を使用
-- `FREGI_SECRET_KEY` はローカルと同じ値を使用（既存の暗号化データと互換性を保つため）
+- `APP_DEBUG=false` を設定（本番環境）
+- `LOG_LEVEL=error` を設定（ただし、`contract_payment`チャンネルは`info`レベルで記録されます）
 
 #### 1.3 ファイルの準備
 
@@ -188,18 +155,55 @@ chown -R www-data:www-data /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing
 
 ### ステップ4: データベースのセットアップ
 
-#### 4.1 マイグレーションの実行
+#### 4.1 データベースのバックアップ（必須）
 
-SSH接続が可能な場合：
+**重要**: マイグレーション実行前に必ずデータベースのバックアップを取得してください。
 
-```bash
-cd /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing
-php artisan migrate --force
+1. Pleskにログイン
+2. データベース一覧を表示
+3. `billing_prod` を選択
+4. 「エクスポート」をクリック
+5. 完全バックアップをダウンロード
+
+#### 4.2 オプション製品機能のマイグレーション実行
+
+**本番環境ではSSH/CLIが使えないため、SQLファイルを直接実行します。**
+
+**手順**:
+1. `AIdocs/オプション商品機能_本番環境マイグレーションSQL.sql` の内容を確認
+2. Pleskにログイン
+3. データベース一覧から `billing_prod` を選択
+4. 「phpMyAdminで開く」をクリック
+5. SQLタブを選択
+6. SQLファイルの内容をコピーして貼り付け
+7. 「実行」ボタンをクリック
+8. エラーがないことを確認
+
+**詳細な手順**: `AIdocs/オプション商品機能_本番環境マイグレーション手順.md` を参照してください。
+
+#### 4.3 マイグレーション実行後の確認
+
+phpMyAdminで以下のSQLを実行して、テーブル構造を確認：
+
+```sql
+-- productsテーブルの構造確認
+DESCRIBE `products`;
+
+-- contract_itemsテーブルの構造確認
+DESCRIBE `contract_items`;
+
+-- contractsテーブルの構造確認
+DESCRIBE `contracts`;
+
+-- contract_plan_option_productsテーブルの存在確認
+DESCRIBE `contract_plan_option_products`;
 ```
 
-SSH接続が不可能な場合：
-- データベースに直接接続して、マイグレーションファイルのSQLを実行
-- または、管理画面から初期データを登録
+**確認項目**:
+- `products`テーブルに `type`, `description`, `is_active`, `display_order` カラムが存在するか
+- `contract_items`テーブルに `contract_plan_id` カラムが存在し、`product_id` が nullable か
+- `contracts`テーブルの `payment_id` が nullable か
+- `contract_plan_option_products` テーブルが存在するか
 
 #### 4.2 管理者アカウントの作成
 
@@ -249,10 +253,37 @@ SSH接続が不可能な場合：
    - F-REGI設定
    - サイト管理
 
-#### 5.3 ルーティングの確認
+#### 5.3 オプション製品機能の確認
+
+1. **公開フォームでの確認**
+   - `https://dschatbot.ai/webroot/billing/contract/create` にアクセス
+   - 製品（契約プラン）を選択
+   - オプション製品が動的に表示されることを確認
+   - ブラウザの開発者ツール（コンソール）でエラーがないことを確認
+
+2. **管理画面での確認**
+   - 管理画面にログイン
+   - 「製品管理」画面を開く
+   - オプション製品を登録・編集できることを確認
+   - ベース製品にオプション製品を紐づけられることを確認
+
+#### 5.4 ルーティングの確認
 
 - 404エラーが発生しないか確認
 - 各ページが正しく表示されるか確認
+- APIエンドポイント（`/contract/api/option-products/{id}`）が正常に動作するか確認
+
+#### 5.5 ログの確認
+
+1. **ログファイルの場所**
+   - `/httpdocs/webroot/billing/app/storage/logs/contract-payment-YYYY-MM-DD.log`
+
+2. **ログの確認方法**
+   - Pleskファイルマネージャーからログファイルを開く
+   - エラーログがないか確認
+   - オプション製品取得APIのログを確認（`オプション製品取得` または `オプション製品取得エラー` で検索）
+
+**詳細**: `AIdocs/ログ機能説明.md` を参照してください。
 
 ---
 
@@ -291,6 +322,8 @@ SSH接続が不可能な場合：
 
 ## デプロイ後の確認事項
 
+### 基本動作確認
+
 - [ ] 公開ページが正常に表示される
 - [ ] 管理画面が正常に表示される
 - [ ] ログインが正常に動作する
@@ -299,11 +332,43 @@ SSH接続が不可能な場合：
 - [ ] ルーティングが正しく動作する
 - [ ] F-REGI設定が登録されている
 
+### オプション製品機能の確認
+
+- [ ] マイグレーションSQLが正しく実行されている（テーブル構造確認）
+- [ ] 公開フォームでオプション製品が動的に表示される
+- [ ] 管理画面でオプション製品を登録・編集できる
+- [ ] ベース製品にオプション製品を紐づけられる
+- [ ] APIエンドポイント（`/contract/api/option-products/{id}`）が正常に動作する
+- [ ] エラーログに問題がない
+
+### ログ機能の確認
+
+- [ ] ログファイルが作成されている（`contract-payment-YYYY-MM-DD.log`）
+- [ ] ログファイルのパーミッションが適切に設定されている（775）
+- [ ] エラーログに問題がない
+
 ---
 
 ## 参考資料
 
-- `AIdocs/本番環境デプロイチェックリスト.md`
-- `AIdocs/本番環境整合性確認レポート.md`
-- `AIdocs/Apache設定確認レポート.md`
-- `AIdocs/AIdocs_Cursor指示書_Billingアプリ_ローカルDocker開始.md`
+### デプロイ関連
+
+- `AIdocs/本番環境デプロイ準備チェックリスト.md` - デプロイ前の準備確認
+- `AIdocs/本番環境デプロイチェックリスト.md` - デプロイ後の確認事項
+- `AIdocs/本番環境デプロイ準備_3回確認結果.md` - デプロイ準備の確認結果
+
+### マイグレーション関連
+
+- `AIdocs/オプション商品機能_本番環境マイグレーションSQL.sql` - マイグレーションSQL
+- `AIdocs/オプション商品機能_本番環境マイグレーション手順.md` - マイグレーション手順
+
+### 機能説明
+
+- `AIdocs/オプション商品_管理画面操作手順_統合版.md` - オプション製品の管理方法
+- `AIdocs/ログ機能説明.md` - ログ機能の説明と確認方法
+
+### その他
+
+- `AIdocs/本番環境整合性確認レポート.md` - 整合性確認結果
+- `AIdocs/Apache設定確認レポート.md` - Apache設定
+- `AIdocs/AIdocs_Cursor指示書_Billingアプリ_ローカルDocker開始.md` - ローカル環境のセットアップ

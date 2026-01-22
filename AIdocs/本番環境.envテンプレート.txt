@@ -52,3 +52,7 @@ VITE_APP_NAME="${APP_NAME}"
 
 # F-REGI暗号化キー（ローカル環境と同じ値を使用）
 FREGI_SECRET_KEY=
+
+# F-REGI接続先（test: テスト環境, prod: 本番環境）
+# 本番環境では通常 prod を設定します
+FREGI_ENV=prod

@@ -52,6 +52,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/', [\App\Http\Controllers\Admin\FregiConfigController::class, 'index'])->name('index');
         Route::get('/edit', [\App\Http\Controllers\Admin\FregiConfigController::class, 'edit'])->name('edit');
         Route::put('/update', [\App\Http\Controllers\Admin\FregiConfigController::class, 'update'])->name('update');
+        Route::put('/switch/{environment}', [\App\Http\Controllers\Admin\FregiConfigController::class, 'switch'])->name('switch');
         Route::get('/show', [\App\Http\Controllers\Admin\FregiConfigController::class, 'show'])->name('show');
     });
 

@@ -12,15 +12,15 @@ class FregiApiService
      * APIエンドポイントURLを取得
      *
      * @param string $apiType APIタイプ（issue/cancel/change/info/authm/salem）
+     * @param string $environment 環境（test/prod）- DBの設定レコードから取得
      * @return string
      */
-    private function getApiUrl(string $apiType): string
+    private function getApiUrl(string $apiType, string $environment): string
     {
         $baseUrl = 'https://ssl.f-regi.com';
         
-        // FREGI_ENVを使用（APP_ENVとは独立）
-        $fregiEnv = config('fregi.environment', 'test');
-        $basePath = $fregiEnv === 'test' ? '/connecttest' : '/connect';
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        $basePath = $environment === 'test' ? '/connecttest' : '/connect';
         
         $apiPaths = [
             'issue' => $basePath . '/compsettleapply.cgi',
@@ -37,13 +37,13 @@ class FregiApiService
     /**
      * お支払い方法選択画面のURLを取得
      *
+     * @param string $environment 環境（test/prod）- DBの設定レコードから取得
      * @return string
      */
-    private function getPaymentPageUrl(): string
+    private function getPaymentPageUrl(string $environment): string
     {
-        // FREGI_ENVを使用（APP_ENVとは独立）
-        $fregiEnv = config('fregi.environment', 'test');
-        return $fregiEnv === 'test' ? 'https://pay.f-regi.com/usertest/' : 'https://pay.f-regi.com/user/';
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        return $environment === 'test' ? 'https://pay.f-regi.com/usertest/' : 'https://pay.f-regi.com/user/';
     }
 
     /**
@@ -56,7 +56,8 @@ class FregiApiService
      */
     public function issuePayment(array $params, FregiConfig $config): array
     {
-        $url = $this->getApiUrl('issue');
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        $url = $this->getApiUrl('issue', $config->environment);
         
         // 必須パラメータの確認
         if (empty($params['SHOPID']) || empty($params['ID']) || empty($params['PAY'])) {
@@ -161,7 +162,8 @@ class FregiApiService
      */
     public function getPaymentPageUrlWithParams(string $settleno, string $checksum, FregiConfig $config): string
     {
-        $baseUrl = $this->getPaymentPageUrl();
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        $baseUrl = $this->getPaymentPageUrl($config->environment);
         return $baseUrl . '?SETTLENO=' . urlencode($settleno) . '&CHECKSUM=' . urlencode($checksum);
     }
 
@@ -175,9 +177,9 @@ class FregiApiService
      */
     public function authorizePayment(array $params, FregiConfig $config): array
     {
-        // config('fregi.auth_url')を使用（FREGI_ENVに応じて自動設定）
-        $url = config('fregi.auth_url');
-        $fregiEnv = config('fregi.environment', 'test');
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        $fregiEnv = $config->environment;
+        $url = $this->getApiUrl('authm', $fregiEnv);
         
         // 必須パラメータの確認（カード情報がある場合とCUSTOMERIDのみの場合で分岐）
         $hasCardInfo = !empty($params['PAN1']) && !empty($params['PAN2']) && !empty($params['PAN3']) && !empty($params['PAN4']);
@@ -350,7 +352,8 @@ class FregiApiService
      */
     public function processMonthlySale(array $params, FregiConfig $config): array
     {
-        $url = $this->getApiUrl('salem');
+        // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+        $url = $this->getApiUrl('salem', $config->environment);
         
         // 必須パラメータの確認
         if (empty($params['SHOPID']) || empty($params['CUSTOMERID']) || empty($params['PAY'])) {

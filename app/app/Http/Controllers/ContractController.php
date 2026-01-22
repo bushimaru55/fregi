@@ -163,13 +163,17 @@ class ContractController extends Controller
                 $optionTotalAmount = $optionProducts->sum('unit_price');
             }
             
+            // DBの設定レコードからenvironmentを取得（設定画面で変更可能）
+            $fregiConfig = $this->configService->getSingleConfig();
+            $fregiEnvironment = $fregiConfig ? $fregiConfig->environment : config('fregi.environment', 'test');
+            
             return view('contracts.confirm', [
                 'data' => $validated,
                 'plan' => $plan,
                 'termsOfService' => $termsOfService,
                 'optionProducts' => $optionProducts,
                 'optionTotalAmount' => $optionTotalAmount,
-                'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
+                'environment' => $fregiEnvironment, // DBの設定レコードから取得
             ]);
         } catch (\Exception $e) {
             // 詳細なエラーログを記録
@@ -242,6 +246,10 @@ class ContractController extends Controller
                 $optionTotalAmount = $optionProducts->sum('unit_price');
             }
             
+            // DBの設定レコードからenvironmentを取得（設定画面で変更可能）
+            $fregiConfig = $this->configService->getSingleConfig();
+            $fregiEnvironment = $fregiConfig ? $fregiConfig->environment : config('fregi.environment', 'test');
+            
             return view('contracts.confirm', [
                 'data' => $viewData,
                 'plan' => $plan,
@@ -249,7 +257,7 @@ class ContractController extends Controller
                 'optionProducts' => $optionProducts,
                 'optionTotalAmount' => $optionTotalAmount,
                 'isViewOnly' => true, // 閲覧専用フラグ（フォーム送信を無効化）
-                'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
+                'environment' => $fregiEnvironment, // DBの設定レコードから取得
             ]);
         }
         
@@ -280,6 +288,10 @@ class ContractController extends Controller
                     $optionTotalAmount = $optionProducts->sum('unit_price');
                 }
                 
+                // DBの設定レコードからenvironmentを取得（設定画面で変更可能）
+                $fregiConfig = $this->configService->getSingleConfig();
+                $fregiEnvironment = $fregiConfig ? $fregiConfig->environment : config('fregi.environment', 'test');
+                
                 return view('contracts.confirm', [
                     'data' => $viewData,
                     'plan' => $plan,
@@ -288,7 +300,7 @@ class ContractController extends Controller
                     'optionTotalAmount' => $optionTotalAmount,
                     'error' => $errorMessage, // エラーメッセージを渡す
                     'validation_errors' => $validationErrors, // バリデーションエラーを渡す
-                    'environment' => config('fregi.environment', 'test'), // F-REGI環境設定
+                    'environment' => $fregiEnvironment, // DBの設定レコードから取得
                 ]);
             } catch (\Exception $e) {
                 // プランが見つからない場合はcreateに戻る
@@ -391,11 +403,20 @@ class ContractController extends Controller
                 ]);
 
                 // F-REGI設定を取得
-                $targetEnv = config('fregi.environment', 'test');
-                $fregiConfig = $this->configService->getActiveConfig(
-                    1, // company_id（マルチテナント対応時に変更）
-                    $targetEnv
-                );
+                // まず、DBから単一設定を取得（設定画面で変更可能）
+                $fregiConfig = $this->configService->getSingleConfig();
+                
+                if (!$fregiConfig) {
+                    // 設定が存在しない場合は、.envのFREGI_ENVをフォールバックとして使用
+                    $targetEnv = config('fregi.environment', 'test');
+                    $fregiConfig = $this->configService->getActiveConfig(
+                        1, // company_id（マルチテナント対応時に変更）
+                        $targetEnv
+                    );
+                }
+                
+                // DBの設定レコードのenvironmentを使用（設定画面で変更可能）
+                $targetEnv = $fregiConfig->environment;
 
                 // カード情報を取得
                 $pan1 = $validated['pan1'];
@@ -503,11 +524,16 @@ class ContractController extends Controller
                     ]);
 
                     // payment_events記録
+                    // DBの設定レコードのenvironmentに基づいてURLを生成
+                    $authUrl = $targetEnv === 'test' 
+                        ? 'https://ssl.f-regi.com/connecttest/authm.cgi'
+                        : 'https://ssl.f-regi.com/connect/authm.cgi';
+                    
                     DB::table('payment_events')->insert([
                         'payment_id' => $monthlyPayment->id,
                         'event_type' => 'fregi_authorize_request_monthly',
                         'payload' => json_encode([
-                            'url' => config('fregi.auth_url'),
+                            'url' => $authUrl,
                             'fregi_env' => $targetEnv,
                             'shopid' => $fregiConfig->shopid,
                             'orderid' => $monthlyPayment->orderid,
@@ -642,11 +668,16 @@ class ContractController extends Controller
                     ]);
 
                     // payment_events記録
+                    // DBの設定レコードのenvironmentに基づいてURLを生成
+                    $authUrl = $targetEnv === 'test' 
+                        ? 'https://ssl.f-regi.com/connecttest/authm.cgi'
+                        : 'https://ssl.f-regi.com/connect/authm.cgi';
+                    
                     DB::table('payment_events')->insert([
                         'payment_id' => $oneTimePayment->id,
                         'event_type' => 'fregi_authorize_request_one_time',
                         'payload' => json_encode([
-                            'url' => config('fregi.auth_url'),
+                            'url' => $authUrl,
                             'fregi_env' => $targetEnv,
                             'shopid' => $fregiConfig->shopid,
                             'orderid' => $oneTimePayment->orderid,
@@ -818,11 +849,16 @@ class ContractController extends Controller
                 ]);
 
                 // payment_events: fregi_authorize_request を記録
+                // DBの設定レコードのenvironmentに基づいてURLを生成
+                $authUrl = $targetEnv === 'test' 
+                    ? 'https://ssl.f-regi.com/connecttest/authm.cgi'
+                    : 'https://ssl.f-regi.com/connect/authm.cgi';
+                
                 DB::table('payment_events')->insert([
                     'payment_id' => $payment->id,
                     'event_type' => 'fregi_authorize_request',
                     'payload' => json_encode([
-                        'url' => config('fregi.auth_url'),
+                        'url' => $authUrl,
                         'fregi_env' => $targetEnv,
                         'shopid' => $fregiConfig->shopid,
                         'orderid' => $payment->orderid,

@@ -36,7 +36,10 @@ class ContractPlanController extends Controller
         // オプション商品作成時にベース商品を選択できるように、有効な契約プランを取得
         $basePlans = ContractPlan::active()->orderBy('display_order')->get();
         
-        return view('admin.contract-plans.create', compact('masters', 'selectedMasterId', 'basePlans'));
+        // _form.blade.phpでoptional($contractPlan)を使うため、nullを明示的に渡す
+        $contractPlan = null;
+        
+        return view('admin.contract-plans.create', compact('masters', 'selectedMasterId', 'basePlans', 'contractPlan'));
     }
 
     /**

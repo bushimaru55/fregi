@@ -27,6 +27,18 @@ class ContractRequest extends FormRequest
             // 契約プラン
             'contract_plan_id' => ['required', 'exists:contract_plans,id'],
             
+            // オプション商品
+            'option_product_ids' => ['nullable', 'array'],
+            'option_product_ids.*' => [
+                'exists:products,id',
+                function ($attribute, $value, $fail) {
+                    $product = \App\Models\Product::find($value);
+                    if (!$product || $product->type !== 'option' || !$product->is_active) {
+                        $fail('選択されたオプション商品が無効です。');
+                    }
+                },
+            ],
+            
             // 申込企業情報
             'company_name' => ['required', 'string', 'max:255'],
             'company_name_kana' => ['nullable', 'string', 'max:255', 'regex:/^[ァ-ヶー\s]+$/u'],
@@ -75,6 +87,8 @@ class ContractRequest extends FormRequest
     {
         return [
             'contract_plan_id' => '契約プラン',
+            'option_product_ids' => 'オプション商品',
+            'option_product_ids.*' => 'オプション商品',
             'company_name' => '会社名',
             'company_name_kana' => '会社名（フリガナ）',
             'department' => '部署名',

@@ -73,7 +73,7 @@
                         <i class="fas fa-folder-open mr-2"></i>契約プランマスター管理
                     </a>
                     <a href="{{ route('admin.contract-plans.index') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-layer-group mr-2"></i>契約プラン管理
+                        <i class="fas fa-layer-group mr-2"></i>製品管理
                     </a>
                     <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-link mr-2"></i>新規申込フォーム管理

@@ -34,8 +34,11 @@ class FregiConfigRequest extends FormRequest
 
         // パスワードバリデーション
         // 1. パスワード変更チェックボックスが有効な場合：必須
-        // 2. 初回保存時（connect_password_encが空の場合）：必須
-        $config = \App\Models\FregiConfig::where('company_id', 1)->first();
+        // 2. 初回保存時（該当環境のconnect_password_encが空の場合）：必須
+        $environment = $this->input('environment', 'test');
+        $config = \App\Models\FregiConfig::where('company_id', 1)
+            ->where('environment', $environment)
+            ->first();
         $isFirstTime = !$config || empty($config->connect_password_enc);
         
         if ($this->has('change_password') && $this->input('change_password')) {
@@ -56,7 +59,7 @@ class FregiConfigRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'connect_password.required' => '接続パスワードは必須です。',
+            'connect_password.required' => '初回保存時は接続パスワードが必須です。',
             'shopid.required' => 'SHOP IDは必須です。',
             'environment.in' => '環境はtestまたはprodである必要があります。',
         ];

@@ -67,7 +67,7 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-bell text-indigo-500 mr-2"></i>通知URL
                     </label>
-                    <input type="url" name="notify_url" value="{{ old('notify_url', url('/billing/api/fregi/notify')) }}" 
+                    <input type="url" name="notify_url" value="{{ old('notify_url', url('/api/fregi/notify')) }}" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                            required>
                 </div>
@@ -77,7 +77,7 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-check-circle text-green-500 mr-2"></i>成功時戻りURL
                     </label>
-                    <input type="url" name="return_url_success" value="{{ old('return_url_success', url('/billing/return/success')) }}" 
+                    <input type="url" name="return_url_success" value="{{ old('return_url_success', url('/return/success')) }}" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                            required>
                 </div>
@@ -87,7 +87,7 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-times-circle text-yellow-500 mr-2"></i>キャンセル時戻りURL
                     </label>
-                    <input type="url" name="return_url_cancel" value="{{ old('return_url_cancel', url('/billing/return/cancel')) }}" 
+                    <input type="url" name="return_url_cancel" value="{{ old('return_url_cancel', url('/return/cancel')) }}" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                            required>
                 </div>
