@@ -29,7 +29,8 @@ class Contract extends Model
         'city',
         'address_line1',
         'address_line2',
-        'desired_start_date',
+        'usage_url_domain',
+        'import_from_trial',
         'actual_start_date',
         'end_date',
         'notes',
@@ -39,6 +40,7 @@ class Contract extends Model
         'desired_start_date' => 'date',
         'actual_start_date' => 'date',
         'end_date' => 'date',
+        'import_from_trial' => 'boolean',
     ];
 
     /**

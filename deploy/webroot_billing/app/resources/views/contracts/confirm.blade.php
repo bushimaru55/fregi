@@ -134,7 +134,32 @@
             </div>
         </div>
 
-        {{-- 2. 契約内容 --}}
+        {{-- 2. ご利用情報 --}}
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+                <i class="fas fa-globe mr-2"></i>ご利用情報
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                @if(!empty($data['usage_url_domain']))
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-600 mb-1">ご利用URL・ドメイン</p>
+                    <p class="text-lg font-semibold text-gray-800">{{ $data['usage_url_domain'] }}</p>
+                </div>
+                @endif
+
+                @if(!empty($data['import_from_trial']))
+                <div class="md:col-span-2">
+                    <p class="text-sm text-gray-600 mb-1">体験版からのインポートを希望する</p>
+                    <p class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i>希望する
+                    </p>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        {{-- 3. 契約内容 --}}
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
                 <i class="fas fa-file-contract mr-2"></i>契約内容
@@ -195,14 +220,10 @@
                     <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
                 </div>
 
-                <div>
-                    <p class="text-sm text-gray-600 mb-1">利用開始希望日</p>
-                    <p class="text-lg font-semibold text-gray-800">{{ \Carbon\Carbon::parse($data['desired_start_date'])->format('Y年m月d日') }}</p>
-                </div>
             </div>
         </div>
 
-        {{-- 3. 利用規約への同意 --}}
+        {{-- 4. 利用規約への同意 --}}
         @if($termsOfService && !empty($data['terms_agreed']))
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
@@ -355,19 +376,28 @@
 </div>
 
 <script>
-// カード番号の自動フォーカス移動（4桁入力で次のフィールドへ）
+// カード番号の自動フォーカス移動（4桁入力で次のフィールドへ）と全角数字→半角数字変換
 (function() {
     const pan1 = document.getElementById('pan1');
     const pan2 = document.getElementById('pan2');
     const pan3 = document.getElementById('pan3');
     const pan4 = document.getElementById('pan4');
     
+    // 全角数字を半角数字に変換する関数
+    function toHalfWidthNumber(str) {
+        return str.replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+    }
+    
     if (pan1 && pan2 && pan3 && pan4) {
-        // 数字のみ入力可能にする
+        // 数字のみ入力可能にする（全角数字→半角数字変換含む）
         [pan1, pan2, pan3, pan4].forEach(function(input) {
             input.addEventListener('input', function(e) {
+                // 全角数字を半角数字に変換
+                let value = toHalfWidthNumber(e.target.value);
                 // 数字以外を削除
-                e.target.value = e.target.value.replace(/[^\d]/g, '');
+                e.target.value = value.replace(/[^\d]/g, '');
             });
             
             // 4桁入力で次のフィールドにフォーカス移動
@@ -395,6 +425,62 @@
                     }
                 }
             });
+        });
+    }
+})();
+
+// 有効期限（年）の全角数字→半角数字変換
+(function() {
+    const cardExpiryYearInput = document.getElementById('card_expiry_year');
+    
+    // 全角数字を半角数字に変換する関数
+    function toHalfWidthNumber(str) {
+        return str.replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+    }
+    
+    if (cardExpiryYearInput) {
+        cardExpiryYearInput.addEventListener('input', function(e) {
+            // 全角数字を半角数字に変換
+            let value = toHalfWidthNumber(e.target.value);
+            // 数字のみを残す
+            e.target.value = value.replace(/[^\d]/g, '');
+        });
+        
+        cardExpiryYearInput.addEventListener('blur', function(e) {
+            // 全角数字を半角数字に変換
+            let value = toHalfWidthNumber(e.target.value);
+            // 数字のみを残す
+            e.target.value = value.replace(/[^\d]/g, '');
+        });
+    }
+})();
+
+// セキュリティコードの全角数字→半角数字変換
+(function() {
+    const scodeInput = document.getElementById('scode');
+    
+    // 全角数字を半角数字に変換する関数
+    function toHalfWidthNumber(str) {
+        return str.replace(/[０-９]/g, function(s) {
+            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+        });
+    }
+    
+    if (scodeInput) {
+        scodeInput.addEventListener('input', function(e) {
+            // 全角数字を半角数字に変換
+            let value = toHalfWidthNumber(e.target.value);
+            // 数字のみを残す
+            e.target.value = value.replace(/[^\d]/g, '');
+        });
+        
+        scodeInput.addEventListener('blur', function(e) {
+            // 全角数字を半角数字に変換
+            let value = toHalfWidthNumber(e.target.value);
+            // 数字のみを残す
+            e.target.value = value.replace(/[^\d]/g, '');
         });
     }
 })();

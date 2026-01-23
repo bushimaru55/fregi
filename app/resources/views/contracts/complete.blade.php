@@ -30,10 +30,6 @@
                         <p class="text-xl font-bold text-green-600">{{ $contract->contractPlan->formatted_price }}（税込）</p>
                     </div>
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">利用開始希望日</p>
-                        <p class="text-lg font-semibold text-gray-800">{{ $contract->desired_start_date->format('Y年m月d日') }}</p>
-                    </div>
-                    <div>
                         <p class="text-sm text-gray-600 mb-1">契約ステータス</p>
                         <span class="inline-block bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                             {{ $contract->status_label }}
@@ -98,8 +94,8 @@
         </h3>
         <ol class="list-decimal list-inside space-y-2 text-gray-700">
             <li>ご登録のメールアドレスに契約内容の確認メールをお送りします。</li>
-            <li>利用開始希望日の前日までに、アカウント情報をメールでお知らせします。</li>
-            <li>利用開始日よりサービスをご利用いただけます。</li>
+            <li>アカウント情報をメールでお知らせします。</li>
+            <li>サービスをご利用いただけます。</li>
         </ol>
     </div>
 

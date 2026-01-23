@@ -54,8 +54,9 @@ class ContractRequest extends FormRequest
             'address_line1' => ['nullable', 'string', 'max:255'],
             'address_line2' => ['nullable', 'string', 'max:255'],
             
-            // 契約内容
-            'desired_start_date' => ['required', 'date', 'after_or_equal:today'],
+            // ご利用情報
+            'usage_url_domain' => ['required', 'string', 'max:255'],
+            'import_from_trial' => ['nullable', 'boolean'],
             
             // 利用規約への同意
             'terms_agreed' => ['required', 'accepted'],
@@ -102,7 +103,8 @@ class ContractRequest extends FormRequest
             'city' => '市区町村',
             'address_line1' => '番地',
             'address_line2' => '建物名',
-            'desired_start_date' => '利用開始希望日',
+            'usage_url_domain' => 'ご利用URL・ドメイン',
+            'import_from_trial' => '体験版からのインポートを希望する',
             'terms_agreed' => '利用規約への同意',
             'pan1' => 'カード番号（1〜4桁目）',
             'pan2' => 'カード番号（5〜8桁目）',
@@ -125,7 +127,6 @@ class ContractRequest extends FormRequest
             'contact_name_kana.regex' => '担当者名（フリガナ）は全角カタカナで入力してください。',
             'phone.regex' => '電話番号は数字とハイフンのみで入力してください。',
             'postal_code.regex' => '郵便番号は7桁の数字で入力してください（ハイフン有無可）。',
-            'desired_start_date.after_or_equal' => '利用開始希望日は本日以降の日付を選択してください。',
             'terms_agreed.required' => '利用規約への同意が必要です。',
             'terms_agreed.accepted' => '利用規約への同意が必要です。',
             'pan1.regex' => 'カード番号（1〜4桁目）は4桁の数字で入力してください。',

@@ -46,10 +46,6 @@
                 <p class="text-sm text-gray-600 mb-1">料金</p>
                 <p class="text-lg font-bold text-indigo-600">{{ number_format($contract->contractPlan->price) }}円（税込）</p>
             </div>
-            <div>
-                <p class="text-sm text-gray-600 mb-1">利用開始希望日</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->desired_start_date->format('Y年m月d日') }}</p>
-            </div>
             @if($contract->actual_start_date)
             <div>
                 <p class="text-sm text-gray-600 mb-1">実際の利用開始日</p>

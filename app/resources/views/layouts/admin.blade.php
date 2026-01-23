@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Billing System') - F-REGI決済管理</title>
+    <title>@yield('title', 'DSchatbot') - F-REGI決済管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -73,9 +73,9 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <i class="fas fa-credit-card text-3xl"></i>
+                    <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto">
                     <div>
-                        <h1 class="text-2xl font-bold">Billing System</h1>
+                        <h1 class="text-2xl font-bold">DSchatbot</h1>
                         <p class="text-sm text-indigo-200">F-REGI決済管理システム</p>
                     </div>
                 </div>
@@ -146,7 +146,7 @@
     <footer class="bg-gray-800 text-white mt-16">
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">© 2026 Billing System. All rights reserved.</p>
+                <p class="text-sm text-gray-400">© 2026 DSchatbot. All rights reserved.</p>
                 <p class="text-sm text-gray-400">Powered by Laravel 10 & F-REGI</p>
             </div>
         </div>

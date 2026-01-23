@@ -195,10 +195,45 @@
             </div>
         </div>
 
-        {{-- 2. 契約内容の選択 --}}
+        {{-- 2. ご利用情報 --}}
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
-                <i class="fas fa-file-contract mr-2"></i>2. 契約内容の選択
+                <i class="fas fa-globe mr-2"></i>2. ご利用情報
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                {{-- ご利用URL・ドメイン --}}
+                <div class="md:col-span-2">
+                    <label for="usage_url_domain" class="block text-sm font-semibold text-gray-700 mb-2">
+                        ご利用URL・ドメイン <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="usage_url_domain" id="usage_url_domain" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('usage_url_domain') border-red-500 @enderror" 
+                        value="{{ old('usage_url_domain') }}" placeholder="https://example.com または example.com" required>
+                    @error('usage_url_domain')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 体験版からのインポートを希望する --}}
+                <div class="md:col-span-2">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="import_from_trial" id="import_from_trial" value="1"
+                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 @error('import_from_trial') border-red-500 @enderror"
+                            {{ old('import_from_trial') ? 'checked' : '' }}>
+                        <span class="ml-2 text-sm font-semibold text-gray-700">体験版からのインポートを希望する</span>
+                    </label>
+                    @error('import_from_trial')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- 3. 契約内容の選択 --}}
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+                <i class="fas fa-file-contract mr-2"></i>3. 契約内容の選択
             </h2>
 
             {{-- 製品選択 --}}
@@ -246,26 +281,13 @@
                 @enderror
                 <p class="text-xs text-gray-500 mt-2">必要なオプション製品にチェックを入れてください</p>
             </div>
-
-            {{-- 利用開始希望日 --}}
-            <div>
-                <label for="desired_start_date" class="block text-sm font-semibold text-gray-700 mb-2">
-                    利用開始希望日 <span class="text-red-500">*</span>
-                </label>
-                <input type="date" name="desired_start_date" id="desired_start_date" 
-                    class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('desired_start_date') border-red-500 @enderror" 
-                    value="{{ old('desired_start_date') }}" min="{{ date('Y-m-d') }}" required>
-                @error('desired_start_date')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
         </div>
 
-        {{-- 3. 利用規約 --}}
+        {{-- 4. 利用規約 --}}
         @if($termsOfService)
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
-                <i class="fas fa-file-contract mr-2"></i>3. 利用規約
+                <i class="fas fa-file-contract mr-2"></i>4. 利用規約
             </h2>
 
             {{-- 利用規約の表示 --}}
@@ -448,9 +470,6 @@
         return new Intl.NumberFormat('ja-JP').format(num);
     }
 })();
-
-    // 今日の日付を最小値に設定
-    document.getElementById('desired_start_date').min = new Date().toISOString().split('T')[0];
 
     // 会社名から会社名（フリガナ）への自動入力（カタカナ変換）
     (function() {
@@ -861,12 +880,22 @@
         });
     })();
 
-    // 電話番号の自動ハイフン挿入
+    // 電話番号の自動ハイフン挿入と全角数字→半角数字変換
     (function() {
         const phoneInput = document.getElementById('phone');
         if (phoneInput) {
+            // 全角数字を半角数字に変換する関数
+            function toHalfWidthNumber(str) {
+                return str.replace(/[０-９]/g, function(s) {
+                    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                });
+            }
+            
             phoneInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/[^\d-]/g, ''); // 数字とハイフンのみ
+                // 全角数字を半角数字に変換
+                let value = toHalfWidthNumber(e.target.value);
+                // 数字とハイフンのみを残す
+                value = value.replace(/[^\d-]/g, '');
                 
                 // ハイフンを一旦削除してから再フォーマット
                 const digits = value.replace(/-/g, '');
@@ -893,7 +922,10 @@
             
             // フォーカスアウト時にもフォーマット
             phoneInput.addEventListener('blur', function(e) {
-                let value = e.target.value.replace(/[^\d-]/g, '');
+                // 全角数字を半角数字に変換
+                let value = toHalfWidthNumber(e.target.value);
+                // 数字とハイフンのみを残す
+                value = value.replace(/[^\d-]/g, '');
                 const digits = value.replace(/-/g, '');
                 
                 if (digits.length > 0 && digits.length < 10) {
@@ -957,9 +989,21 @@
         const errorDiv = document.getElementById('address_error');
         const loadingDiv = document.getElementById('address_loading');
 
-        // 郵便番号を正規化（ハイフンを除去）
+        // 全角数字を半角数字に変換する関数
+        function toHalfWidthNumber(str) {
+            return str.replace(/[０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+        }
+
+        // 郵便番号を正規化（全角数字→半角数字変換、ハイフンを除去）
         function normalizePostalCode(postalCode) {
-            return postalCode.replace(/[ー−‐]/g, '-').replace(/[^\d-]/g, '');
+            // 全角数字を半角数字に変換
+            let normalized = toHalfWidthNumber(postalCode);
+            // ハイフン記号を統一
+            normalized = normalized.replace(/[ー−‐]/g, '-');
+            // 数字とハイフンのみを残す
+            return normalized.replace(/[^\d-]/g, '');
         }
 
         // 住所検索関数
@@ -1049,9 +1093,13 @@
                 }
             });
 
-            // 郵便番号入力時の自動フォーマット（ハイフン自動挿入）
+            // 郵便番号入力時の自動フォーマット（全角数字→半角数字変換、ハイフン自動挿入）
             postalCodeInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/[^\d]/g, '');
+                // 全角数字を半角数字に変換
+                let value = toHalfWidthNumber(e.target.value);
+                // 数字のみを残す
+                value = value.replace(/[^\d]/g, '');
+                // ハイフン自動挿入
                 if (value.length > 3) {
                     value = value.slice(0, 3) + '-' + value.slice(3, 7);
                 }
@@ -1060,6 +1108,30 @@
                 } else {
                     e.target.value = value.slice(0, 8);
                 }
+            });
+        }
+    })();
+
+    // ご利用URL・ドメインの全角英数字→半角英数字変換
+    (function() {
+        const usageUrlDomainInput = document.getElementById('usage_url_domain');
+        
+        // 全角英数字を半角英数字に変換する関数
+        function toHalfWidthAlphanumeric(str) {
+            return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+            });
+        }
+        
+        if (usageUrlDomainInput) {
+            usageUrlDomainInput.addEventListener('input', function(e) {
+                // 全角英数字を半角英数字に変換
+                e.target.value = toHalfWidthAlphanumeric(e.target.value);
+            });
+            
+            usageUrlDomainInput.addEventListener('blur', function(e) {
+                // 全角英数字を半角英数字に変換
+                e.target.value = toHalfWidthAlphanumeric(e.target.value);
             });
         }
     })();
