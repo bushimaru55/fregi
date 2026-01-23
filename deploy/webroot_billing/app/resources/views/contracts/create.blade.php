@@ -3,10 +3,10 @@
 @section('title', '新規申込')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <div class="mb-8 text-center">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2">新規申込フォーム</h1>
-        <p class="text-gray-600">必要事項をご入力の上、お申し込みください</p>
+<div class="max-w-4xl mx-auto px-4 md:px-0">
+    <div class="mb-6 md:mb-8 text-center">
+        <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2">新規申込フォーム</h1>
+        <p class="text-sm md:text-base text-gray-600">必要事項をご入力の上、お申し込みください</p>
     </div>
 
     @if(session('error'))
@@ -17,23 +17,23 @@
         </div>
     @endif
 
-    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-8">
+    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-6 md:space-y-8">
         @csrf
 
         {{-- 1. 申込企業情報 --}}
-        <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
                 <i class="fas fa-building mr-2"></i>1. 申込企業情報
             </h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 {{-- 会社名 --}}
                 <div class="md:col-span-2">
                     <label for="company_name" class="block text-sm font-semibold text-gray-700 mb-2">
                         会社名 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="company_name" id="company_name" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('company_name') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('company_name') border-red-500 @enderror" 
                         value="{{ old('company_name') }}" required>
                     @error('company_name')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -46,7 +46,7 @@
                         会社名（フリガナ）
                     </label>
                     <input type="text" name="company_name_kana" id="company_name_kana" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('company_name_kana') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('company_name_kana') border-red-500 @enderror" 
                         value="{{ old('company_name_kana') }}" placeholder="カブシキガイシャ サンプル">
                     @error('company_name_kana')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -59,7 +59,7 @@
                         部署名
                     </label>
                     <input type="text" name="department" id="department" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
                         value="{{ old('department') }}">
                 </div>
 
@@ -69,7 +69,7 @@
                         役職
                     </label>
                     <input type="text" name="position" id="position" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
                         value="{{ old('position') }}">
                 </div>
 
@@ -79,7 +79,7 @@
                         担当者名 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="contact_name" id="contact_name" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contact_name') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('contact_name') border-red-500 @enderror" 
                         value="{{ old('contact_name') }}" required>
                     @error('contact_name')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -92,7 +92,7 @@
                         担当者名（フリガナ）
                     </label>
                     <input type="text" name="contact_name_kana" id="contact_name_kana" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('contact_name_kana') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('contact_name_kana') border-red-500 @enderror" 
                         value="{{ old('contact_name_kana') }}" placeholder="ヤマダ タロウ">
                     @error('contact_name_kana')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -105,7 +105,7 @@
                         メールアドレス <span class="text-red-500">*</span>
                     </label>
                     <input type="email" name="email" id="email" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('email') border-red-500 @enderror" 
                         value="{{ old('email') }}" required>
                     @error('email')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -118,7 +118,7 @@
                         電話番号 <span class="text-red-500">*</span>
                     </label>
                     <input type="tel" name="phone" id="phone" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('phone') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('phone') border-red-500 @enderror" 
                         value="{{ old('phone') }}" placeholder="03-1234-5678" required>
                     @error('phone')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -132,10 +132,10 @@
                     </label>
                     <div class="flex gap-2">
                         <input type="text" name="postal_code" id="postal_code" maxlength="8"
-                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('postal_code') border-red-500 @enderror" 
+                            class="flex-1 px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('postal_code') border-red-500 @enderror" 
                             value="{{ old('postal_code') }}" placeholder="123-4567">
                         <button type="button" id="search_address_btn" 
-                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-300">
+                            class="px-3 md:px-4 py-3 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-300 text-sm md:text-base whitespace-nowrap">
                             <i class="fas fa-search mr-2"></i>検索
                         </button>
                     </div>
@@ -155,7 +155,7 @@
                         都道府県
                     </label>
                     <select name="prefecture" id="prefecture" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base">
                         <option value="">選択してください</option>
                         @foreach(['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'] as $pref)
                             <option value="{{ $pref }}" {{ old('prefecture') == $pref ? 'selected' : '' }}>{{ $pref }}</option>
@@ -169,7 +169,7 @@
                         市区町村
                     </label>
                     <input type="text" name="city" id="city" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
                         value="{{ old('city') }}" placeholder="渋谷区">
                 </div>
 
@@ -179,7 +179,7 @@
                         番地
                     </label>
                     <input type="text" name="address_line1" id="address_line1" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
                         value="{{ old('address_line1') }}" placeholder="渋谷1-2-3">
                 </div>
 
@@ -189,15 +189,15 @@
                         建物名
                     </label>
                     <input type="text" name="address_line2" id="address_line2" 
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
                         value="{{ old('address_line2') }}" placeholder="○○ビル 5F">
                 </div>
             </div>
         </div>
 
         {{-- 2. 契約内容の選択 --}}
-        <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
                 <i class="fas fa-file-contract mr-2"></i>2. 契約内容の選択
             </h2>
 
@@ -206,17 +206,17 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-4">
                     製品 <span class="text-red-500">*</span>
                 </label>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     @foreach($plans as $plan)
                         <label class="relative cursor-pointer">
                             <input type="radio" name="contract_plan_id" value="{{ $plan->id }}" 
                                 class="peer sr-only" 
                                 {{ old('contract_plan_id') == $plan->id ? 'checked' : '' }} required>
-                            <div class="border-2 border-gray-300 rounded-lg p-4 transition-all peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-indigo-300">
+                            <div class="border-2 border-gray-300 rounded-lg p-3 md:p-4 transition-all peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-indigo-300">
                                 <div class="text-center">
-                                    <div class="text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
-                                    <div class="text-3xl font-bold text-indigo-600 mb-2">{{ $plan->formatted_price }}</div>
-                                    <div class="text-sm text-gray-600">{{ $plan->description }}</div>
+                                    <div class="text-base md:text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
+                                    <div class="text-2xl md:text-3xl font-bold text-indigo-600 mb-2">{{ $plan->formatted_price }}</div>
+                                    <div class="text-xs md:text-sm text-gray-600">{{ $plan->description }}</div>
                                 </div>
                             </div>
                         </label>
@@ -253,7 +253,7 @@
                     利用開始希望日 <span class="text-red-500">*</span>
                 </label>
                 <input type="date" name="desired_start_date" id="desired_start_date" 
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('desired_start_date') border-red-500 @enderror" 
+                    class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('desired_start_date') border-red-500 @enderror" 
                     value="{{ old('desired_start_date') }}" min="{{ date('Y-m-d') }}" required>
                 @error('desired_start_date')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -263,24 +263,24 @@
 
         {{-- 3. 利用規約 --}}
         @if($termsOfService)
-        <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
                 <i class="fas fa-file-contract mr-2"></i>3. 利用規約
             </h2>
 
             {{-- 利用規約の表示 --}}
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6" style="max-height: 400px; overflow-y: auto;">
-                <div class="quill-content text-gray-700 text-sm">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6" style="max-height: 300px; overflow-y: auto;">
+                <div class="quill-content text-gray-700 text-xs md:text-sm">
                     {!! $termsOfService !!}
                 </div>
             </div>
 
             {{-- 同意チェックボックス --}}
-            <div class="flex items-center justify-center">
+            <div class="flex items-center justify-center flex-wrap">
                 <input type="checkbox" name="terms_agreed" id="terms_agreed" value="1"
-                    class="mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded @error('terms_agreed') border-red-500 @enderror"
+                    class="mr-2 md:mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded @error('terms_agreed') border-red-500 @enderror"
                     {{ old('terms_agreed') ? 'checked' : '' }} required>
-                <label for="terms_agreed" class="text-gray-700">
+                <label for="terms_agreed" class="text-gray-700 text-sm md:text-base">
                     <span class="text-red-500">*</span>
                     <span class="font-semibold">利用規約に同意します</span>
                 </label>
@@ -292,11 +292,11 @@
         @endif
 
         {{-- 送信ボタン --}}
-        <div class="flex justify-center space-x-4">
-            <a href="{{ url('/') }}" class="px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300">
+        <div class="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-6 md:mb-8">
+            <a href="{{ url('/') }}" class="px-6 md:px-8 py-3 md:py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
                 キャンセル
             </a>
-            <button type="submit" class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+            <button type="submit" class="px-6 md:px-8 py-3 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300 text-base">
                 確認画面へ <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </div>
@@ -451,6 +451,298 @@
 
     // 今日の日付を最小値に設定
     document.getElementById('desired_start_date').min = new Date().toISOString().split('T')[0];
+
+    // 会社名から会社名（フリガナ）への自動入力（カタカナ変換）
+    (function() {
+        const nameInput = document.getElementById('company_name');
+        const kanaInput = document.getElementById('company_name_kana');
+        
+        if (!nameInput || !kanaInput) {
+            return;
+        }
+        
+        // ひらがなをカタカナに変換する関数
+        const hiraToKata = (s) => {
+            return s.replace(/[\u3041-\u3096]/g, (ch) => {
+                return String.fromCharCode(ch.charCodeAt(0) + 0x60);
+            });
+        };
+        
+        // カタカナ正規化（ひらがな→カタカナ、半角長音記号→全角長音記号）
+        const normalizeKana = (s) => {
+            if (!s) return '';
+            // ひらがなをカタカナに変換
+            let result = hiraToKata(s);
+            // 半角長音記号（ｰ）を全角長音記号（ー）に変換
+            result = result.replace(/\uFF70/g, '\u30FC');
+            return result;
+        };
+        
+        // 状態管理
+        let composing = false;
+        let lastComposition = '';
+        let accumulatedKana = ''; // 確定済みのカタカナを蓄積
+        let kanaTouched = false; // ユーザーが手動でフリガナを編集したかどうか
+        let compositionStartValue = ''; // compositionstart時の値を記録
+        
+        // フリガナフィールドの手動編集を検出
+        // 注意: このイベントは、kanaInputの直接入力イベント（後述）の前に実行される
+        // 直接入力の場合は、後続のイベントでaccumulatedKanaが更新されるため、
+        // ここではkanaTouchedを設定しない（直接入力と自動反映を区別できないため）
+        kanaInput.addEventListener('input', function() {
+            // このイベントではkanaTouchedを設定しない
+            // 直接入力の場合は、後続のイベントでaccumulatedKanaが更新される
+        });
+        
+        // IME入力開始
+        nameInput.addEventListener('compositionstart', function() {
+            composing = true;
+            lastComposition = '';
+            compositionStartValue = nameInput.value; // 開始時の値を記録
+        });
+        
+        // IME入力中（変換前の読み仮名を取得）
+        nameInput.addEventListener('compositionupdate', function(e) {
+            if (kanaTouched) {
+                return; // 手動編集後は自動反映しない
+            }
+            
+            // e.dataが利用可能な場合はそれを使用（未確定文字列）
+            // ただし、e.dataが漢字を含んでいる場合は無視（漢字変換候補表示時）
+            let data = '';
+            let useData = false;
+            if (e.data !== undefined && e.data !== null && e.data !== '') {
+                // e.dataがひらがなのみかチェック（漢字が含まれていないか）
+                const hasKanji = /[\u4E00-\u9FAF]/.test(e.data);
+                if (!hasKanji) {
+                    data = e.data;
+                    useData = true;
+                }
+            }
+            
+            if (useData && data) {
+                lastComposition = data;
+                const kana = normalizeKana(data);
+                if (kana) {
+                    // 確定済みのカタカナ + 現在入力中のカタカナ
+                    kanaInput.value = accumulatedKana + kana;
+                }
+            } else {
+                // e.dataが利用できない場合のフォールバック
+                // compositionstart時の値と比較して新規入力部分を抽出
+                const currentValue = e.target.value;
+                if (currentValue.length > compositionStartValue.length) {
+                    // 新規入力部分を抽出
+                    const newPart = currentValue.slice(compositionStartValue.length);
+                    // 新規部分からひらがなと長音記号を抽出
+                    const hiraganaMatch = newPart.match(/[\u3041-\u3096\u30FC\uFF70]+/);
+                    if (hiraganaMatch) {
+                        const hiragana = hiraganaMatch[0];
+                        const kana = normalizeKana(hiragana);
+                        if (kana) {
+                            lastComposition = hiragana;
+                            kanaInput.value = accumulatedKana + kana;
+                        }
+                    }
+                } else {
+                    // 値が減少した場合や置換が発生した場合
+                    // currentValueからひらがな部分を抽出（最後の手段）
+                    const hiraganaMatch = currentValue.match(/[\u3041-\u3096\u30FC\uFF70]+/g);
+                    if (hiraganaMatch) {
+                        // compositionstart時の値から既に確定された部分を除く
+                        const startHiragana = compositionStartValue.match(/[\u3041-\u3096\u30FC\uFF70]+/g);
+                        const startHiraganaStr = startHiragana ? startHiragana.join('') : '';
+                        const allHiragana = hiraganaMatch.join('');
+                        if (allHiragana.length > startHiraganaStr.length) {
+                            const newHiragana = allHiragana.slice(startHiraganaStr.length);
+                            const kana = normalizeKana(newHiragana);
+                            if (kana) {
+                                lastComposition = newHiragana;
+                                kanaInput.value = accumulatedKana + kana;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // IME入力終了（変換確定）
+        nameInput.addEventListener('compositionend', function() {
+            composing = false;
+            // 確定文字（漢字）では kanaInput を更新しない
+            // lastComposition をカタカナ化して蓄積に追加
+            // ただし、lastCompositionが漢字を含んでいる場合は無視（漢字変換確定時）
+            if (lastComposition && !kanaTouched) {
+                // lastCompositionが漢字を含んでいるかチェック
+                const hasKanji = /[\u4E00-\u9FAF]/.test(lastComposition);
+                if (!hasKanji) {
+                    const kana = normalizeKana(lastComposition);
+                    if (kana) {
+                        accumulatedKana += kana;
+                        kanaInput.value = accumulatedKana;
+                    }
+                }
+            }
+            lastComposition = '';
+        });
+        
+        // 通常の入力時（IME変換後は処理しない）
+        nameInput.addEventListener('input', function(e) {
+            if (kanaTouched) return; // 手動編集後は自動反映しない
+            
+            // IME変換中だけ kana を更新（確定後は更新しない）
+            if (e.isComposing || composing) {
+                // input中に value 全体を取ると漢字が混ざる場合があるので
+                // lastComposition を優先し、無ければ nameInput.value を控えめに使う
+                const base = lastComposition || '';
+                const kana = normalizeKana(base);
+                if (kana) {
+                    kanaInput.value = accumulatedKana + kana;
+                }
+            } else {
+                // IME変換確定後（isComposing === false）は kana を更新しない
+                // 漢字が入らないように、蓄積されたカタカナを保持
+                if (accumulatedKana && kanaInput.value !== accumulatedKana) {
+                    // フリガナフィールドにカタカナ以外が入っていた場合は、蓄積された値を復元
+                    const currentKana = kanaInput.value;
+                    const cleanKana = currentKana.replace(/[^\u30A1-\u30F6\u30FC\u0020\u3000]/g, '');
+                    if (currentKana !== cleanKana || /[^\u30A1-\u30F6\u30FC\u0020\u3000]/.test(currentKana)) {
+                        kanaInput.value = accumulatedKana;
+                    }
+                }
+            }
+        });
+        
+        // 会社名フィールドがクリアされた場合の処理
+        nameInput.addEventListener('focus', function() {
+            if (!nameInput.value) {
+                accumulatedKana = '';
+                if (!kanaTouched) {
+                    kanaInput.value = '';
+                }
+            }
+        });
+            
+        // フリガナフィールド自体への直接入力を制限（カタカナのみ）
+        let kanaFieldLastValue = ''; // フリガナフィールドの前回の値を記録
+        
+        // フリガナフィールドのIME入力開始
+        kanaInput.addEventListener('compositionstart', function(e) {
+            kanaFieldLastValue = e.target.value;
+        });
+        
+        // フリガナフィールドのIME入力中
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        kanaInput.addEventListener('compositionupdate', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+        });
+        
+        // フリガナフィールドのIME入力終了（変換確定）
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        kanaInput.addEventListener('compositionend', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+            // 状態を更新（会社名からの自動反映機能で使用）
+            accumulatedKana = e.target.value;
+            kanaFieldLastValue = e.target.value;
+            kanaTouched = false;
+        });
+        
+        // フリガナフィールドの通常入力
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        kanaInput.addEventListener('input', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+            // 状態を更新（会社名からの自動反映機能で使用）
+            accumulatedKana = e.target.value;
+            kanaFieldLastValue = e.target.value;
+            kanaTouched = false;
+        });
+    })();
+
+    // 電話番号の自動ハイフン挿入
+    (function() {
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/[^\d-]/g, ''); // 数字とハイフンのみ
+                
+                // ハイフンを一旦削除してから再フォーマット
+                const digits = value.replace(/-/g, '');
+                
+                // 電話番号のフォーマット（携帯電話: 11桁、固定電話: 10桁）
+                if (digits.length <= 3) {
+                    value = digits;
+                } else if (digits.length <= 7) {
+                    // 市外局番-市内局番
+                    value = digits.slice(0, 3) + '-' + digits.slice(3);
+                } else if (digits.length <= 10) {
+                    // 固定電話: 03-1234-5678
+                    value = digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
+                } else if (digits.length <= 11) {
+                    // 携帯電話: 090-1234-5678
+                    value = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
+                } else {
+                    // 11桁を超える場合は切り詰め
+                    value = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
+                }
+                
+                e.target.value = value;
+            });
+            
+            // フォーカスアウト時にもフォーマット
+            phoneInput.addEventListener('blur', function(e) {
+                let value = e.target.value.replace(/[^\d-]/g, '');
+                const digits = value.replace(/-/g, '');
+                
+                if (digits.length > 0 && digits.length < 10) {
+                    // 10桁未満の場合は固定電話フォーマットを試行
+                    if (digits.length <= 3) {
+                        value = digits;
+                    } else if (digits.length <= 7) {
+                        value = digits.slice(0, 3) + '-' + digits.slice(3);
+                    } else {
+                        value = digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
+                    }
+                    e.target.value = value;
+                }
+            });
+        }
+    })();
+
+    // メールアドレスの全角→半角変換
+    (function() {
+        const emailInput = document.getElementById('email');
+        if (emailInput) {
+            // 全角文字を半角に変換する関数
+            function toHalfWidth(str) {
+                return str.replace(/[Ａ-Ｚａ-ｚ０-９＠．]/g, function(s) {
+                    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+                });
+            }
+            
+            emailInput.addEventListener('input', function(e) {
+                const originalValue = e.target.value;
+                const halfWidthValue = toHalfWidth(originalValue);
+                
+                // カーソル位置を保持
+                const cursorPosition = e.target.selectionStart;
+                
+                if (originalValue !== halfWidthValue) {
+                    e.target.value = halfWidthValue;
+                    // カーソル位置を調整（変換された文字数分）
+                    const diff = originalValue.length - halfWidthValue.length;
+                    e.target.setSelectionRange(cursorPosition - diff, cursorPosition - diff);
+                }
+            });
+            
+            // フォーカスアウト時にも変換
+            emailInput.addEventListener('blur', function(e) {
+                const halfWidthValue = toHalfWidth(e.target.value);
+                if (e.target.value !== halfWidthValue) {
+                    e.target.value = halfWidthValue;
+                }
+            });
+        }
+    })();
 
     // 郵便番号から住所を自動入力
     (function() {
