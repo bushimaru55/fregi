@@ -658,6 +658,209 @@
         });
     })();
 
+    // 担当者名から担当者名（フリガナ）への自動入力（カタカナ変換）
+    (function() {
+        const contactNameInput = document.getElementById('contact_name');
+        const contactKanaInput = document.getElementById('contact_name_kana');
+        
+        if (!contactNameInput || !contactKanaInput) {
+            return;
+        }
+        
+        // ひらがなをカタカナに変換する関数
+        const hiraToKata = (s) => {
+            return s.replace(/[\u3041-\u3096]/g, (ch) => {
+                return String.fromCharCode(ch.charCodeAt(0) + 0x60);
+            });
+        };
+        
+        // カタカナ正規化（ひらがな→カタカナ、半角長音記号→全角長音記号）
+        const normalizeKana = (s) => {
+            if (!s) return '';
+            // ひらがなをカタカナに変換
+            let result = hiraToKata(s);
+            // 半角長音記号（ｰ）を全角長音記号（ー）に変換
+            result = result.replace(/\uFF70/g, '\u30FC');
+            return result;
+        };
+        
+        // 状態管理
+        let composing = false;
+        let lastComposition = '';
+        let accumulatedKana = ''; // 確定済みのカタカナを蓄積
+        let kanaTouched = false; // ユーザーが手動でフリガナを編集したかどうか
+        let compositionStartValue = ''; // compositionstart時の値を記録
+        
+        // フリガナフィールドの手動編集を検出
+        contactKanaInput.addEventListener('input', function() {
+            // このイベントではkanaTouchedを設定しない
+            // 直接入力の場合は、後続のイベントでaccumulatedKanaが更新される
+        });
+        
+        // IME入力開始
+        contactNameInput.addEventListener('compositionstart', function() {
+            composing = true;
+            lastComposition = '';
+            compositionStartValue = contactNameInput.value; // 開始時の値を記録
+        });
+        
+        // IME入力中（変換前の読み仮名を取得）
+        contactNameInput.addEventListener('compositionupdate', function(e) {
+            if (kanaTouched) {
+                return; // 手動編集後は自動反映しない
+            }
+            
+            // e.dataが利用可能な場合はそれを使用（未確定文字列）
+            // ただし、e.dataが漢字を含んでいる場合は無視（漢字変換候補表示時）
+            let data = '';
+            let useData = false;
+            if (e.data !== undefined && e.data !== null && e.data !== '') {
+                // e.dataがひらがなのみかチェック（漢字が含まれていないか）
+                const hasKanji = /[\u4E00-\u9FAF]/.test(e.data);
+                if (!hasKanji) {
+                    data = e.data;
+                    useData = true;
+                }
+            }
+            
+            if (useData && data) {
+                lastComposition = data;
+                const kana = normalizeKana(data);
+                if (kana) {
+                    // 確定済みのカタカナ + 現在入力中のカタカナ
+                    contactKanaInput.value = accumulatedKana + kana;
+                }
+            } else {
+                // e.dataが利用できない場合のフォールバック
+                // compositionstart時の値と比較して新規入力部分を抽出
+                const currentValue = e.target.value;
+                if (currentValue.length > compositionStartValue.length) {
+                    // 新規入力部分を抽出
+                    const newPart = currentValue.slice(compositionStartValue.length);
+                    // 新規部分からひらがなと長音記号を抽出
+                    const hiraganaMatch = newPart.match(/[\u3041-\u3096\u30FC\uFF70]+/);
+                    if (hiraganaMatch) {
+                        const hiragana = hiraganaMatch[0];
+                        const kana = normalizeKana(hiragana);
+                        if (kana) {
+                            lastComposition = hiragana;
+                            contactKanaInput.value = accumulatedKana + kana;
+                        }
+                    }
+                } else {
+                    // 値が減少した場合や置換が発生した場合
+                    // currentValueからひらがな部分を抽出（最後の手段）
+                    const hiraganaMatch = currentValue.match(/[\u3041-\u3096\u30FC\uFF70]+/g);
+                    if (hiraganaMatch) {
+                        // compositionstart時の値から既に確定された部分を除く
+                        const startHiragana = compositionStartValue.match(/[\u3041-\u3096\u30FC\uFF70]+/g);
+                        const startHiraganaStr = startHiragana ? startHiragana.join('') : '';
+                        const allHiragana = hiraganaMatch.join('');
+                        if (allHiragana.length > startHiraganaStr.length) {
+                            const newHiragana = allHiragana.slice(startHiraganaStr.length);
+                            const kana = normalizeKana(newHiragana);
+                            if (kana) {
+                                lastComposition = newHiragana;
+                                contactKanaInput.value = accumulatedKana + kana;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // IME入力終了（変換確定）
+        contactNameInput.addEventListener('compositionend', function() {
+            composing = false;
+            // 確定文字（漢字）では contactKanaInput を更新しない
+            // lastComposition をカタカナ化して蓄積に追加
+            // ただし、lastCompositionが漢字を含んでいる場合は無視（漢字変換確定時）
+            if (lastComposition && !kanaTouched) {
+                // lastCompositionが漢字を含んでいるかチェック
+                const hasKanji = /[\u4E00-\u9FAF]/.test(lastComposition);
+                if (!hasKanji) {
+                    const kana = normalizeKana(lastComposition);
+                    if (kana) {
+                        accumulatedKana += kana;
+                        contactKanaInput.value = accumulatedKana;
+                    }
+                }
+            }
+            lastComposition = '';
+        });
+        
+        // 通常の入力時（IME変換後は処理しない）
+        contactNameInput.addEventListener('input', function(e) {
+            if (kanaTouched) return; // 手動編集後は自動反映しない
+            
+            // IME変換中だけ kana を更新（確定後は更新しない）
+            if (e.isComposing || composing) {
+                // input中に value 全体を取ると漢字が混ざる場合があるので
+                // lastComposition を優先し、無ければ contactNameInput.value を控えめに使う
+                const base = lastComposition || '';
+                const kana = normalizeKana(base);
+                if (kana) {
+                    contactKanaInput.value = accumulatedKana + kana;
+                }
+            } else {
+                // IME変換確定後（isComposing === false）は kana を更新しない
+                // 漢字が入らないように、蓄積されたカタカナを保持
+                if (accumulatedKana && contactKanaInput.value !== accumulatedKana) {
+                    // フリガナフィールドにカタカナ以外が入っていた場合は、蓄積された値を復元
+                    const currentKana = contactKanaInput.value;
+                    const cleanKana = currentKana.replace(/[^\u30A1-\u30F6\u30FC\u0020\u3000]/g, '');
+                    if (currentKana !== cleanKana || /[^\u30A1-\u30F6\u30FC\u0020\u3000]/.test(currentKana)) {
+                        contactKanaInput.value = accumulatedKana;
+                    }
+                }
+            }
+        });
+        
+        // 担当者名フィールドがクリアされた場合の処理
+        contactNameInput.addEventListener('focus', function() {
+            if (!contactNameInput.value) {
+                accumulatedKana = '';
+                if (!kanaTouched) {
+                    contactKanaInput.value = '';
+                }
+            }
+        });
+            
+        // フリガナフィールド自体への直接入力を制限（カタカナのみ）
+        let kanaFieldLastValue = ''; // フリガナフィールドの前回の値を記録
+        
+        // フリガナフィールドのIME入力開始
+        contactKanaInput.addEventListener('compositionstart', function(e) {
+            kanaFieldLastValue = e.target.value;
+        });
+        
+        // フリガナフィールドのIME入力中
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        contactKanaInput.addEventListener('compositionupdate', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+        });
+        
+        // フリガナフィールドのIME入力終了（変換確定）
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        contactKanaInput.addEventListener('compositionend', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+            // 状態を更新（担当者名からの自動反映機能で使用）
+            accumulatedKana = e.target.value;
+            kanaFieldLastValue = e.target.value;
+            kanaTouched = false;
+        });
+        
+        // フリガナフィールドの通常入力
+        // 直接入力の場合はそのまま入れるため、何も処理しない
+        contactKanaInput.addEventListener('input', function(e) {
+            // 直接入力の場合はそのまま入れる（入力補助ではない）
+            // 状態を更新（担当者名からの自動反映機能で使用）
+            accumulatedKana = e.target.value;
+            kanaFieldLastValue = e.target.value;
+            kanaTouched = false;
+        });
+    })();
+
     // 電話番号の自動ハイフン挿入
     (function() {
         const phoneInput = document.getElementById('phone');
