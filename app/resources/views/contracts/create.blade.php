@@ -106,7 +106,7 @@
                     </label>
                     <input type="email" name="email" id="email" 
                         class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('email') border-red-500 @enderror" 
-                        value="{{ old('email') }}" required>
+                        value="{{ old('email') }}" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" style="ime-mode: disabled;" required>
                     @error('email')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -943,10 +943,31 @@
         }
     })();
 
-    // メールアドレスの全角→半角変換
+    // メールアドレスの全角→半角変換とIME無効化（デスクトップ・モバイル対応）
     (function() {
         const emailInput = document.getElementById('email');
         if (emailInput) {
+            // IMEを無効化する関数（デスクトップブラウザ向け）
+            function disableIME(input) {
+                // CSSでIMEを無効化（非標準だが一部のデスクトップブラウザで動作）
+                input.style.setProperty('ime-mode', 'disabled', 'important');
+                // 属性でも設定（一部のブラウザで動作）
+                input.setAttribute('ime-mode', 'disabled');
+            }
+            
+            // モバイルデバイスかどうかを判定
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
+            // フォーカス時にIMEを無効化（デスクトップブラウザ向け）
+            // モバイルでは inputmode="email" により適切なキーボードが自動表示される
+            emailInput.addEventListener('focus', function(e) {
+                if (!isMobile) {
+                    disableIME(e.target);
+                }
+                // モバイルでも念のため属性を設定（一部のAndroidブラウザで動作する可能性）
+                e.target.setAttribute('ime-mode', 'disabled');
+            });
+            
             // 全角文字を半角に変換する関数
             function toHalfWidth(str) {
                 return str.replace(/[Ａ-Ｚａ-ｚ０-９＠．]/g, function(s) {

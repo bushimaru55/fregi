@@ -2,8 +2,39 @@
 
 @section('title', '申込内容確認')
 
+@push('styles')
+<style>
+    body {
+        background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
+        min-height: 100vh;
+    }
+    .payment-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .btn-orange {
+        background: #ff6b6b;
+        color: white;
+    }
+    .btn-orange:hover {
+        background: #ff5252;
+    }
+    .btn-teal {
+        background: #4ecdc4;
+        color: white;
+    }
+    .btn-teal:hover {
+        background: #3db8b0;
+    }
+    .section-title {
+        border-bottom: 2px solid #4ecdc4;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="max-w-4xl mx-auto px-4 md:px-0">
+<div class="max-w-4xl mx-auto px-4 md:px-0 py-8">
     <div class="mb-6 md:mb-8 text-center">
         <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2">申込内容確認</h1>
         @if(isset($isViewOnly) && $isViewOnly)
@@ -61,8 +92,8 @@
         @endforeach
 
         {{-- 1. 申込企業情報 --}}
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
                 <i class="fas fa-building mr-2"></i>申込企業情報
             </h2>
 
@@ -135,8 +166,8 @@
         </div>
 
         {{-- 2. ご利用情報 --}}
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
                 <i class="fas fa-globe mr-2"></i>ご利用情報
             </h2>
 
@@ -160,13 +191,13 @@
         </div>
 
         {{-- 3. 契約内容 --}}
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
                 <i class="fas fa-file-contract mr-2"></i>契約内容
             </h2>
 
             <div class="space-y-3 md:space-y-4">
-                <div class="bg-indigo-50 border-2 border-indigo-500 rounded-lg p-4 md:p-6">
+                <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4 md:p-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
                         <div>
                             <p class="text-xs md:text-sm text-gray-600 mb-1">製品</p>
@@ -177,7 +208,7 @@
                         </div>
                         <div class="text-left md:text-right">
                             <p class="text-xs md:text-sm text-gray-600 mb-1">料金</p>
-                            <p class="text-2xl md:text-3xl font-bold text-indigo-600">{{ number_format($plan->price ?? 0) }}円</p>
+                            <p class="text-2xl md:text-3xl font-bold text-teal-600">{{ number_format($plan->price ?? 0) }}円</p>
                             @if(isset($plan->billing_type) && $plan->billing_type === 'monthly')
                                 <p class="text-xs text-gray-500 mt-1">（税込・月額）</p>
                             @else
@@ -212,10 +243,10 @@
                     $optionTotal = $optionTotalAmount ?? 0;
                     $totalAmount = $baseAmount + $optionTotal;
                 @endphp
-                <div class="mt-4 pt-4 border-t-2 border-indigo-500">
+                <div class="mt-4 pt-4 border-t-2 border-teal-300">
                     <div class="flex justify-between items-center">
                         <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
-                        <span class="text-2xl md:text-3xl font-bold text-indigo-600">{{ number_format($totalAmount) }}円</span>
+                        <span class="text-2xl md:text-3xl font-bold text-teal-600">{{ number_format($totalAmount) }}円</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
                 </div>
@@ -225,8 +256,8 @@
 
         {{-- 4. 利用規約への同意 --}}
         @if($termsOfService && !empty($data['terms_agreed']))
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
                 <i class="fas fa-file-contract mr-2"></i>利用規約への同意
             </h2>
 
@@ -242,8 +273,8 @@
         @endif
 
         {{-- 4. お支払い情報（カード情報入力） --}}
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
                 <i class="fas fa-credit-card mr-2"></i>お支払い情報
             </h2>
 
@@ -361,10 +392,10 @@
                     <i class="fas fa-file-alt mr-2"></i>申込フォームへ
                 </a>
             @else
-                <a href="{{ route('contract.create') }}" class="px-6 md:px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
+                <a href="{{ route('contract.create') }}" class="px-6 md:px-8 py-3 btn-teal font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
-                <button type="submit" class="px-6 md:px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-300 text-base">
+                <button type="submit" class="px-6 md:px-8 py-3 btn-orange font-bold rounded-lg shadow-md transition duration-300 text-base">
                     <i class="fas fa-lock mr-2"></i>決済へ進む
                 </button>
             @endif

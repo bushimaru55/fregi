@@ -11,7 +11,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
         }
         .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
         }
         .card-shadow {
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
@@ -80,12 +80,8 @@
     <header class="gradient-bg text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center">
                     <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto">
-                    <div>
-                        <h1 class="text-2xl font-bold">DSchatbot</h1>
-                        <p class="text-sm text-indigo-200">F-REGI決済管理システム</p>
-                    </div>
                 </div>
                 <nav class="hidden md:flex space-x-6">
                     @php
