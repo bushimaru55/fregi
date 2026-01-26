@@ -325,9 +325,8 @@ class ContractController extends Controller
             }
         }
         
-        // トークンもセッションデータもない場合は通常通りエラー
-        return redirect()->route('contract.create')
-            ->with('error', '確認画面に直接アクセスすることはできません。フォームからお申し込みください。');
+        // トークンもセッションデータもない場合は申込フォームへリダイレクト（エンドユーザーには技術的な文言を見せない）
+        return redirect()->route('contract.create');
     }
 
     /**
@@ -349,10 +348,21 @@ class ContractController extends Controller
                 ]);
                 
                 // 契約情報を作成（ステータス: draft）
-                $contract = Contract::create([
-                    ...$validated,
-                    'status' => 'draft',
-                ]);
+                // カード情報（pan1-4, scode, card_expiry_*, card_name）は保存しない。F-REGI 送信時のみ使用。
+                $createData = $validated;
+                unset(
+                    $createData['pan1'],
+                    $createData['pan2'],
+                    $createData['pan3'],
+                    $createData['pan4'],
+                    $createData['scode'],
+                    $createData['card_expiry_month'],
+                    $createData['card_expiry_year'],
+                    $createData['card_name'],
+                    $createData['option_product_ids'],
+                    $createData['terms_agreed']
+                );
+                $contract = Contract::create([...$createData, 'status' => 'draft']);
 
                 Log::channel('contract_payment')->info('契約作成完了', [
                     'contract_id' => $contract->id,
@@ -782,194 +792,6 @@ class ContractController extends Controller
                     throw new \Exception('決済情報が見つかりません');
                 }
                 return redirect()->route('contract.complete', ['orderid' => $primaryOrderId]);
-                
-                // カード情報を取得
-                $pan1 = $validated['pan1'];
-                $pan2 = $validated['pan2'];
-                $pan3 = $validated['pan3'];
-                $pan4 = $validated['pan4'];
-                $cardExpiryMonth = $validated['card_expiry_month'];
-                $cardExpiryYear = $validated['card_expiry_year'];
-                // 年を2桁に変換（4桁の場合は下2桁を取得）
-                if (strlen($cardExpiryYear) === 4) {
-                    $cardExpiryYear = substr($cardExpiryYear, -2);
-                }
-                $cardName = strtoupper($validated['card_name']); // 大文字に変換
-                $scode = $validated['scode'] ?? null;
-
-                // オーソリ処理（authm.cgi）のパラメータを構築
-                $apiParams = [
-                    'SHOPID' => $fregiConfig->shopid,
-                    'ID' => $payment->orderid,
-                    'PAY' => (string)$payment->amount,
-                    'PAN1' => $pan1,
-                    'PAN2' => $pan2,
-                    'PAN3' => $pan3,
-                    'PAN4' => $pan4,
-                    'CARDEXPIRY1' => $cardExpiryMonth,
-                    'CARDEXPIRY2' => $cardExpiryYear,
-                    'CARDNAME' => $cardName,
-                    'IP' => $request->ip(),
-                ];
-                
-                // セキュリティコードがある場合は追加
-                if ($scode) {
-                    $apiParams['SCODE'] = $scode;
-                }
-                
-                // 決済タイプに応じてMONTHLYパラメータを設定
-                $customerId = null; // 月額課金の場合のみ設定
-                if ($billingType === 'monthly') {
-                    // 月額課金の場合
-                    $customerId = $contract->generateCustomerId();
-                    $apiParams['MONTHLY'] = '1';
-                    $apiParams['MONTHLYMODE'] = '0'; // 月次課金
-                    $apiParams['CUSTOMERID'] = $customerId;
-                } else {
-                    // 一回限りの決済の場合
-                    $apiParams['MONTHLY'] = '0'; // 即時決済
-                }
-
-                // ログ用にマスクしたパラメータを作成
-                $logParams = $apiParams;
-                $logParams['PAN1'] = '****';
-                $logParams['PAN2'] = '****';
-                $logParams['PAN3'] = '****';
-                $logParams['PAN4'] = '****';
-                if (isset($logParams['SCODE'])) {
-                    $logParams['SCODE'] = '****';
-                }
-                
-                Log::channel('contract_payment')->info('F-REGIオーソリ処理開始', [
-                    'payment_id' => $payment->id,
-                    'orderid' => $payment->orderid,
-                    'billing_type' => $billingType,
-                    'environment' => $targetEnv, // $targetEnvを使用（config('fregi.environment', 'test')）
-                    'api_params' => $logParams, // ログにはマスクした値を出力
-                ]);
-
-                // payment_events: fregi_authorize_request を記録
-                // DBの設定レコードのenvironmentに基づいてURLを生成
-                $authUrl = $targetEnv === 'test' 
-                    ? 'https://ssl.f-regi.com/connecttest/authm.cgi'
-                    : 'https://ssl.f-regi.com/connect/authm.cgi';
-                
-                DB::table('payment_events')->insert([
-                    'payment_id' => $payment->id,
-                    'event_type' => 'fregi_authorize_request',
-                    'payload' => json_encode([
-                        'url' => $authUrl,
-                        'fregi_env' => $targetEnv,
-                        'shopid' => $fregiConfig->shopid,
-                        'orderid' => $payment->orderid,
-                        'amount' => $payment->amount,
-                        'billing_type' => $billingType,
-                        'has_card_info' => true,
-                        'has_customer_id' => !empty($customerId),
-                    ]),
-                    'created_at' => now(),
-                ]);
-
-                // オーソリ処理（authm.cgi）を呼び出し
-                $apiResult = $this->apiService->authorizePayment($apiParams, $fregiConfig);
-
-                Log::channel('contract_payment')->info('F-REGIオーソリ処理結果', [
-                    'payment_id' => $payment->id,
-                    'result' => $apiResult['result'] ?? 'UNKNOWN',
-                    'auth_code' => $apiResult['auth_code'] ?? null,
-                    'seqno' => $apiResult['seqno'] ?? null,
-                    'customer_id' => ($billingType === 'monthly') ? $customerId : null,
-                    'error_message' => $apiResult['error_message'] ?? null,
-                ]);
-
-                // payment_events: fregi_authorize_response を記録
-                DB::table('payment_events')->insert([
-                    'payment_id' => $payment->id,
-                    'event_type' => 'fregi_authorize_response',
-                    'payload' => json_encode([
-                        'result' => $apiResult['result'] ?? 'UNKNOWN',
-                        'auth_code' => $apiResult['auth_code'] ?? null,
-                        'seqno' => $apiResult['seqno'] ?? null,
-                        'customer_id' => ($billingType === 'monthly') ? $customerId : null,
-                        'error_message' => $apiResult['error_message'] ?? null,
-                    ]),
-                    'created_at' => now(),
-                ]);
-
-                if ($apiResult['result'] !== 'OK') {
-                    Log::channel('contract_payment')->error('F-REGIオーソリ処理失敗', [
-                        'payment_id' => $payment->id,
-                        'error_message' => $apiResult['error_message'] ?? '不明なエラー',
-                        'api_result' => $apiResult,
-                    ]);
-                    
-                    // payment_events: fregi_authorize_failed を記録
-                    DB::table('payment_events')->insert([
-                        'payment_id' => $payment->id,
-                        'event_type' => 'fregi_authorize_failed',
-                        'payload' => json_encode([
-                            'error_message' => $apiResult['error_message'] ?? '不明なエラー',
-                            'error_code' => $apiResult['error_code'] ?? null,
-                        ]),
-                        'created_at' => now(),
-                    ]);
-                    
-                    // トランザクションをロールバック（例外をスロー）
-                    // これにより、契約と決済情報が作成されない
-                    throw new \Exception('決済処理に失敗しました: ' . ($apiResult['error_message'] ?? '不明なエラー'));
-                }
-
-                // 承認番号、取引番号を取得
-                $authCode = $apiResult['auth_code'];
-                $seqno = $apiResult['seqno'];
-
-                // payment_events: fregi_authorize_success を記録
-                DB::table('payment_events')->insert([
-                    'payment_id' => $payment->id,
-                    'event_type' => 'fregi_authorize_success',
-                    'payload' => json_encode([
-                        'auth_code' => $authCode,
-                        'seqno' => $seqno,
-                        'customer_id' => ($billingType === 'monthly') ? $customerId : null,
-                    ]),
-                    'created_at' => now(),
-                ]);
-
-                // Paymentに承認番号、取引番号を保存
-                $payment->update([
-                    'receiptno' => $authCode, // 承認番号
-                    'slipno' => $seqno, // 取引番号
-                    'status' => 'paid', // ENUM値: created, redirect_issued, waiting_notify, paid, failed, canceled, expired
-                    'completed_at' => now(),
-                ]);
-
-                // 月額課金の場合はCUSTOMERIDを保存（送信したCUSTOMERIDを保存）
-                if ($billingType === 'monthly') {
-                    $contract->update([
-                        'customer_id' => $customerId, // 送信したCUSTOMERIDを保存
-                        'status' => 'active',
-                    ]);
-                } else {
-                    // 一回限りの決済の場合も契約を有効化
-                    $contract->update([
-                        'status' => 'active',
-                    ]);
-                }
-
-                $processingTime = round((microtime(true) - $startTime) * 1000, 2);
-
-                Log::channel('contract_payment')->info('決済処理完了', [
-                    'payment_id' => $payment->id,
-                    'contract_id' => $contract->id,
-                    'orderid' => $payment->orderid,
-                    'auth_code' => $authCode,
-                    'seqno' => $seqno,
-                    'customer_id' => $contract->customer_id,
-                    'processing_time_ms' => $processingTime,
-                ]);
-
-                // 完了画面にリダイレクト
-                return redirect()->route('contract.complete', ['orderid' => $payment->orderid]);
             } catch (\Exception $e) {
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
                 

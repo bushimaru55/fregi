@@ -71,6 +71,9 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 | created_at | TIMESTAMP | NULL | 作成日時 |
 | updated_at | TIMESTAMP | NULL | 更新日時 |
 
+**カード情報の取扱い（2026-01-23）:**
+- **保存しない:** フルPAN（pan1〜pan4）、セキュリティコード（scode）、有効期限、カード名義 — 一切 DB に保存しない。F-REGI へのオーソリリクエスト時のみメモリ上で使用。
+
 **ステータス:**
 - `draft`: 下書き（入力中）
 - `pending_payment`: 決済待ち

@@ -621,13 +621,18 @@
             } else {
                 // IME変換確定後（isComposing === false）は kana を更新しない
                 // 漢字が入らないように、蓄積されたカタカナを保持
+                // カタカナ・スペース・数字（半角・全角）は許可。会社名に数字を含む場合があるため。
                 if (accumulatedKana && kanaInput.value !== accumulatedKana) {
-                    // フリガナフィールドにカタカナ以外が入っていた場合は、蓄積された値を復元
                     const currentKana = kanaInput.value;
-                    const cleanKana = currentKana.replace(/[^\u30A1-\u30F6\u30FC\u0020\u3000]/g, '');
-                    if (currentKana !== cleanKana || /[^\u30A1-\u30F6\u30FC\u0020\u3000]/.test(currentKana)) {
+                    const cleanKana = currentKana.replace(/[^\u30A1-\u30F6\u30FC\u0020\u30000-9\uFF10-\uFF19]/g, '');
+                    if (currentKana !== cleanKana) {
                         kanaInput.value = accumulatedKana;
                     }
+                }
+                // 会社名に末尾の数字があればフリガナに付与（会社名に数字を含む場合の自動反映）
+                const trail = nameInput.value.match(/[0-9０-９]+$/);
+                if (trail && !kanaTouched) {
+                    kanaInput.value = kanaInput.value.replace(/[0-9０-９]+$/g, '') + trail[0];
                 }
             }
         });

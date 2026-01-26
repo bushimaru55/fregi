@@ -25,7 +25,7 @@ class ContractController extends Controller
      */
     public function show(Contract $contract): View
     {
-        $contract->load(['contractPlan', 'payment.events']);
+        $contract->load(['contractPlan', 'payment.events', 'contractItems.product']);
         return view('admin.contracts.show', compact('contract'));
     }
 }

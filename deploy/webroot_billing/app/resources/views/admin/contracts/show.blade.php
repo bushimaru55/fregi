@@ -119,6 +119,57 @@
         </div>
     </div>
 
+    {{-- ご利用情報 --}}
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+            <i class="fas fa-globe mr-2"></i>ご利用情報
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">ご利用URL・ドメイン</p>
+                <p class="text-lg font-semibold text-gray-800">{{ $contract->usage_url_domain ?? '—' }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600 mb-1">体験版からのインポートを希望する</p>
+                <p class="text-lg font-semibold text-gray-800">{{ $contract->import_from_trial ? 'はい' : 'いいえ' }}</p>
+            </div>
+        </div>
+    </div>
+
+    {{-- 契約内容（オプション商品） --}}
+    @php $optionItems = $contract->contractItems->whereNotNull('product_id'); @endphp
+    @if($optionItems->isNotEmpty())
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+            <i class="fas fa-puzzle-piece mr-2"></i>オプション商品
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-600 uppercase text-xs">
+                        <th class="py-2 px-4 text-left">商品名</th>
+                        <th class="py-2 px-4 text-left">コード</th>
+                        <th class="py-2 px-4 text-right">単価（税込）</th>
+                        <th class="py-2 px-4 text-right">数量</th>
+                        <th class="py-2 px-4 text-right">小計</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($optionItems as $item)
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2 px-4">{{ $item->product_name }}</td>
+                        <td class="py-2 px-4">{{ $item->product_code ?? '—' }}</td>
+                        <td class="py-2 px-4 text-right">{{ number_format($item->unit_price) }}円</td>
+                        <td class="py-2 px-4 text-right">{{ $item->quantity }}</td>
+                        <td class="py-2 px-4 text-right">{{ number_format($item->subtotal) }}円</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     {{-- 決済情報 --}}
     @if($contract->payment)
     <div class="bg-white shadow-lg rounded-lg p-6 mb-6">

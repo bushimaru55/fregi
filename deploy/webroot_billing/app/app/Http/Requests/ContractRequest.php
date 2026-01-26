@@ -41,7 +41,7 @@ class ContractRequest extends FormRequest
             
             // 申込企業情報
             'company_name' => ['required', 'string', 'max:255'],
-            'company_name_kana' => ['nullable', 'string', 'max:255', 'regex:/^[ァ-ヶー\s]+$/u'],
+            'company_name_kana' => ['nullable', 'string', 'max:255', 'regex:/^[ァ-ヶー\s0-9０-９]+$/u'],
             'department' => ['nullable', 'string', 'max:255'],
             'position' => ['nullable', 'string', 'max:255'],
             'contact_name' => ['required', 'string', 'max:255'],
@@ -123,7 +123,7 @@ class ContractRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'company_name_kana.regex' => '会社名（フリガナ）は全角カタカナで入力してください。',
+            'company_name_kana.regex' => '会社名（フリガナ）は全角カタカナ・数字で入力してください。',
             'contact_name_kana.regex' => '担当者名（フリガナ）は全角カタカナで入力してください。',
             'phone.regex' => '電話番号は数字とハイフンのみで入力してください。',
             'postal_code.regex' => '郵便番号は7桁の数字で入力してください（ハイフン有無可）。',
