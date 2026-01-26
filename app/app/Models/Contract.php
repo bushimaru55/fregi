@@ -31,9 +31,11 @@ class Contract extends Model
         'address_line2',
         'usage_url_domain',
         'import_from_trial',
+        'desired_start_date',
         'actual_start_date',
         'end_date',
         'notes',
+        'card_last4',
     ];
 
     protected $casts = [

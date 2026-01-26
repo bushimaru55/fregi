@@ -349,7 +349,12 @@ class ContractController extends Controller
                 
                 // 契約情報を作成（ステータス: draft）
                 // カード情報（pan1-4, scode, card_expiry_*, card_name）は保存しない。F-REGI 送信時のみ使用。
+                // ただし、カード番号の末尾4桁（pan4）は表示用に保存する
                 $createData = $validated;
+                
+                // カード番号の末尾4桁を保存
+                $cardLast4 = $validated['pan4'] ?? null;
+                
                 unset(
                     $createData['pan1'],
                     $createData['pan2'],
@@ -362,7 +367,17 @@ class ContractController extends Controller
                     $createData['option_product_ids'],
                     $createData['terms_agreed']
                 );
-                $contract = Contract::create([...$createData, 'status' => 'draft']);
+                
+                // desired_start_dateが設定されていない場合は、今日の日付をデフォルト値として設定
+                if (!isset($createData['desired_start_date']) || empty($createData['desired_start_date'])) {
+                    $createData['desired_start_date'] = now()->format('Y-m-d');
+                }
+                
+                $contract = Contract::create([
+                    ...$createData,
+                    'status' => 'draft',
+                    'card_last4' => $cardLast4,
+                ]);
 
                 Log::channel('contract_payment')->info('契約作成完了', [
                     'contract_id' => $contract->id,
@@ -927,9 +942,20 @@ class ContractController extends Controller
             abort(404, '契約情報が見つかりません。');
         }
 
+        // オプション商品を取得（product_idが設定されているContractItem）
+        $contractItems = $contract->contractItems()->with('product')->get();
+        $optionItems = $contractItems->filter(function ($item) {
+            return $item->product_id !== null;
+        });
+        
+        // オプション商品の合計金額を計算
+        $optionTotalAmount = $optionItems->sum('subtotal');
+
         return view('contracts.complete', [
             'contract' => $contract,
             'payment' => $payment,
+            'optionItems' => $optionItems,
+            'optionTotalAmount' => $optionTotalAmount,
         ]);
     }
 

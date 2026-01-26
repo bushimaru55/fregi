@@ -36,6 +36,41 @@
                         </span>
                     </div>
                 </div>
+                
+                {{-- オプション製品の表示 --}}
+                @if(isset($optionItems) && $optionItems->isNotEmpty())
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600 mb-3 font-semibold">オプション製品</p>
+                    <div class="space-y-2">
+                        @foreach($optionItems as $item)
+                            <div class="flex justify-between items-center bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-800">{{ $item->product_name ?? ($item->product->name ?? '') }}</span>
+                                <span class="font-semibold text-gray-800">{{ number_format($item->subtotal ?? $item->unit_price ?? 0) }}円</span>
+                            </div>
+                        @endforeach
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-300">
+                            <span class="text-sm text-gray-600">オプション製品合計</span>
+                            <span class="font-semibold text-gray-800">{{ number_format($optionTotalAmount ?? 0) }}円</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- 合計金額の表示 --}}
+                @php
+                    $baseAmount = $contract->contractPlan->price ?? 0;
+                    $optionTotal = $optionTotalAmount ?? 0;
+                    $totalAmount = $baseAmount + $optionTotal;
+                @endphp
+                @if(isset($optionItems) && $optionItems->isNotEmpty())
+                <div class="mt-4 pt-4 border-t-2 border-green-300">
+                    <div class="flex justify-between items-center">
+                        <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
+                        <span class="text-2xl md:text-3xl font-bold text-green-600">{{ number_format($totalAmount) }}円</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
+                </div>
+                @endif
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

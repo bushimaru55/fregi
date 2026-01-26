@@ -294,7 +294,7 @@
                     <div class="flex gap-1 md:gap-2 items-center flex-wrap">
                         <input type="text" name="pan1" id="pan1" maxlength="4" pattern="\d{4}" 
                             class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan1') border-red-500 @enderror" 
-                            placeholder="1234" required autocomplete="cc-number">
+                            placeholder="1234" required>
                         <span class="text-gray-400">-</span>
                         <input type="text" name="pan2" id="pan2" maxlength="4" pattern="\d{4}" 
                             class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan2') border-red-500 @enderror" 
@@ -347,7 +347,7 @@
                         </label>
                         <input type="text" name="card_expiry_year" id="card_expiry_year" maxlength="4" pattern="\d{2,4}" 
                             class="w-full px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('card_expiry_year') border-red-500 @enderror" 
-                            placeholder="25 または 2025" required autocomplete="cc-exp-year">
+                            placeholder="25 または 2025" required>
                         @error('card_expiry_year')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -362,7 +362,7 @@
                     </label>
                     <input type="text" name="card_name" id="card_name" maxlength="45" 
                         class="w-full px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('card_name') border-red-500 @enderror" 
-                        placeholder="TARO YAMADA" required autocomplete="cc-name">
+                        placeholder="TARO YAMADA" required>
                     @error('card_name')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -376,7 +376,7 @@
                     </label>
                     <input type="text" name="scode" id="scode" maxlength="4" pattern="\d{3,4}" 
                         class="w-32 md:w-32 px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('scode') border-red-500 @enderror" 
-                        placeholder="123" autocomplete="cc-csc">
+                        placeholder="123">
                     @error('scode')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror

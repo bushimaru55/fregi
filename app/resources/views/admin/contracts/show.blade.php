@@ -166,11 +166,27 @@
     </div>
     @endif
 
+    {{-- カード情報 --}}
+    @if($contract->card_last4)
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
+            <i class="fas fa-credit-card mr-2"></i>カード情報
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">カード番号（末尾4桁）</p>
+                <p class="text-lg font-mono font-semibold text-gray-800">**** **** **** {{ $contract->card_last4 }}</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- 決済情報 --}}
     @if($contract->payment)
     <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
-            <i class="fas fa-credit-card mr-2"></i>決済情報
+            <i class="fas fa-money-bill-wave mr-2"></i>決済情報
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

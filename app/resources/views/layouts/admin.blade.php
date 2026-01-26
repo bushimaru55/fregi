@@ -73,15 +73,11 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto">
+                    <a href="{{ route('admin.dashboard') }}">
+                        <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer">
+                    </a>
                 </div>
                 <nav class="hidden md:flex space-x-6">
-                    <a href="{{ url('/billing/') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-home mr-2"></i>ホーム
-                    </a>
-                    <a href="{{ route('admin.dashboard') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
-                    </a>
                     <a href="{{ route('admin.contracts.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-list-alt mr-2"></i>契約管理
                     </a>
