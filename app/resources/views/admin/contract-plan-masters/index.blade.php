@@ -5,7 +5,7 @@
 @section('content')
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">契約プランマスター管理</h1>
-        <a href="{{ route('admin.contract-plan-masters.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+        <a href="{{ route('admin.contract-plan-masters.create') }}" class="btn-primary font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
             <i class="fas fa-plus mr-2"></i>新規作成
         </a>
     </div>
@@ -18,7 +18,7 @@
         @else
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                    <tr class="theme-table-header uppercase text-sm leading-normal">
                         <th class="py-3 px-6 text-left">ID</th>
                         <th class="py-3 px-6 text-left">マスター名</th>
                         <th class="py-3 px-6 text-left">説明</th>
@@ -53,7 +53,7 @@
                                     <a href="{{ route('admin.contract-plan-masters.edit', $master->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
                                         <i class="fas fa-edit mr-1"></i>編集
                                     </a>
-                                    <form action="{{ route('admin.contract-plan-masters.destroy', $master->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                    <form action="{{ route('admin.contract-plan-masters.destroy', $master->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">

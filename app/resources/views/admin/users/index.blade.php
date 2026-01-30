@@ -60,7 +60,7 @@
             </div>
             <div class="flex items-center space-x-2">
                 @if(count($notificationEmails) > 0)
-                    <form action="{{ route('admin.users.send-test-notification-email') }}" method="POST" class="inline" onsubmit="return confirm('登録済みの送信先（{{ count($notificationEmails) }}件）にテストメールを送信します。よろしいですか？');">
+                    <form action="{{ route('admin.users.send-test-notification-email') }}" method="POST" class="inline inline-confirm-form" data-confirm="登録済みの送信先（{{ count($notificationEmails) }}件）にテストメールを送信します。よろしいですか？">
                         @csrf
                         <button type="submit" class="btn-primary font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                             <i class="fas fa-paper-plane mr-2"></i>送信テスト
@@ -109,7 +109,7 @@
                                         <i class="fas fa-edit mr-1"></i>編集
                                     </a>
                                     @if($user->id !== auth()->id())
-                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">

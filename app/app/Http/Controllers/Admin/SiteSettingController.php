@@ -23,8 +23,11 @@ class SiteSettingController extends Controller
         $topPageUrl = SiteSetting::getTextValue('top_page_url', '');
         // 製品ページのURLを取得
         $productPageUrl = SiteSetting::getTextValue('product_page_url', '');
+        // 返信メール設定を取得
+        $replyMailHeader = SiteSetting::getTextValue('reply_mail_header', '');
+        $replyMailFooter = SiteSetting::getTextValue('reply_mail_footer', '');
         
-        return view('admin.site-settings.index', compact('termsOfService', 'topPageUrl', 'productPageUrl'));
+        return view('admin.site-settings.index', compact('termsOfService', 'topPageUrl', 'productPageUrl', 'replyMailHeader', 'replyMailFooter'));
     }
 
     /**
@@ -176,6 +179,64 @@ class SiteSettingController extends Controller
             return redirect()
                 ->route('admin.site-settings.index')
                 ->with('success', '製品ページのURLを更新しました。');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['error' => '更新に失敗しました: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 返信メール設定の編集画面を表示
+     */
+    public function editReplyMail()
+    {
+        $replyMailHeader = SiteSetting::getTextValue('reply_mail_header', '');
+        $replyMailFooter = SiteSetting::getTextValue('reply_mail_footer', '');
+
+        return view('admin.site-settings.edit-reply-mail', compact('replyMailHeader', 'replyMailFooter'));
+    }
+
+    /**
+     * 返信メール設定を更新
+     */
+    public function updateReplyMail(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'reply_mail_header' => ['nullable', 'string', 'max:10000'],
+            'reply_mail_footer' => ['nullable', 'string', 'max:10000'],
+        ], [
+            'reply_mail_header.max' => '上部文章は10000文字以内で入力してください。',
+            'reply_mail_footer.max' => '下部文章は10000文字以内で入力してください。',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            // 空の場合は ConvertEmptyStringsToNull で null になるため、必ず string に正規化する
+            $header = (string) ($request->input('reply_mail_header') ?? '');
+            $footer = (string) ($request->input('reply_mail_footer') ?? '');
+
+            // DBに保存（テキスト形式）
+            SiteSetting::setTextValue(
+                'reply_mail_header',
+                $header,
+                '申込者への返信メールの上部文章'
+            );
+            
+            SiteSetting::setTextValue(
+                'reply_mail_footer',
+                $footer,
+                '申込者への返信メールの下部文章'
+            );
+
+            return redirect()
+                ->route('admin.site-settings.index')
+                ->with('success', '返信メール設定を更新しました。');
         } catch (\Exception $e) {
             return back()
                 ->withInput()

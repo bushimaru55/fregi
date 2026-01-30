@@ -109,10 +109,6 @@
                 <i class="fas fa-plus text-3xl mb-2"></i>
                 <p class="font-semibold">プラン新規作成</p>
             </a>
-            <a href="{{ route('admin.fregi-configs.index') }}" class="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
-                <i class="fas fa-cog text-3xl mb-2"></i>
-                <p class="font-semibold">F-REGI設定</p>
-            </a>
             <a href="{{ route('admin.site-settings.index') }}" class="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
                 <i class="fas fa-globe text-3xl mb-2"></i>
                 <p class="font-semibold">サイト管理</p>

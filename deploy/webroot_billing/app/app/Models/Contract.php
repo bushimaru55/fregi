@@ -31,9 +31,11 @@ class Contract extends Model
         'address_line2',
         'usage_url_domain',
         'import_from_trial',
+        'desired_start_date',
         'actual_start_date',
         'end_date',
         'notes',
+        'card_last4',
     ];
 
     protected $casts = [
@@ -52,11 +54,19 @@ class Contract extends Model
     }
 
     /**
-     * 決済情報
+     * 決済情報（主決済 - 後方互換性のため維持）
      */
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id');
+    }
+
+    /**
+     * 決済情報（複数決済に対応）
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'contract_id');
     }
 
     /**
@@ -110,6 +120,7 @@ class Contract extends Model
         return match($this->status) {
             'draft' => '下書き',
             'pending_payment' => '決済待ち',
+            'submitted' => '申込受付済み',
             'active' => '有効',
             'canceled' => 'キャンセル',
             'expired' => '期限切れ',

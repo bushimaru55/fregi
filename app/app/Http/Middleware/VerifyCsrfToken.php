@@ -12,6 +12,5 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        'api/fregi/notify', // F-REGI通知はCSRF除外
     ];
 }

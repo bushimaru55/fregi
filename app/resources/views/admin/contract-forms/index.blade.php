@@ -15,7 +15,7 @@
     </div>
 
     @if(session('success'))
-        <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 mb-6">
+        <div class="theme-alert-success rounded-lg p-4 mb-6">
             <p class="text-green-800">
                 <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
             </p>
@@ -23,7 +23,7 @@
     @endif
 
     @if(session('generated_view_url'))
-        <div class="bg-green-50 border-2 border-green-500 rounded-lg p-6 mb-6">
+        <div class="theme-alert-success rounded-lg p-6 mb-6">
             <h2 class="text-xl font-bold text-gray-800 mb-4">
                 <i class="fas fa-check-circle text-green-500 mr-2"></i>閲覧画面用URLが生成されました
             </h2>
@@ -35,7 +35,7 @@
                     class="flex-1 px-4 py-2 border-2 border-green-300 rounded-lg bg-white font-mono text-sm">
                 <button 
                     onclick="copyUrl('generated-view-url', 'copy-success-view')" 
-                    class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+                    class="btn-primary px-6 py-2 font-bold rounded-lg shadow-md transition duration-300">
                     <i class="fas fa-copy mr-2"></i>コピー
                 </button>
             </div>
@@ -45,7 +45,7 @@
             <div class="mt-4">
                 <a href="{{ session('generated_view_url') }}" 
                     target="_blank"
-                    class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-300">
+                    class="btn-cta inline-block px-4 py-2 font-semibold rounded-lg transition duration-300">
                     <i class="fas fa-external-link-alt mr-2"></i>新しいタブで開く
                 </a>
             </div>
@@ -66,9 +66,10 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                        <tr class="theme-table-header uppercase text-sm leading-normal">
                             <th class="py-3 px-6 text-left">生成日時</th>
                             <th class="py-3 px-6 text-left">URL</th>
+                            <th class="py-3 px-6 text-left">選択されているプラン名（複数対応）</th>
                             <th class="py-3 px-6 text-left">プラン数</th>
                             <th class="py-3 px-6 text-left">有効期限</th>
                             <th class="py-3 px-6 text-left">ステータス</th>
@@ -99,6 +100,12 @@
                                     </div>
                                 </td>
                                 <td class="py-3 px-6 text-left">
+                                    @php
+                                        $names = isset($planNames) ? array_map(fn($id) => $planNames[$id] ?? '（削除済み）', $savedUrl->plan_ids ?? []) : [];
+                                    @endphp
+                                    {{ implode('、', $names) ?: '—' }}
+                                </td>
+                                <td class="py-3 px-6 text-left">
                                     {{ count($savedUrl->plan_ids) }}件
                                 </td>
                                 <td class="py-3 px-6 text-left">
@@ -115,11 +122,10 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-6 text-center">
-                                    <form action="{{ route('admin.contract-forms.destroy', $savedUrl) }}" method="POST" 
-                                        onsubmit="return confirm('このURLを削除してもよろしいですか？');">
+                                    <form action="{{ route('admin.contract-forms.destroy', $savedUrl) }}" method="POST" class="inline-confirm-form" data-confirm="このURLを削除してもよろしいですか？">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" 
+                                        <button type="submit"
                                             class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition duration-300">
                                             <i class="fas fa-trash mr-1"></i>削除
                                         </button>
@@ -174,7 +180,7 @@
             @else
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                        <tr class="theme-table-header uppercase text-sm leading-normal">
                             <th class="py-3 px-6 text-left w-12">
                                 <input type="checkbox" 
                                     id="select-all-checkbox" 

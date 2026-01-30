@@ -59,25 +59,32 @@ mkdir -p "$DEPLOY_APP_DIR"
 echo -e "${GREEN}作成完了${NC}"
 echo ""
 
-# Viteビルドの実行
-echo -e "${YELLOW}Viteビルドを実行します...${NC}"
-cd "$APP_DIR"
+# Viteビルドの実行（一時ディレクトリで実行し、ローカル app/public/build は変更しない）
+echo -e "${YELLOW}Viteビルドを一時ディレクトリで実行します（ローカル app/public/build は変更しません）...${NC}"
+BUILD_TMP=$(mktemp -d 2>/dev/null || mktemp -d -t 'billing_deploy')
+if command -v rsync &> /dev/null; then
+    rsync -a --exclude=node_modules --exclude=vendor --exclude=.git "$APP_DIR/" "$BUILD_TMP/app_src/"
+else
+    cp -r "$APP_DIR" "$BUILD_TMP/app_src"
+    rm -rf "$BUILD_TMP/app_src/node_modules" "$BUILD_TMP/app_src/vendor" 2>/dev/null || true
+fi
+cd "$BUILD_TMP/app_src"
 if [ ! -d "node_modules" ]; then
-    echo -e "${YELLOW}node_modulesが見つかりません。npm installを実行します...${NC}"
+    echo -e "${YELLOW}node_modules をインストールしています...${NC}"
     npm install
 fi
 npm run build
-echo -e "${GREEN}Viteビルド完了${NC}"
-
-# manifest.jsonの存在確認
-if [ ! -f "$APP_DIR/public/build/manifest.json" ]; then
-    echo -e "${RED}エラー: manifest.jsonが見つかりません${NC}"
+if [ ! -f "$BUILD_TMP/app_src/public/build/manifest.json" ]; then
+    echo -e "${RED}エラー: ビルド後に manifest.json が見つかりません${NC}"
+    rm -rf "$BUILD_TMP"
     exit 1
 fi
-echo -e "${GREEN}manifest.json確認: $APP_DIR/public/build/manifest.json${NC}"
-echo ""
-
+cp -r "$BUILD_TMP/app_src/public/build" "$DEPLOY_DIR/build"
+echo -e "${GREEN}Viteビルド完了（成果物を deploy にコピー済み）${NC}"
 cd "$PROJECT_ROOT"
+rm -rf "$BUILD_TMP"
+echo -e "${GREEN}manifest.json確認: $DEPLOY_DIR/build/manifest.json${NC}"
+echo ""
 
 # 公開ディレクトリのコピー
 echo -e "${YELLOW}公開ディレクトリをコピーします...${NC}"
@@ -96,11 +103,7 @@ if [ -f "$APP_DIR/public/.htaccess" ]; then
     fi
 fi
 
-# build/のコピー
-if [ -d "$APP_DIR/public/build" ]; then
-    cp -r "$APP_DIR/public/build" "$DEPLOY_DIR/build"
-    echo -e "${GREEN}build/ をコピー完了${NC}"
-fi
+# build/ は上記の一時ディレクトリビルドで既に配置済み
 
 # css/のコピー
 if [ -d "$APP_DIR/public/css" ]; then
@@ -298,8 +301,8 @@ echo ""
 echo -e "生成先: ${GREEN}$DEPLOY_DIR${NC}"
 echo ""
 echo -e "${YELLOW}次のステップ:${NC}"
-echo "1. app/.env ファイルを設定してください"
-echo "2. FTPでアップロードしてください"
-echo "3. パーミッションを設定してください（775）"
+echo "1. app/.env を配置: AIdocs/本番環境.envテンプレート.txt をコピーし deploy/webroot_billing/app/.env に保存して本番の値を設定"
+echo "2. FTPで deploy/webroot_billing/ の中身を /httpdocs/webroot/billing/ にアップロード"
+echo "3. パーミッションを設定してください（app/storage, app/bootstrap/cache を 775）"
 echo "4. 動作確認を行ってください"
 echo ""

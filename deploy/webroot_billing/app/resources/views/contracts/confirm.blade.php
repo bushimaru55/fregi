@@ -44,7 +44,7 @@
                 </p>
             </div>
         @else
-            <p class="text-sm md:text-base text-gray-600">以下の内容でお申し込みします。よろしければ「決済へ進む」ボタンをクリックしてください。</p>
+            <p class="text-sm md:text-base text-gray-600">以下の内容でお申し込みします。よろしければ「申し込む」ボタンをクリックしてください。</p>
         @endif
     </div>
 
@@ -272,119 +272,6 @@
         </div>
         @endif
 
-        {{-- 4. お支払い情報（カード情報入力） --}}
-        <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 section-title">
-                <i class="fas fa-credit-card mr-2"></i>お支払い情報
-            </h2>
-
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
-                <p class="text-xs md:text-sm text-gray-700">
-                    <i class="fas fa-shield-alt text-yellow-500 mr-2"></i>
-                    クレジットカード情報はSSL暗号化通信により安全に送信されます。
-                </p>
-            </div>
-
-            <div class="space-y-4 md:space-y-6">
-                {{-- カード番号 --}}
-                <div>
-                    <label for="card_number" class="block text-sm font-semibold text-gray-700 mb-2">
-                        カード番号 <span class="text-red-500">*</span>
-                    </label>
-                    <div class="flex gap-1 md:gap-2 items-center flex-wrap">
-                        <input type="text" name="pan1" id="pan1" maxlength="4" pattern="\d{4}" 
-                            class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan1') border-red-500 @enderror" 
-                            placeholder="1234" required autocomplete="cc-number">
-                        <span class="text-gray-400">-</span>
-                        <input type="text" name="pan2" id="pan2" maxlength="4" pattern="\d{4}" 
-                            class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan2') border-red-500 @enderror" 
-                            placeholder="5678" required>
-                        <span class="text-gray-400">-</span>
-                        <input type="text" name="pan3" id="pan3" maxlength="4" pattern="\d{4}" 
-                            class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan3') border-red-500 @enderror" 
-                            placeholder="9012" required>
-                        <span class="text-gray-400">-</span>
-                        <input type="text" name="pan4" id="pan4" maxlength="4" pattern="\d{4}" 
-                            class="w-20 md:w-24 px-2 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('pan4') border-red-500 @enderror" 
-                            placeholder="3456" required>
-                    </div>
-                    @error('pan1')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    @error('pan2')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    @error('pan3')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    @error('pan4')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500 mt-1">16桁のカード番号を4桁ずつ入力してください</p>
-                </div>
-
-                {{-- 有効期限 --}}
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="card_expiry_month" class="block text-sm font-semibold text-gray-700 mb-2">
-                            有効期限（月） <span class="text-red-500">*</span>
-                        </label>
-                        <select name="card_expiry_month" id="card_expiry_month" 
-                            class="w-full px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('card_expiry_month') border-red-500 @enderror" 
-                            required>
-                            <option value="">--</option>
-                            @for($i = 1; $i <= 12; $i++)
-                                <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</option>
-                            @endfor
-                        </select>
-                        @error('card_expiry_month')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="card_expiry_year" class="block text-sm font-semibold text-gray-700 mb-2">
-                            有効期限（年） <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" name="card_expiry_year" id="card_expiry_year" maxlength="4" pattern="\d{2,4}" 
-                            class="w-full px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('card_expiry_year') border-red-500 @enderror" 
-                            placeholder="25 または 2025" required autocomplete="cc-exp-year">
-                        @error('card_expiry_year')
-                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                        <p class="text-xs text-gray-500 mt-1">2桁または4桁で入力（例: 25 または 2025）</p>
-                    </div>
-                </div>
-
-                {{-- カード名義 --}}
-                <div>
-                    <label for="card_name" class="block text-sm font-semibold text-gray-700 mb-2">
-                        カード名義 <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="card_name" id="card_name" maxlength="45" 
-                        class="w-full px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('card_name') border-red-500 @enderror" 
-                        placeholder="TARO YAMADA" required autocomplete="cc-name">
-                    @error('card_name')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500 mt-1">カード表面に記載されている名義をアルファベット（大文字）で入力してください（45文字以内）</p>
-                </div>
-
-                {{-- セキュリティコード --}}
-                <div>
-                    <label for="scode" class="block text-sm font-semibold text-gray-700 mb-2">
-                        セキュリティコード
-                    </label>
-                    <input type="text" name="scode" id="scode" maxlength="4" pattern="\d{3,4}" 
-                        class="w-32 md:w-32 px-3 md:px-3 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('scode') border-red-500 @enderror" 
-                        placeholder="123" autocomplete="cc-csc">
-                    @error('scode')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-gray-500 mt-1">カード裏面の3桁または4桁の数字（任意）</p>
-                </div>
-            </div>
-        </div>
-
         {{-- ボタン --}}
         <div class="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-6 md:mb-8">
             @if(isset($isViewOnly) && $isViewOnly)
@@ -396,7 +283,7 @@
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
                 <button type="submit" class="px-6 md:px-8 py-3 btn-orange font-bold rounded-lg shadow-md transition duration-300 text-base">
-                    <i class="fas fa-lock mr-2"></i>決済へ進む
+                    <i class="fas fa-paper-plane mr-2"></i>申し込む
                 </button>
             @endif
         </div>
@@ -405,116 +292,5 @@
     </form>
     @endif
 </div>
-
-<script>
-// カード番号の自動フォーカス移動（4桁入力で次のフィールドへ）と全角数字→半角数字変換
-(function() {
-    const pan1 = document.getElementById('pan1');
-    const pan2 = document.getElementById('pan2');
-    const pan3 = document.getElementById('pan3');
-    const pan4 = document.getElementById('pan4');
-    
-    // 全角数字を半角数字に変換する関数
-    function toHalfWidthNumber(str) {
-        return str.replace(/[０-９]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-        });
-    }
-    
-    if (pan1 && pan2 && pan3 && pan4) {
-        // 数字のみ入力可能にする（全角数字→半角数字変換含む）
-        [pan1, pan2, pan3, pan4].forEach(function(input) {
-            input.addEventListener('input', function(e) {
-                // 全角数字を半角数字に変換
-                let value = toHalfWidthNumber(e.target.value);
-                // 数字以外を削除
-                e.target.value = value.replace(/[^\d]/g, '');
-            });
-            
-            // 4桁入力で次のフィールドにフォーカス移動
-            input.addEventListener('input', function(e) {
-                if (e.target.value.length === 4) {
-                    if (e.target === pan1) {
-                        pan2.focus();
-                    } else if (e.target === pan2) {
-                        pan3.focus();
-                    } else if (e.target === pan3) {
-                        pan4.focus();
-                    }
-                }
-            });
-            
-            // Backspaceで前のフィールドに戻る（空の場合）
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Backspace' && e.target.value.length === 0) {
-                    if (e.target === pan2) {
-                        pan1.focus();
-                    } else if (e.target === pan3) {
-                        pan2.focus();
-                    } else if (e.target === pan4) {
-                        pan3.focus();
-                    }
-                }
-            });
-        });
-    }
-})();
-
-// 有効期限（年）の全角数字→半角数字変換
-(function() {
-    const cardExpiryYearInput = document.getElementById('card_expiry_year');
-    
-    // 全角数字を半角数字に変換する関数
-    function toHalfWidthNumber(str) {
-        return str.replace(/[０-９]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-        });
-    }
-    
-    if (cardExpiryYearInput) {
-        cardExpiryYearInput.addEventListener('input', function(e) {
-            // 全角数字を半角数字に変換
-            let value = toHalfWidthNumber(e.target.value);
-            // 数字のみを残す
-            e.target.value = value.replace(/[^\d]/g, '');
-        });
-        
-        cardExpiryYearInput.addEventListener('blur', function(e) {
-            // 全角数字を半角数字に変換
-            let value = toHalfWidthNumber(e.target.value);
-            // 数字のみを残す
-            e.target.value = value.replace(/[^\d]/g, '');
-        });
-    }
-})();
-
-// セキュリティコードの全角数字→半角数字変換
-(function() {
-    const scodeInput = document.getElementById('scode');
-    
-    // 全角数字を半角数字に変換する関数
-    function toHalfWidthNumber(str) {
-        return str.replace(/[０-９]/g, function(s) {
-            return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-        });
-    }
-    
-    if (scodeInput) {
-        scodeInput.addEventListener('input', function(e) {
-            // 全角数字を半角数字に変換
-            let value = toHalfWidthNumber(e.target.value);
-            // 数字のみを残す
-            e.target.value = value.replace(/[^\d]/g, '');
-        });
-        
-        scodeInput.addEventListener('blur', function(e) {
-            // 全角数字を半角数字に変換
-            let value = toHalfWidthNumber(e.target.value);
-            // 数字のみを残す
-            e.target.value = value.replace(/[^\d]/g, '');
-        });
-    }
-})();
-</script>
 @endsection
 

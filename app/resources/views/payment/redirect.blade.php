@@ -27,7 +27,7 @@
                 <input type="hidden" name="{{ $key }}" value="{{ $value }}">
             @endforeach
             
-            <button type="submit" class="gradient-bg text-white px-8 py-4 rounded-lg hover:opacity-90 transition shadow-lg">
+            <button type="submit" class="theme-btn-primary px-8 py-4 rounded-lg hover:opacity-90 transition shadow-lg border-0 cursor-pointer">
                 <i class="fas fa-arrow-right mr-2"></i>決済ページへ進む
             </button>
         </form>

@@ -17,7 +17,3 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-// F-REGI通知受領（受付CGI）
-Route::post('/fregi/notify', [\App\Http\Controllers\Api\FregiNotifyController::class, 'handle'])
-    ->name('api.fregi.notify');

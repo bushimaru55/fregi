@@ -17,8 +17,13 @@ class Product extends Model
         'description',
         'unit_price',
         'type',
+        'billing_type',
         'is_active',
         'display_order',
+    ];
+
+    protected $attributes = [
+        'billing_type' => 'one_time',
     ];
 
     protected $casts = [
@@ -64,10 +69,15 @@ class Product extends Model
 
     /**
      * 価格を税込表示用にフォーマット
+     * オプション製品で月額課金の場合は「/月額」を付与
      */
     public function getFormattedPriceAttribute(): string
     {
-        return number_format($this->unit_price) . '円';
+        $price = number_format($this->unit_price) . '円';
+        if ($this->type === 'option' && ($this->billing_type ?? 'one_time') === 'monthly') {
+            $price .= '/月額';
+        }
+        return $price;
     }
 
     /**
@@ -81,5 +91,25 @@ class Product extends Model
             'addon' => '追加商品',
             default => '不明',
         };
+    }
+
+    /**
+     * 決済タイプのラベルを取得（オプション製品の1回限り・月額課金表示用）
+     */
+    public function getBillingTypeLabelAttribute(): string
+    {
+        return match($this->billing_type ?? 'one_time') {
+            'monthly' => '月額課金',
+            'one_time' => '一回限り',
+            default => '一回限り',
+        };
+    }
+
+    /**
+     * オプション製品かどうか
+     */
+    public function isOption(): bool
+    {
+        return $this->type === 'option';
     }
 }

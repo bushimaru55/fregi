@@ -29,7 +29,8 @@
 ### 2.1 ローカルで開発・動作確認
 - Dockerで `migrate`/`seed` を実行してUIを完成させる
 - ルーティング・画面・Filament管理画面が動くこと
-- F-REGI連携の疎通（notify/return）が期待通りに動くこと
+- 申込フォーム〜申込受付完了フローが動くこと
+- 申込受付時の通知メール送信・送信先設定・送信テストが動くこと
 
 ### 2.2 本番投入用成果物を作る（deploy/）
 - `deploy/webroot_billing/` に **本番で必要なものだけ**を複製
@@ -64,13 +65,11 @@
 
 ---
 
-## 5. ルーティング確認（F-REGI）
-- 通知URL（POST想定）:
-  - `https://dschatbot.ai/webroot/billing/api/fregi/notify`
-  - ブラウザでGETすると 405 になってもOK（ルート存在のサイン）
-- 戻りURL:
-  - `https://dschatbot.ai/webroot/billing/return/success`
-  - `https://dschatbot.ai/webroot/billing/return/cancel`
+## 5. デプロイ後の確認
+- 申込フォーム: `https://dschatbot.ai/webroot/billing/` または `/contract/create`
+- 申込完了: 申込〜完了画面まで正常に動作すること
+- 管理画面: ログイン・申込一覧・契約詳細が表示されること
+- 送信先メール: 管理者管理から送信先メールアドレス設定・保存・送信テストができること（本番 MAIL_* 設定後）
 
 ---
 
@@ -96,142 +95,14 @@
 
 ---
 
-## 9. 必須環境変数：FREGI_SECRET_KEY
+## 9. 本番必須環境変数
 
-### 概要
-F-REGI設定の接続パスワードを暗号化するために使用する秘密鍵です。**ローカル・本番ともに必須**です。
+本番用 `.env` は `deploy/webroot_billing/app/.env` に配置し、以下を必ず設定する。
 
-### キーの生成方法
+- **APP_KEY**: `php artisan key:generate` で生成した値（ローカルで生成しコピー可）
+- **DB_***: 本番DBの接続情報（DB_DATABASE, DB_USERNAME, DB_PASSWORD）
+- **APP_URL**: `https://dschatbot.ai/webroot/billing`
+- **SESSION_PATH**: `/webroot/billing`
+- **MAIL_***: 申込受付通知・送信テスト用（MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_ADDRESS 等。本番メールサーバに合わせて設定）
 
-以下のいずれかのコマンドで32バイトのBase64エンコードされたキーを生成できます：
-
-**macOS/Linux:**
-```bash
-# opensslを使用（推奨）
-openssl rand -base64 32
-
-# Pythonを使用
-python3 - <<'PY'
-import os
-import base64
-print(base64.b64encode(os.urandom(32)).decode('utf-8'))
-PY
-```
-
-**生成例:**
-```
-Y1AExhmfYZYSwOJ24QRTEV1YoD87NxzwBNLmMdZsUSc=
-```
-
-### .envへの設定
-
-生成したキーを`.env`ファイルに追加：
-
-```env
-FREGI_SECRET_KEY=Y1AExhmfYZYSwOJ24QRTEV1YoD87NxzwBNLmMdZsUSc=
-```
-
-### 本番環境での設定
-
-本番環境（Plesk）では、`deploy/webroot_billing/app/.env`に設定してください。
-
-**重要：** 本番環境の`FREGI_SECRET_KEY`は**パスワードと同等の機密情報**として管理してください。
-
-### 重要な注意事項
-
-1. **環境間でのキー共有**
-   - 本番とローカルで**同じキーを使う必要があるか？**
-     - 現仕様では、`connect_password_enc`を復号してF-REGI APIに送信するため、**本番DBの復号には本番キーが必要**です
-     - 環境ごとに別キーにすることは可能ですが、**DBを移送する場合は注意**が必要です
-   - 推奨：本番とローカルで**別キーを使用**し、本番DBをローカルに移行する場合は、一時的に本番キーを設定して復号・再暗号化を行う
-
-2. **キーローテーション時の注意**
-   - キーを変更すると、既存の`connect_password_enc`を復号できなくなる可能性があります
-   - ローテーション時は、以下の手順が必要です：
-     1. 旧キーで既存の`connect_password_enc`を復号
-     2. 新キーで再暗号化
-     3. 管理画面からF-REGI設定を再保存（パスワードを再入力）
-
-3. **未設定時のエラー**
-   - `FREGI_SECRET_KEY`が未設定のままF-REGI設定を保存しようとすると、管理画面に以下のエラーが表示されます：
-     - `F-REGI暗号化キー（FREGI_SECRET_KEY）が未設定です。.env に設定してから再度保存してください。`
-   - 500エラーではなく、分かりやすいエラーメッセージが表示されます
-
-4. **キーの保管**
-   - 本番環境の`FREGI_SECRET_KEY`は安全なパスワードマネージャー等に保管してください
-   - バックアップ・移行時に使用できるようにしておいてください
-
----
-
-## 10. F-REGI接続先の制御：FREGI_ENV
-
-### 概要
-F-REGI APIへの接続先を制御する環境変数です。`APP_ENV`とは独立して設定できます。
-
-- **`FREGI_ENV=test`**: テスト環境（`https://ssl.f-regi.com/connecttest/authm.cgi`）
-- **`FREGI_ENV=prod`**: 本番環境（`https://ssl.f-regi.com/connect/authm.cgi`）
-
-**重要**: 本番サーバ（`APP_ENV=production`）でも、テスト接続を行う場合は`FREGI_ENV=test`を設定してください。
-
-### .envへの設定
-
-```env
-# F-REGI接続先（test: テスト環境, prod: 本番環境）
-FREGI_ENV=test
-```
-
-### 本番環境（Plesk）での設定手順
-
-1. **`.env`ファイルに追記**
-   - ファイルパス: `/httpdocs/webroot/billing/app/.env`
-   - 追記内容:
-     ```env
-     FREGI_ENV=test
-     ```
-   - 注意: 既存の`.env`ファイルに追記してください（上書きしない）
-
-2. **Config Cacheの再生成（重要）**
-   - Pleskでは`php artisan`コマンドが実行できないため、以下の方法で対応：
-   
-   **方法1: Config Cacheファイルを削除**
-   - ファイルパス: `/httpdocs/webroot/billing/app/bootstrap/cache/config.php`
-   - このファイルを削除すると、次回アクセス時に自動的に再生成されます
-   - Pleskファイルマネージャーから削除可能
-   
-   **方法2: ブラウザでアクセスして再生成**
-   - 管理画面にアクセスすると、config cacheが自動的に再生成されます
-   - ただし、既存のcacheファイルがある場合は反映されないため、**方法1を推奨**
-
-3. **設定確認**
-   - ログファイル（`storage/logs/laravel.log`）で以下を確認：
-     - `F-REGIオーソリ処理送信前`ログに`fregi_env: test`と`auth_url: https://ssl.f-regi.com/connecttest/authm.cgi`が記録されていること
-   - ログ確認方法（Pleskファイルマネージャー）:
-     - `/httpdocs/webroot/billing/app/storage/logs/laravel.log`を開く
-     - 最新の`F-REGIオーソリ処理送信前`ログを確認
-
-### トラブルシューティング
-
-**問題**: `.env`に`FREGI_ENV=test`を設定したが、まだ`connect/authm.cgi`に接続している
-
-**原因**: Config Cacheが古いまま
-
-**対処**:
-1. `/httpdocs/webroot/billing/app/bootstrap/cache/config.php`を削除
-2. 管理画面にアクセスしてconfig cacheを再生成
-3. 再度F-REGI決済を実行してログを確認
-
-**問題**: ログに`fregi_env`や`auth_url`が表示されない
-
-**原因**: 古いコードがデプロイされている可能性
-
-**対処**:
-1. `FregiApiService.php`が最新版であることを確認
-2. ファイルの更新日時を確認
-3. 必要に応じて再デプロイ
-
-### 注意事項
-
-- `FREGI_ENV`は`APP_ENV`とは独立しています
-- 本番サーバ（`APP_ENV=production`）でも`FREGI_ENV=test`を設定することで、テスト環境に接続できます
-- `FREGI_ENV`を変更した場合は、必ずconfig cacheを再生成してください
-- ログには`fregi_env`と`auth_url`が記録されるため、接続先を確認できます
+`.env` 変更後、Pleskでは `php artisan config:clear` が使えないため、`/httpdocs/webroot/billing/app/bootstrap/cache/config.php` を削除すると次回アクセス時に再生成される。

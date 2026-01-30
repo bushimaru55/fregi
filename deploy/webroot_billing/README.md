@@ -91,31 +91,13 @@ chown -R www-data:www-data /var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing
 
 ### 2. 必須設定項目
 
-```env
-APP_NAME="Billing System"
-APP_ENV=production
-APP_KEY=                    # 後で生成
-APP_DEBUG=false
-APP_URL=https://dschatbot.ai/webroot/billing
+プロジェクトルートの `AIdocs/本番環境.envテンプレート.txt` をコピーし、`app/.env` として保存してから本番の値を設定してください。
 
-LOG_CHANNEL=stack
-LOG_LEVEL=error
-
-DB_CONNECTION=mysql
-DB_HOST=localhost
-DB_PORT=3306
-DB_DATABASE=               # 本番環境のデータベース名
-DB_USERNAME=               # 本番環境のデータベースユーザー名
-DB_PASSWORD=               # 本番環境のデータベースパスワード
-
-SESSION_DRIVER=file
-SESSION_LIFETIME=120
-SESSION_COOKIE=billing_session
-SESSION_PATH=/webroot/billing
-
-# F-REGI暗号化キー
-FREGI_SECRET_KEY=          # ローカル環境の.envからコピー
-```
+- `APP_KEY`: ローカルで `php artisan key:generate --show` で生成した値
+- `APP_URL=https://dschatbot.ai/webroot/billing`
+- `SESSION_PATH=/webroot/billing`
+- `DB_*`: 本番データベース接続情報
+- `MAIL_*`: 申込受付通知・送信テスト用（本番メールサーバに合わせて設定）
 
 ### 3. APP_KEYの生成
 

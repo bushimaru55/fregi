@@ -127,6 +127,15 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // メール送信専用ログチャンネル（送信成功・失敗の原因特定用）
+        'mail' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/mail.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
         // 決済フロー専用ログチャンネル
         // 本番環境でもinfoレベルのログを記録するため、ログレベルをinfoに固定
         'contract_payment' => [

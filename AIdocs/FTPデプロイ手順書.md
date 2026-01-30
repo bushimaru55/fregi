@@ -1,7 +1,7 @@
 # FTPデプロイ手順書
 
 作成日: 2026-01-15  
-最終更新: 2026-01-21（オプション製品機能対応版）
+最終更新: 申込受付・通知メール仕様（1フォルダパッケージ）
 
 ## 前提条件
 
@@ -13,27 +13,30 @@
 
 ## 本番環境のディレクトリ構成
 
+デプロイは **1フォルダ** で行います。`deploy/webroot_billing/` の中身をそのまま `/httpdocs/webroot/billing/` にアップロードします。
+
 ```
-/var/www/vhosts/dschatbot.ai/httpdocs/
-├── laravel_billing/          # Laravel本体（非公開）
-│   ├── app/
-│   ├── bootstrap/
-│   ├── config/
-│   ├── database/
-│   ├── public/               # この中身は使わない（webrootに配置）
-│   ├── resources/
-│   ├── routes/
-│   ├── storage/
-│   ├── vendor/               # Composer依存関係
-│   ├── .env                  # 本番環境用設定ファイル
-│   └── ...
-└── webroot/
-    └── billing/              # 公開ディレクトリ（Laravel public）
-        ├── index.php         # 本番環境用（絶対パス設定）
-        ├── .htaccess
-        ├── css/
-        ├── js/
-        └── ...
+/var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/
+├── index.php         # スクリプトが生成（index.production.php のリネームは不要）
+├── .htaccess
+├── build/
+├── css/
+├── js/
+├── favicon.ico
+├── robots.txt
+└── app/              # Laravel 本体
+    ├── app/
+    ├── bootstrap/
+    ├── config/
+    ├── database/
+    ├── resources/
+    ├── routes/
+    ├── storage/
+    ├── vendor/
+    ├── .env          # 本番用（手動で配置。スクリプトではコピーされない）
+    ├── artisan
+    ├── composer.json
+    └── composer.lock
 ```
 
 ---
@@ -46,108 +49,55 @@
 
 **重要**: デプロイパッケージ（`deploy/webroot_billing/`）が最新のコードを反映していることを確認してください。
 
-**確認項目**:
-- `app/resources/views/contracts/create.blade.php` に最新の修正が含まれているか（`url()`ヘルパーを使用したURL生成）
-- `app/app/Http/Controllers/ContractController.php` に `getOptionProducts()` メソッドが含まれているか
-- `app/routes/web.php` に `contract.api.option-products` ルートが含まれているか
+**手順**:
+1. プロジェクトルートで `./scripts/build_deploy_webroot_billing.sh` を実行
+2. スクリプトはローカルの `app/public/build/` を変更せず、一時ディレクトリで Vite ビルドし、成果物のみ `deploy/webroot_billing/` に出力する
+3. 生成後、`deploy/webroot_billing/build/manifest.json` が存在することを確認
 
-**デプロイパッケージが古い場合**:
-1. 最新のコードを確認（コミット: `778ef57` 以降）
-2. デプロイパッケージを再生成
-3. 必要なファイルが最新であることを確認
+**デプロイパッケージが古い場合**: 上記スクリプトを再実行してからアップロードしてください。
 
-#### 1.2 本番環境用index.phpの準備
+#### 1.2 .envファイルの準備
 
-`app/public/index.production.php` を `app/public/index.php` として本番環境にアップロードします。
+本番用 `.env` は **スクリプトではコピーされません**。手動で準備します。
 
-**注意**: ローカルの `app/public/index.php` は相対パスを使用しているため、本番環境では `index.production.php` を使用してください。
+1. `AIdocs/本番環境.envテンプレート.txt` をコピー
+2. **deploy/webroot_billing/app/.env** として保存
+3. 本番の値を設定：
+   - `APP_KEY`（ローカルで `php artisan key:generate` で生成した値）
+   - データベース接続情報（`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`）
+   - `APP_URL=https://dschatbot.ai/webroot/billing`
+   - `SESSION_PATH=/webroot/billing`
+   - 申込受付通知・送信テスト用の `MAIL_*`（本番メールサーバに合わせる）
+   - `APP_DEBUG=false`, `LOG_LEVEL=error`
 
-#### 1.3 .envファイルの準備
-
-本番環境用の `.env` ファイルを準備します。`AIdocs/本番環境.envテンプレート.txt` をコピーして使用してください。
-
-**必須設定項目**:
-- `APP_KEY`: `php artisan key:generate` で生成した値
-- `FREGI_SECRET_KEY`: ローカル環境と同じ値（既存の暗号化データと互換性を保つため）
-- `FREGI_ENV=prod`: 本番環境では `prod` を設定
-- データベース接続情報（DB_DATABASE, DB_USERNAME, DB_PASSWORD）
-
-**重要**: 
-- `APP_DEBUG=false` を設定（本番環境）
-- `LOG_LEVEL=error` を設定（ただし、`contract_payment`チャンネルは`info`レベルで記録されます）
-
-#### 1.3 ファイルの準備
-
-以下のファイル・ディレクトリを準備します：
-
-1. **Laravel本体**（`app/` ディレクトリ全体）
-   - `vendor/` ディレクトリを含む（Composer依存関係）
-   - `.env` ファイル（本番環境用）
-
-2. **公開ディレクトリ**（`app/public/` の内容）
-   - `index.production.php` を `index.php` として配置
-   - `.htaccess`
-   - `css/`, `js/`, `fonts/`, `images/` などの静的ファイル
+**重要**: `index.php` はスクリプトが生成するため、`index.production.php` のリネーム手順は不要です。
 
 ---
 
 ### ステップ2: FTP接続とアップロード
 
-#### 2.1 Laravel本体のアップロード
+**アップロード先（1箇所）**: `/httpdocs/webroot/billing/`（Plesk の実際のパスは環境に応じて確認）
 
-FTPクライアントで以下のディレクトリにアップロード：
+**アップロードする内容**: **deploy/webroot_billing/** の **中身すべて** を上記ディレクトリにアップロード
 
-**アップロード先**: `/var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing/`
-
-**アップロードする内容**:
-- `app/` ディレクトリ（`public/` を除く）
-- `bootstrap/`
-- `config/`
-- `database/`
-- `resources/`
-- `routes/`
-- `storage/`（ディレクトリ構造のみ、中身は空でOK）
-- `vendor/`
-- `.env`（本番環境用）
-- `artisan`
-- `composer.json`
-- `composer.lock`
-
-**注意**: 
-- `public/` ディレクトリはアップロードしない（次のステップで別途アップロード）
-- `.git/` ディレクトリはアップロードしない
-
-#### 2.2 公開ディレクトリのアップロード
-
-FTPクライアントで以下のディレクトリにアップロード：
-
-**アップロード先**: `/var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/`
-
-**アップロードする内容**:
-- `index.production.php` → `index.php` として配置
+- `index.php`（スクリプトが生成済み）
 - `.htaccess`
-- `css/` ディレクトリとその中身
-- `js/` ディレクトリとその中身
-- `fonts/` ディレクトリとその中身（存在する場合）
-- `images/` ディレクトリとその中身（存在する場合）
+- `build/`, `css/`, `js/`, `favicon.ico`, `robots.txt` 等
+- `app/` ディレクトリ一式（Laravel 本体。その中に本番用 `.env` を配置済みであること）
 
-**重要**: `index.production.php` を `index.php` としてアップロードしてください。
+**注意**:
+- `.git/` はアップロードしない（deploy パッケージには含まれない想定）
+- 本番用 `.env` は事前に `deploy/webroot_billing/app/.env` に配置してからアップロードする
 
 ---
 
 ### ステップ3: ファイルパーミッションの設定
 
-FTPクライアントまたはSSH（可能な場合）で以下のパーミッションを設定：
+FTPクライアントまたはPleskファイルマネージャで、以下を可能な範囲で設定：
 
-```bash
-# storage ディレクトリの書き込み権限
-chmod -R 775 /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing/storage
-chown -R www-data:www-data /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing/storage
-
-# bootstrap/cache ディレクトリの書き込み権限
-chmod -R 775 /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing/bootstrap/cache
-chown -R www-data:www-data /var/www/vhosts/dschatbot.ai/httpdocs/laravel_billing/bootstrap/cache
-```
+- `app/storage/`: `775`
+- `app/bootstrap/cache/`: `775`
+- `app/storage/logs/`: `775`
 
 **注意**: FTPクライアントでパーミッションを設定できない場合は、サーバー管理者に依頼してください。
 
@@ -217,30 +167,24 @@ SSH接続が不可能な場合：
 - データベースに直接接続して、管理者アカウントを手動で作成
 - または、初回ログイン時にパスワードリセット機能を使用
 
-#### 4.3 F-REGI設定の登録
-
-管理画面（`https://dschatbot.ai/billing/admin/fregi-configs`）から：
-- 本番環境用のF-REGI設定を登録
-- `environment=prod` を選択
-- SHOPID、接続パスワード等を設定
-
 ---
 
 ### ステップ5: 動作確認
 
 #### 5.1 基本動作確認
 
-1. `https://dschatbot.ai/billing/` にアクセス
+1. `https://dschatbot.ai/webroot/billing/` にアクセス
    - Basic認証を通過
-   - 新規申込フォームが表示されるか確認
+   - 新規申込フォーム（またはトップ）が表示されるか確認
 
 2. 静的ファイルの確認
+   - `https://dschatbot.ai/webroot/billing/build/manifest.json` が 200 で返るか確認
    - CSS、JSが正しく読み込まれるか確認
    - ブラウザの開発者ツールでエラーがないか確認
 
 #### 5.2 管理画面の確認
 
-1. `https://dschatbot.ai/billing/login` にアクセス
+1. `https://dschatbot.ai/webroot/billing/login` にアクセス
    - ログイン画面が表示されるか確認
 
 2. ログイン
@@ -248,30 +192,25 @@ SSH接続が不可能な場合：
    - ダッシュボードが表示されるか確認
 
 3. 各管理画面の確認
-   - 契約管理
+   - 契約管理（申込一覧・契約詳細）
    - 契約プラン管理
-   - F-REGI設定
+   - 管理者管理・送信先メールアドレス設定・送信テスト
    - サイト管理
 
-#### 5.3 オプション製品機能の確認
+#### 5.3 申込・通知の確認
 
-1. **公開フォームでの確認**
+1. **申込フロー**
    - `https://dschatbot.ai/webroot/billing/contract/create` にアクセス
-   - 製品（契約プラン）を選択
-   - オプション製品が動的に表示されることを確認
-   - ブラウザの開発者ツール（コンソール）でエラーがないことを確認
+   - 申込フォーム〜申込受付完了まで正常に動作することを確認
 
-2. **管理画面での確認**
-   - 管理画面にログイン
-   - 「製品管理」画面を開く
-   - オプション製品を登録・編集できることを確認
-   - ベース製品にオプション製品を紐づけられることを確認
+2. **送信先メール**
+   - 管理画面「管理者管理」から送信先メールアドレスを設定・保存
+   - 送信テストが実行できること（本番 MAIL_* 設定後）
 
 #### 5.4 ルーティングの確認
 
 - 404エラーが発生しないか確認
 - 各ページが正しく表示されるか確認
-- APIエンドポイント（`/contract/api/option-products/{id}`）が正常に動作するか確認
 
 #### 5.5 ログの確認
 
@@ -300,8 +239,8 @@ SSH接続が不可能な場合：
 ### 問題2: 404エラーが発生する
 
 **確認事項**:
-- `.htaccess` ファイルが正しく配置されているか
-- `index.php` が正しく配置されているか（`index.production.php` を `index.php` として配置）
+- `.htaccess` ファイルが正しく配置されているか（`RewriteBase /webroot/billing/` が含まれるか）
+- `index.php` が正しく配置されているか（スクリプトが生成したものをアップロードしているか）
 - Apacheの `mod_rewrite` が有効になっているか
 
 ### 問題3: 静的ファイルが読み込まれない
@@ -324,26 +263,22 @@ SSH接続が不可能な場合：
 
 ### 基本動作確認
 
-- [ ] 公開ページが正常に表示される
-- [ ] 管理画面が正常に表示される
-- [ ] ログインが正常に動作する
+- [ ] `https://dschatbot.ai/webroot/billing/` で公開ページが正常に表示される
+- [ ] `https://dschatbot.ai/webroot/billing/build/manifest.json` が 200 で返る
+- [ ] 管理画面が正常に表示され、ログインが動作する
 - [ ] データベース接続が正常に動作する
 - [ ] 静的ファイルが正しく読み込まれる
 - [ ] ルーティングが正しく動作する
-- [ ] F-REGI設定が登録されている
 
-### オプション製品機能の確認
+### 申込・通知の確認
 
-- [ ] マイグレーションSQLが正しく実行されている（テーブル構造確認）
-- [ ] 公開フォームでオプション製品が動的に表示される
-- [ ] 管理画面でオプション製品を登録・編集できる
-- [ ] ベース製品にオプション製品を紐づけられる
-- [ ] APIエンドポイント（`/contract/api/option-products/{id}`）が正常に動作する
-- [ ] エラーログに問題がない
+- [ ] 申込フォーム〜申込受付完了まで正常に動作する
+- [ ] 送信先メールアドレスの設定・保存ができる
+- [ ] 送信テストが実行できる（本番 MAIL_* 設定後）
 
 ### ログ機能の確認
 
-- [ ] ログファイルが作成されている（`contract-payment-YYYY-MM-DD.log`）
+- [ ] ログファイルが作成されている（`app/storage/logs/` 配下。`laravel.log`, `mail-YYYY-MM-DD.log` 等）
 - [ ] ログファイルのパーミッションが適切に設定されている（775）
 - [ ] エラーログに問題がない
 

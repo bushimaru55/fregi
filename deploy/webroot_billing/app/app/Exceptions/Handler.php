@@ -25,8 +25,8 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            // グローバルなエラーハンドリング：契約・決済関連のルートの場合は詳細ログを記録
-            if (request()->is('contract/*') || request()->is('admin/contracts/*') || request()->is('payment/*') || request()->is('return/*')) {
+            // グローバルなエラーハンドリング：契約・管理契約関連のルートの場合は詳細ログを記録
+            if (request()->is('contract/*') || request()->is('admin/contracts/*')) {
                 $this->logDetailedError($e);
             }
         });
@@ -67,7 +67,6 @@ class Handler extends ExceptionHandler
                 'session_id' => $request->hasSession() ? $request->session()->getId() : null,
                 'session_keys' => $request->hasSession() ? array_keys($request->session()->all()) : [],
                 'ip' => $request->ip(),
-                'fregi_env' => config('fregi.environment', 'unknown'),
                 'app_env' => config('app.env', 'unknown'),
                 'app_debug' => config('app.debug', false),
                 'php_version' => PHP_VERSION,

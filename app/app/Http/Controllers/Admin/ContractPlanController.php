@@ -69,7 +69,7 @@ class ContractPlanController extends Controller
             $rules['item'] = 'required|string|max:50|unique:products,code';
             $rules['base_plan_ids'] = 'required|array|min:1';
             $rules['base_plan_ids.*'] = 'required|exists:contract_plans,id';
-            // オプション商品は常に一回限り
+            $rules['billing_type'] = 'required|in:one_time,monthly';
         }
 
         $validated = $request->validate($rules);
@@ -87,6 +87,7 @@ class ContractPlanController extends Controller
                     'name' => $validated['name'],
                     'unit_price' => $validated['price'],
                     'type' => 'option',
+                    'billing_type' => $validated['billing_type'],
                     'description' => $validated['description'] ?? null,
                     'is_active' => $validated['is_active'],
                     'display_order' => $validated['display_order'],
@@ -168,9 +169,20 @@ class ContractPlanController extends Controller
 
     /**
      * 契約プラン削除
+     * このプランを参照する契約が1件でもある場合は削除不可とする。
      */
     public function destroy(ContractPlan $contractPlan): RedirectResponse
     {
+        if ($contractPlan->contracts()->exists()) {
+            $count = $contractPlan->contracts()->count();
+            return redirect()
+                ->route('admin.contract-plans.index')
+                ->withErrors(["この契約プランは契約が{$count}件紐づいているため削除できません。紐づく契約を変更または削除してから再度お試しください。"]);
+        }
+
+        // オプション製品との紐づけを解除（外部キー制約を避ける）
+        $contractPlan->optionProducts()->detach();
+
         $contractPlan->delete();
         return redirect()->route('admin.contract-plans.index')->with('success', '契約プランが削除されました。');
     }

@@ -9,6 +9,7 @@ use App\Models\ContractPlan;
 use App\Models\Product;
 use App\Models\SiteSetting;
 use App\Mail\ContractNotificationMail;
+use App\Mail\ContractReplyMail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -371,6 +372,7 @@ class ContractController extends Controller
                 $optionItems = $contractItems->filter(fn ($item) => $item->product_id !== null);
                 $optionTotalAmount = $optionItems->sum('subtotal');
 
+                // 管理者への通知メール送信
                 try {
                     $notificationEmails = SiteSetting::getNotificationEmailsArray();
                     if ($notificationEmails !== []) {
@@ -414,6 +416,46 @@ class ContractController extends Controller
                         'error_trace' => $e->getTraceAsString(),
                     ]);
                     Log::channel('mail')->error('申込受付通知メール送信エラー', $mailErrorContext);
+                }
+
+                // 申込者への返信メール送信
+                try {
+                    $customerEmail = $contract->email;
+                    if ($customerEmail) {
+                        Mail::to($customerEmail)->send(
+                            new ContractReplyMail($contract, $optionItems, $optionTotalAmount)
+                        );
+                        Log::channel('contract_payment')->info('申込者への返信メール送信完了', [
+                            'contract_id' => $contract->id,
+                            'to' => $customerEmail,
+                        ]);
+                        Log::channel('mail')->info('申込者への返信メール送信完了', [
+                            'contract_id' => $contract->id,
+                            'to' => $customerEmail,
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    $previous = $e->getPrevious();
+                    $replyMailErrorContext = [
+                        'contract_id' => $contract->id,
+                        'to' => $contract->email,
+                        'exception_class' => get_class($e),
+                        'message' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'previous_message' => $previous ? $previous->getMessage() : null,
+                        'previous_class' => $previous ? get_class($previous) : null,
+                        'trace' => $e->getTraceAsString(),
+                    ];
+                    Log::channel('contract_payment')->error('申込者への返信メール送信エラー', [
+                        'contract_id' => $contract->id,
+                        'to' => $contract->email,
+                        'error_message' => $e->getMessage(),
+                        'exception_class' => get_class($e),
+                        'previous_message' => $previous ? $previous->getMessage() : null,
+                        'error_trace' => $e->getTraceAsString(),
+                    ]);
+                    Log::channel('mail')->error('申込者への返信メール送信エラー', $replyMailErrorContext);
                 }
 
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
@@ -469,6 +511,7 @@ class ContractController extends Controller
                         'code' => $product->code,
                         'unit_price' => $product->unit_price,
                         'formatted_price' => $product->formatted_price,
+                        'billing_type' => $product->billing_type ?? 'one_time',
                         'description' => $product->description,
                     ];
                 });

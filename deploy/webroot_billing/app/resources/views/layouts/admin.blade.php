@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'DSchatbot') - F-REGI決済管理</title>
+    <title>@yield('title', 'DSchatbot') - 申込管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -43,6 +43,26 @@
             display: none !important;
             content: none !important;
         }
+        /* Filamentのselectスタイルをリセット（管理画面の通常のselect要素用） */
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select]) {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+            background-position: right 0.5rem center !important;
+            background-repeat: no-repeat !important;
+            background-size: 1.5em 1.5em !important;
+            padding-right: 2.5rem !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+        }
+        /* Filamentの疑似要素を無効化 */
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])::before,
+        select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])::after,
+        select.native-select::before,
+        select.native-select::after {
+            display: none !important;
+            content: none !important;
+            background: none !important;
+        }
     </style>
     @livewireStyles
     @stack('styles')
@@ -53,15 +73,11 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto">
+                    <a href="{{ route('admin.dashboard') }}">
+                        <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer">
+                    </a>
                 </div>
                 <nav class="hidden md:flex space-x-6">
-                    <a href="{{ url('/billing/') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-home mr-2"></i>ホーム
-                    </a>
-                    <a href="{{ route('admin.dashboard') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
-                    </a>
                     <a href="{{ route('admin.contracts.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-list-alt mr-2"></i>契約管理
                     </a>
@@ -74,11 +90,11 @@
                     <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-link mr-2"></i>新規申込フォーム管理
                     </a>
-                    <a href="{{ route('admin.fregi-configs.edit') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-cog mr-2"></i>F-REGI設定
-                    </a>
                     <a href="{{ route('admin.site-settings.index') }}" class="hover:text-indigo-200 transition">
                         <i class="fas fa-globe mr-2"></i>サイト管理
+                    </a>
+                    <a href="{{ route('admin.users.index') }}" class="hover:text-indigo-200 transition">
+                        <i class="fas fa-user-shield mr-2"></i>管理者管理
                     </a>
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
@@ -123,7 +139,7 @@
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <p class="text-sm text-gray-400">© 2026 DSchatbot. All rights reserved.</p>
-                <p class="text-sm text-gray-400">Powered by Laravel 10 & F-REGI</p>
+                <p class="text-sm text-gray-400">Powered by Laravel 10</p>
             </div>
         </div>
     </footer>
@@ -136,18 +152,21 @@
     <!-- Fix for native-select elements -->
     <script>
         function applyNativeSelectStyles() {
-            // すべてのnative-selectクラスを持つselect要素にスタイルを適用
-            const nativeSelects = document.querySelectorAll('select.native-select');
-            nativeSelects.forEach(function(select) {
-                // インラインスタイルで強制的に適用
-                select.style.setProperty('background-image', "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", 'important');
-                select.style.setProperty('background-position', 'right 0.5rem center', 'important');
-                select.style.setProperty('background-repeat', 'no-repeat', 'important');
-                select.style.setProperty('background-size', '1.5em 1.5em', 'important');
-                select.style.setProperty('padding-right', '2.5rem', 'important');
-                select.style.setProperty('appearance', 'none', 'important');
-                select.style.setProperty('-webkit-appearance', 'none', 'important');
-                select.style.setProperty('-moz-appearance', 'none', 'important');
+            // すべてのselect要素（Filamentのものを除く）にスタイルを適用
+            const allSelects = document.querySelectorAll('select:not([class*="fi-"]):not([class*="filament-"]):not([data-filament-select])');
+            allSelects.forEach(function(select) {
+                // Filamentのコンポーネント内でないことを確認
+                if (!select.closest('.fi-fo-field-wrapper') && !select.closest('[wire\\:id]')) {
+                    // インラインスタイルで強制的に適用（既存の背景画像を上書き）
+                    select.style.setProperty('background-image', "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", 'important');
+                    select.style.setProperty('background-position', 'right 0.5rem center', 'important');
+                    select.style.setProperty('background-repeat', 'no-repeat', 'important');
+                    select.style.setProperty('background-size', '1.5em 1.5em', 'important');
+                    select.style.setProperty('padding-right', '2.5rem', 'important');
+                    select.style.setProperty('appearance', 'none', 'important');
+                    select.style.setProperty('-webkit-appearance', 'none', 'important');
+                    select.style.setProperty('-moz-appearance', 'none', 'important');
+                }
             });
         }
         

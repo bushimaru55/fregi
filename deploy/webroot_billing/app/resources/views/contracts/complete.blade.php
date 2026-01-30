@@ -9,7 +9,7 @@
             <i class="fas fa-check-circle text-green-600 text-6xl"></i>
         </div>
         <h1 class="text-4xl font-bold text-gray-800 mb-2">お申し込みありがとうございます！</h1>
-        <p class="text-gray-600">決済が完了しました。ご登録のメールアドレスに確認メールをお送りしております。</p>
+        <p class="text-gray-600">申込を受け付けました。ご登録のメールアドレスに確認メールをお送りしております。</p>
     </div>
 
     {{-- 契約情報 --}}
@@ -36,6 +36,41 @@
                         </span>
                     </div>
                 </div>
+                
+                {{-- オプション製品の表示 --}}
+                @if(isset($optionItems) && $optionItems->isNotEmpty())
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <p class="text-sm text-gray-600 mb-3 font-semibold">オプション製品</p>
+                    <div class="space-y-2">
+                        @foreach($optionItems as $item)
+                            <div class="flex justify-between items-center bg-gray-50 rounded-lg p-3">
+                                <span class="text-gray-800">{{ $item->product_name ?? ($item->product->name ?? '') }}</span>
+                                <span class="font-semibold text-gray-800">{{ number_format($item->subtotal ?? $item->unit_price ?? 0) }}円</span>
+                            </div>
+                        @endforeach
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-300">
+                            <span class="text-sm text-gray-600">オプション製品合計</span>
+                            <span class="font-semibold text-gray-800">{{ number_format($optionTotalAmount ?? 0) }}円</span>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- 合計金額の表示 --}}
+                @php
+                    $baseAmount = $contract->contractPlan->price ?? 0;
+                    $optionTotal = $optionTotalAmount ?? 0;
+                    $totalAmount = $baseAmount + $optionTotal;
+                @endphp
+                @if(isset($optionItems) && $optionItems->isNotEmpty())
+                <div class="mt-4 pt-4 border-t-2 border-green-300">
+                    <div class="flex justify-between items-center">
+                        <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
+                        <span class="text-2xl md:text-3xl font-bold text-green-600">{{ number_format($totalAmount) }}円</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
+                </div>
+                @endif
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -55,34 +90,6 @@
                     <p class="text-sm text-gray-600 mb-1">電話番号</p>
                     <p class="text-lg font-semibold text-gray-800">{{ $contract->phone }}</p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- 決済情報 --}}
-    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-blue-500">
-            <i class="fas fa-credit-card mr-2"></i>決済情報
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <p class="text-sm text-gray-600 mb-1">注文番号</p>
-                <p class="text-lg font-mono font-semibold text-gray-800">{{ $payment->orderid }}</p>
-            </div>
-            @if($payment->receiptno)
-            <div>
-                <p class="text-sm text-gray-600 mb-1">F-REGI受付番号</p>
-                <p class="text-lg font-mono font-semibold text-gray-800">{{ $payment->receiptno }}</p>
-            </div>
-            @endif
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済金額</p>
-                <p class="text-lg font-bold text-gray-800">{{ number_format($payment->amount) }}円</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済日時</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $payment->completed_at?->format('Y年m月d日 H:i') ?? '処理中' }}</p>
             </div>
         </div>
     </div>

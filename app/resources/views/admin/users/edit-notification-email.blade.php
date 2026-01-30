@@ -54,7 +54,7 @@
         <div class="flex justify-between items-center mt-6">
             <div>
                 {{-- 送信テストフォーム（独立） --}}
-                <form action="{{ route('admin.users.send-test-notification-email') }}" method="POST" class="inline" onsubmit="return confirm('登録済みの送信先にテストメールを送信します。よろしいですか？');">
+                <form action="{{ route('admin.users.send-test-notification-email') }}" method="POST" class="inline inline-confirm-form" data-confirm="登録済みの送信先にテストメールを送信します。よろしいですか？">
                     @csrf
                     <button type="submit" class="btn-primary px-6 py-2 font-bold rounded-lg shadow-md transition duration-300">
                         <i class="fas fa-paper-plane mr-2"></i>送信テスト

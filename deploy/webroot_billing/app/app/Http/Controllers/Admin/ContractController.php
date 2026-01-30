@@ -13,7 +13,7 @@ class ContractController extends Controller
      */
     public function index(): View
     {
-        $contracts = Contract::with(['contractPlan', 'payment'])
+        $contracts = Contract::with(['contractPlan'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
         
@@ -25,7 +25,7 @@ class ContractController extends Controller
      */
     public function show(Contract $contract): View
     {
-        $contract->load(['contractPlan', 'payment.events', 'contractItems.product']);
+        $contract->load(['contractPlan', 'contractItems.product']);
         return view('admin.contracts.show', compact('contract'));
     }
 }

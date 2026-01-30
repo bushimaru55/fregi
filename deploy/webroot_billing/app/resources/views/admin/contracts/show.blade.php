@@ -28,6 +28,7 @@
                     $statusColors = [
                         'draft' => 'bg-gray-200 text-gray-600',
                         'pending_payment' => 'bg-yellow-200 text-yellow-800',
+                        'submitted' => 'bg-blue-200 text-blue-800',
                         'active' => 'bg-green-200 text-green-800',
                         'canceled' => 'bg-red-200 text-red-800',
                         'expired' => 'bg-gray-300 text-gray-700',
@@ -45,10 +46,6 @@
             <div>
                 <p class="text-sm text-gray-600 mb-1">料金</p>
                 <p class="text-lg font-bold text-indigo-600">{{ number_format($contract->contractPlan->price) }}円（税込）</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600 mb-1">利用開始希望日</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->desired_start_date->format('Y年m月d日') }}</p>
             </div>
             @if($contract->actual_start_date)
             <div>
@@ -167,83 +164,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    @endif
-
-    {{-- 決済情報 --}}
-    @if($contract->payment)
-    <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 border-b-2 border-indigo-500">
-            <i class="fas fa-credit-card mr-2"></i>決済情報
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <p class="text-sm text-gray-600 mb-1">注文番号</p>
-                <p class="text-lg font-mono font-semibold text-gray-800">{{ $contract->payment->orderid }}</p>
-            </div>
-            @if($contract->payment->receiptno)
-            <div>
-                <p class="text-sm text-gray-600 mb-1">F-REGI受付番号</p>
-                <p class="text-lg font-mono font-semibold text-gray-800">{{ $contract->payment->receiptno }}</p>
-            </div>
-            @endif
-            @if($contract->payment->slipno)
-            <div>
-                <p class="text-sm text-gray-600 mb-1">F-REGI伝票番号</p>
-                <p class="text-lg font-mono font-semibold text-gray-800">{{ $contract->payment->slipno }}</p>
-            </div>
-            @endif
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済金額</p>
-                <p class="text-lg font-bold text-gray-800">{{ number_format($contract->payment->amount) }}円</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済ステータス</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->payment->status }}</p>
-            </div>
-            @if($contract->payment->requested_at)
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済要求日時</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->payment->requested_at->format('Y年m月d日 H:i') }}</p>
-            </div>
-            @endif
-            @if($contract->payment->completed_at)
-            <div>
-                <p class="text-sm text-gray-600 mb-1">決済完了日時</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->payment->completed_at->format('Y年m月d日 H:i') }}</p>
-            </div>
-            @endif
-        </div>
-
-        {{-- 決済イベント履歴 --}}
-        @if($contract->payment->events->isNotEmpty())
-        <div class="mt-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">決済イベント履歴</h3>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-600 uppercase text-xs">
-                            <th class="py-2 px-4 text-left">日時</th>
-                            <th class="py-2 px-4 text-left">イベントタイプ</th>
-                            <th class="py-2 px-4 text-left">詳細</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($contract->payment->events->sortByDesc('created_at') as $event)
-                        <tr class="border-b border-gray-200">
-                            <td class="py-2 px-4">{{ $event->created_at->format('Y/m/d H:i:s') }}</td>
-                            <td class="py-2 px-4">{{ $event->event_type }}</td>
-                            <td class="py-2 px-4">
-                                <pre class="text-xs bg-gray-100 p-2 rounded overflow-auto">{{ json_encode($event->payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        @endif
     </div>
     @endif
 

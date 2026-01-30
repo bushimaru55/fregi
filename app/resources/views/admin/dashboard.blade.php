@@ -17,7 +17,7 @@
                 <p class="text-3xl font-bold text-gray-800">{{ \App\Models\Contract::count() }}</p>
             </div>
             <div class="bg-blue-100 rounded-full p-4">
-                <i class="fas fa-file-contract text-blue-600 text-2xl"></i>
+                <i class="fas fa-file-contract theme-price text-2xl"></i>
             </div>
         </div>
     </div>
@@ -25,11 +25,11 @@
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-600 text-sm">有効契約</p>
-                <p class="text-3xl font-bold text-gray-800">{{ \App\Models\Contract::where('status', 'active')->count() }}</p>
+                <p class="text-gray-600 text-sm">製品版提供中</p>
+                <p class="text-3xl font-bold text-gray-800">{{ \App\Models\Contract::where('status', 'product')->count() }}</p>
             </div>
-            <div class="bg-green-100 rounded-full p-4">
-                <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+            <div class="theme-card rounded-full p-4">
+                <i class="fas fa-check-circle theme-price text-2xl"></i>
             </div>
         </div>
     </div>
@@ -74,7 +74,7 @@
                     </div>
                     <div class="text-right">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold 
-                            {{ $contract->status === 'active' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800' }}">
+                            {{ $contract->status === 'product' ? 'bg-green-200 text-green-800' : ($contract->status === 'suspended' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800') }}">
                             {{ $contract->status_label }}
                         </span>
                         <p class="text-xs text-gray-500 mt-1">{{ $contract->created_at->format('Y/m/d') }}</p>
@@ -85,7 +85,7 @@
             @endforelse
         </div>
         <div class="mt-4">
-            <a href="{{ route('admin.contracts.index') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">
+            <a href="{{ route('admin.contracts.index') }}" class="theme-link font-semibold">
                 すべて表示 <i class="fas fa-arrow-right ml-1"></i>
             </a>
         </div>
@@ -97,23 +97,19 @@
             <i class="fas fa-bolt mr-2"></i>クイックアクション
         </h2>
         <div class="grid grid-cols-2 gap-4">
-            <a href="{{ route('admin.contracts.index') }}" class="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
+            <a href="{{ route('admin.contracts.index') }}" class="btn-cta rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-list-alt text-3xl mb-2"></i>
                 <p class="font-semibold">契約一覧</p>
             </a>
-            <a href="{{ route('admin.contract-plans.index') }}" class="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
+            <a href="{{ route('admin.contract-plans.index') }}" class="btn-primary rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-layer-group text-3xl mb-2"></i>
                 <p class="font-semibold">契約プラン管理</p>
             </a>
-            <a href="{{ route('admin.contract-plans.create') }}" class="bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
+            <a href="{{ route('admin.contract-plans.create') }}" class="btn-primary rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-plus text-3xl mb-2"></i>
                 <p class="font-semibold">プラン新規作成</p>
             </a>
-            <a href="{{ route('admin.fregi-configs.index') }}" class="bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
-                <i class="fas fa-cog text-3xl mb-2"></i>
-                <p class="font-semibold">F-REGI設定</p>
-            </a>
-            <a href="{{ route('admin.site-settings.index') }}" class="bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-lg p-4 text-center transform hover:scale-105 transition">
+            <a href="{{ route('admin.site-settings.index') }}" class="btn-cta rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-globe text-3xl mb-2"></i>
                 <p class="font-semibold">サイト管理</p>
             </a>

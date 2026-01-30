@@ -28,7 +28,7 @@ Route::prefix('contract')->name('contract.')->group(function () {
     Route::get('/confirm', [\App\Http\Controllers\ContractController::class, 'confirmGet'])->name('confirm.get');
     Route::post('/confirm', [\App\Http\Controllers\ContractController::class, 'confirm'])->name('confirm');
     Route::post('/store', [\App\Http\Controllers\ContractController::class, 'store'])->name('store');
-    Route::get('/complete', [\App\Http\Controllers\ContractController::class, 'complete'])->name('complete');
+    Route::get('/complete/{contract}', [\App\Http\Controllers\ContractController::class, 'complete'])->name('complete')->middleware('signed');
     
     // オプション商品取得API（選択されたベース商品に紐づくオプション商品を取得）
     Route::get('/api/option-products/{contractPlanId}', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
@@ -45,15 +45,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::prefix('contracts')->name('contracts.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ContractController::class, 'index'])->name('index');
         Route::get('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'show'])->name('show');
-    });
-
-    // F-REGI設定（編集のみ運用：単一レコード）
-    Route::prefix('fregi-configs')->name('fregi-configs.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\FregiConfigController::class, 'index'])->name('index');
-        Route::get('/edit', [\App\Http\Controllers\Admin\FregiConfigController::class, 'edit'])->name('edit');
-        Route::put('/update', [\App\Http\Controllers\Admin\FregiConfigController::class, 'update'])->name('update');
-        Route::put('/switch/{environment}', [\App\Http\Controllers\Admin\FregiConfigController::class, 'switch'])->name('switch');
-        Route::get('/show', [\App\Http\Controllers\Admin\FregiConfigController::class, 'show'])->name('show');
     });
 
     // 契約プラン管理
@@ -85,20 +76,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/product-page-url/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'editProductPageUrl'])->name('product-page-url.edit');
         Route::put('/product-page-url', [\App\Http\Controllers\Admin\SiteSettingController::class, 'updateProductPageUrl'])->name('product-page-url.update');
     });
-});
 
-// 決済フロー
-Route::prefix('payment')->name('payment.')->group(function () {
-    Route::get('/{payment}/initiate', [\App\Http\Controllers\PaymentController::class, 'initiate'])->name('initiate');
-});
-
-// 戻りURL（F-REGIから戻ってくるURL、STATUSパラメータで処理を分岐）
-Route::get('/return', [\App\Http\Controllers\ReturnController::class, 'handle'])->name('return.handle');
-// 後方互換性のため残す（必要に応じて削除可能）
-Route::prefix('return')->name('return.')->group(function () {
-    Route::get('/success', [\App\Http\Controllers\ReturnController::class, 'success'])->name('success');
-    Route::get('/cancel', [\App\Http\Controllers\ReturnController::class, 'cancel'])->name('cancel');
-    Route::get('/failure', [\App\Http\Controllers\ReturnController::class, 'failure'])->name('failure');
+    // 管理者管理（通知メール設定は {user} と衝突するため resource より前に定義）
+    Route::get('users/notification-email/edit', [\App\Http\Controllers\Admin\UserController::class, 'editNotificationEmail'])->name('users.edit-notification-email');
+    Route::put('users/notification-email', [\App\Http\Controllers\Admin\UserController::class, 'updateNotificationEmail'])->name('users.update-notification-email');
+    Route::post('users/notification-email/send-test', [\App\Http\Controllers\Admin\UserController::class, 'sendTestNotificationEmail'])->name('users.send-test-notification-email');
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
 });
 
 // 認証関連（Breeze）

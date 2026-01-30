@@ -34,7 +34,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:products,code'],
             'unit_price' => ['required', 'integer', 'min:0'],
@@ -42,13 +42,20 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'display_order' => ['required', 'integer', 'min:0'],
-        ]);
+        ];
+        if ($request->input('type') === 'option') {
+            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly'])];
+        } else {
+            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly'])];
+        }
+        $validated = $request->validate($rules);
 
         $product = Product::create([
             'name' => $validated['name'],
             'code' => $validated['code'],
             'unit_price' => $validated['unit_price'],
             'type' => $validated['type'],
+            'billing_type' => $validated['billing_type'] ?? 'one_time',
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
             'display_order' => $validated['display_order'] ?? 0,
@@ -72,7 +79,7 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', Rule::unique('products', 'code')->ignore($product->id)],
             'unit_price' => ['required', 'integer', 'min:0'],
@@ -80,13 +87,20 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
             'display_order' => ['required', 'integer', 'min:0'],
-        ]);
+        ];
+        if ($request->input('type') === 'option') {
+            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly'])];
+        } else {
+            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly'])];
+        }
+        $validated = $request->validate($rules);
 
         $product->update([
             'name' => $validated['name'],
             'code' => $validated['code'],
             'unit_price' => $validated['unit_price'],
             'type' => $validated['type'],
+            'billing_type' => $validated['billing_type'] ?? 'one_time',
             'description' => $validated['description'] ?? null,
             'is_active' => $validated['is_active'] ?? true,
             'display_order' => $validated['display_order'] ?? 0,
