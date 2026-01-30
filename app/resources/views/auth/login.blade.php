@@ -52,28 +52,12 @@
                 </label>
             </div>
 
-            <div class="flex items-center justify-between">
-                @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}" class="text-sm theme-link">
-                        パスワードを忘れた方
-                    </a>
-                @endif
-
+            <div class="flex justify-end">
                 <button type="submit" class="btn-cta px-6 py-2 font-bold rounded-lg shadow-md transition duration-300">
                     <i class="fas fa-sign-in-alt mr-2"></i>ログイン
                 </button>
             </div>
         </form>
-
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600 mb-2">
-                <strong>管理者アカウント:</strong>
-            </p>
-            <p class="text-xs text-gray-500">
-                kanri@dschatbot.ai / cs20051101<br>
-                dsbrand@example.com / cs20051101
-            </p>
-        </div>
     </div>
 </div>
 @endsection
