@@ -20,8 +20,8 @@
         </h2>
 
         <div class="space-y-4 md:space-y-6">
-            {{-- 契約プラン・料金・ステータス（テーマ色のブロック） --}}
-            <div class="rounded-lg p-4 md:p-6 border-2 theme-card-selected" style="background-color: var(--color-primary-soft); border-color: var(--color-primary);">
+            {{-- 契約プラン・料金・ステータス（枠のみ・背景色なし） --}}
+            <div class="rounded-lg p-4 md:p-6 border border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">契約プラン</p>
@@ -65,7 +65,7 @@
                     $totalAmount = $baseAmount + $optionTotal;
                 @endphp
                 @if(isset($optionItems) && $optionItems->isNotEmpty())
-                <div class="mt-4 pt-4 border-t-2" style="border-color: var(--color-primary);">
+                <div class="mt-4 pt-4 border-t border-gray-200">
                     <div class="flex justify-between items-center">
                         <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
                         <span class="text-2xl md:text-3xl font-bold theme-price">{{ number_format($totalAmount) }}円</span>
@@ -97,9 +97,9 @@
         </div>
     </div>
 
-    {{-- 今後の流れ（白カード内にテーマ色ブロック） --}}
+    {{-- 今後の流れ（枠のみ・背景色なし） --}}
     <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
-        <div class="rounded-lg p-4 md:p-6 border" style="background-color: var(--color-primary-soft); border-color: var(--color-primary);">
+        <div class="rounded-lg p-4 md:p-6 border border-gray-200">
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 <i class="fas fa-info-circle mr-2 theme-price"></i>今後の流れ
             </h3>
