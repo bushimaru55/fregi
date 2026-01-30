@@ -36,6 +36,23 @@ class SiteSetting extends Model
     }
 
     /**
+     * 申込通知メール送信先を配列で取得（複数対応）
+     * 改行・カンマ区切りで保存された文字列をパースし、有効なメールアドレスのみ返す
+     *
+     * @return array<int, string>
+     */
+    public static function getNotificationEmailsArray(): array
+    {
+        $raw = self::getTextValue('notification_email', '');
+        if ($raw === '' || $raw === null) {
+            return [];
+        }
+        $parts = preg_split('/[\r\n,]+/', (string) $raw) ?: [];
+        $emails = array_values(array_filter(array_map('trim', $parts)));
+        return array_values(array_filter($emails, fn (string $e) => filter_var($e, FILTER_VALIDATE_EMAIL) !== false));
+    }
+
+    /**
      * キーで設定値を設定（HTML＋テキスト両方保存）
      * 
      * @param string $key 設定キー
