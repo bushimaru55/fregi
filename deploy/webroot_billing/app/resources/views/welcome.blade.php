@@ -11,40 +11,40 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {{-- 新規申込 --}}
-        <a href="{{ route('contract.create') }}" class="bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-lg shadow-lg p-8 transform hover:scale-105 transition duration-300">
+        <a href="{{ route('contract.create') }}" class="btn-cta rounded-lg shadow-lg p-8 inline-block transform hover:scale-105 transition duration-300">
             <div class="text-6xl mb-4">
                 <i class="fas fa-file-signature"></i>
             </div>
             <h2 class="text-2xl font-bold mb-2">新規申込</h2>
-            <p class="text-indigo-100">サービスの新規お申し込みはこちら</p>
+            <p class="opacity-90">サービスの新規お申し込みはこちら</p>
         </a>
 
         {{-- 管理画面: ダッシュボード（ログイン済みのみ） --}}
         @auth
-        <a href="{{ route('admin.dashboard') }}" class="bg-gradient-to-br from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white rounded-lg shadow-lg p-8 transform hover:scale-105 transition duration-300">
+        <a href="{{ route('admin.dashboard') }}" class="btn-primary rounded-lg shadow-lg p-8 inline-block transform hover:scale-105 transition duration-300">
             <div class="text-6xl mb-4">
                 <i class="fas fa-tachometer-alt"></i>
             </div>
             <h2 class="text-2xl font-bold mb-2">ダッシュボード</h2>
-            <p class="text-green-100">管理画面トップ</p>
+            <p class="opacity-90">管理画面トップ</p>
         </a>
         @else
-        <a href="{{ route('login') }}" class="bg-gradient-to-br from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white rounded-lg shadow-lg p-8 transform hover:scale-105 transition duration-300">
+        <a href="{{ route('login') }}" class="btn-primary rounded-lg shadow-lg p-8 inline-block transform hover:scale-105 transition duration-300">
             <div class="text-6xl mb-4">
                 <i class="fas fa-sign-in-alt"></i>
             </div>
             <h2 class="text-2xl font-bold mb-2">管理者ログイン</h2>
-            <p class="text-green-100">管理画面へのログイン</p>
+            <p class="opacity-90">管理画面へのログイン</p>
         </a>
         @endauth
 
         {{-- お問い合わせ --}}
-        <a href="#" class="bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white rounded-lg shadow-lg p-8 transform hover:scale-105 transition duration-300">
+        <a href="#" class="btn-outline rounded-lg shadow-lg p-8 inline-block transform hover:scale-105 transition duration-300">
             <div class="text-6xl mb-4">
                 <i class="fas fa-envelope"></i>
             </div>
             <h2 class="text-2xl font-bold mb-2">お問い合わせ</h2>
-            <p class="text-blue-100">ご不明点はこちら</p>
+            <p class="opacity-80">ご不明点はこちら</p>
         </a>
     </div>
 

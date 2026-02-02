@@ -17,7 +17,7 @@
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">商品管理</h1>
-        <a href="{{ route('admin.products.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+        <a href="{{ route('admin.products.create') }}" class="btn-cta font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
             <i class="fas fa-plus mr-2"></i>新規作成
         </a>
     </div>
@@ -30,11 +30,12 @@
         @else
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                    <tr class="theme-table-header uppercase text-sm leading-normal">
                         <th class="py-3 px-6 text-left">ID</th>
                         <th class="py-3 px-6 text-left">商品コード</th>
                         <th class="py-3 px-6 text-left">商品名</th>
                         <th class="py-3 px-6 text-left">種別</th>
+                        <th class="py-3 px-6 text-left">決済タイプ</th>
                         <th class="py-3 px-6 text-left">単価</th>
                         <th class="py-3 px-6 text-left">状態</th>
                         <th class="py-3 px-6 text-center">アクション</th>
@@ -59,6 +60,17 @@
                                     {{ $product->type_label }}
                                 </span>
                             </td>
+                            <td class="py-3 px-6 text-left">
+                                @if($product->type === 'option')
+                                    @if(($product->billing_type ?? 'one_time') === 'monthly')
+                                        <span class="px-2 py-0.5 rounded text-xs theme-price" style="background-color: var(--color-primary-soft);">月額課金</span>
+                                    @else
+                                        <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">一回限り</span>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
                             <td class="py-3 px-6 text-left font-semibold">{{ $product->formatted_price }}</td>
                             <td class="py-3 px-6 text-left">
                                 @if($product->is_active)
@@ -69,10 +81,10 @@
                             </td>
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center space-x-2">
-                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="theme-link font-semibold">
                                         <i class="fas fa-edit mr-1"></i>編集
                                     </a>
-                                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">

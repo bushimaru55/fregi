@@ -2,44 +2,13 @@
 
 @section('title', '申込内容確認')
 
-@push('styles')
-<style>
-    body {
-        background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
-        min-height: 100vh;
-    }
-    .payment-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    }
-    .btn-orange {
-        background: #ff6b6b;
-        color: white;
-    }
-    .btn-orange:hover {
-        background: #ff5252;
-    }
-    .btn-teal {
-        background: #4ecdc4;
-        color: white;
-    }
-    .btn-teal:hover {
-        background: #3db8b0;
-    }
-    .section-title {
-        border-bottom: 2px solid #4ecdc4;
-    }
-</style>
-@endpush
-
 @section('content')
 <div class="max-w-4xl mx-auto px-4 md:px-0 py-8">
     <div class="mb-6 md:mb-8 text-center">
         <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2">申込内容確認</h1>
         @if(isset($isViewOnly) && $isViewOnly)
-            <div class="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 md:p-4 mb-4">
-                <p class="text-blue-800 font-semibold text-sm md:text-base">
+            <div class="theme-alert-success p-3 md:p-4 mb-4 rounded-lg">
+                <p class="font-semibold text-sm md:text-base" style="color: var(--color-text);">
                     <i class="fas fa-eye mr-2"></i>閲覧画面（この画面は閲覧専用です。実際の申込処理には使用できません）
                 </p>
             </div>
@@ -226,7 +195,7 @@
                         @foreach($optionProducts as $option)
                             <div class="flex justify-between items-center bg-gray-50 rounded-lg p-3">
                                 <span class="text-gray-800">{{ $option->name }}</span>
-                                <span class="font-semibold text-gray-800">{{ number_format($option->unit_price) }}円</span>
+                                <span class="font-semibold text-gray-800">{{ $option->formatted_price }}</span>
                             </div>
                         @endforeach
                         <div class="flex justify-between items-center pt-2 border-t border-gray-300">
@@ -261,9 +230,9 @@
                 <i class="fas fa-file-contract mr-2"></i>利用規約への同意
             </h2>
 
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="theme-alert-success rounded-lg p-4">
                 <div class="flex items-center">
-                    <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                    <i class="fas fa-check-circle text-xl mr-3" style="color: var(--color-primary);"></i>
                     <p class="text-sm font-semibold text-gray-700">
                         利用規約に同意いただきました。
                     </p>
@@ -275,14 +244,14 @@
         {{-- ボタン --}}
         <div class="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-6 md:mb-8">
             @if(isset($isViewOnly) && $isViewOnly)
-                <a href="{{ route('contract.create') }}" class="px-6 md:px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
+                <a href="{{ route('contract.create') }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
                     <i class="fas fa-file-alt mr-2"></i>申込フォームへ
                 </a>
             @else
-                <a href="{{ route('contract.create') }}" class="px-6 md:px-8 py-3 btn-teal font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
+                <a href="{{ route('contract.create') }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
-                <button type="submit" class="px-6 md:px-8 py-3 btn-orange font-bold rounded-lg shadow-md transition duration-300 text-base">
+                <button type="submit" class="btn-cta px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-base">
                     <i class="fas fa-paper-plane mr-2"></i>申し込む
                 </button>
             @endif

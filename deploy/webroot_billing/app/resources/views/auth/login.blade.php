@@ -26,7 +26,7 @@
                     メールアドレス
                 </label>
                 <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('email') border-red-500 @enderror">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('email') border-red-500 @enderror">
                 @error('email')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -38,7 +38,7 @@
                     パスワード
                 </label>
                 <input id="password" type="password" name="password" required autocomplete="current-password"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('password') border-red-500 @enderror">
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('password') border-red-500 @enderror">
                 @error('password')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -47,33 +47,17 @@
             <!-- Remember Me -->
             <div class="mb-6">
                 <label class="flex items-center">
-                    <input type="checkbox" name="remember" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    <input type="checkbox" name="remember" class="rounded border-gray-300 theme-checkbox-accent shadow-sm">
                     <span class="ml-2 text-sm text-gray-600">ログイン状態を保持する</span>
                 </label>
             </div>
 
-            <div class="flex items-center justify-between">
-                @if (Route::has('password.request'))
-                    <a href="{{ route('password.request') }}" class="text-sm text-indigo-600 hover:text-indigo-900">
-                        パスワードを忘れた方
-                    </a>
-                @endif
-
-                <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300">
+            <div class="flex justify-end">
+                <button type="submit" class="btn-cta px-6 py-2 font-bold rounded-lg shadow-md transition duration-300">
                     <i class="fas fa-sign-in-alt mr-2"></i>ログイン
                 </button>
             </div>
         </form>
-
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600 mb-2">
-                <strong>管理者アカウント:</strong>
-            </p>
-            <p class="text-xs text-gray-500">
-                kanri@dschatbot.ai / cs20051101<br>
-                dsbrand@example.com / cs20051101
-            </p>
-        </div>
     </div>
 </div>
 @endsection

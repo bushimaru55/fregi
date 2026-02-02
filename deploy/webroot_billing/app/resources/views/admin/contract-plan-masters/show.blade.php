@@ -59,7 +59,7 @@
         @else
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                    <tr class="theme-table-header uppercase text-sm leading-normal">
                         <th class="py-3 px-6 text-left">プランコード</th>
                         <th class="py-3 px-6 text-left">プラン名</th>
                         <th class="py-3 px-6 text-left">料金</th>

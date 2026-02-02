@@ -22,8 +22,8 @@ class UserController extends Controller
     public function index(): View
     {
         $users = User::orderBy('created_at', 'desc')->get();
-        $notificationEmail = SiteSetting::getTextValue('notification_email', '');
-        return view('admin.users.index', compact('users', 'notificationEmail'));
+        $notificationEmails = SiteSetting::getNotificationEmailsArray();
+        return view('admin.users.index', compact('users', 'notificationEmails'));
     }
 
     /**
@@ -151,33 +151,49 @@ class UserController extends Controller
     public function editNotificationEmail(): View
     {
         $notificationEmail = SiteSetting::getTextValue('notification_email', '');
-        
         return view('admin.users.edit-notification-email', compact('notificationEmail'));
     }
 
     /**
-     * 送信先メールアドレス更新
+     * 送信先メールアドレス更新（複数対応：1行1件またはカンマ区切り）
      */
     public function updateNotificationEmail(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'notification_email' => ['required', 'email', 'max:255'],
-        ], [
-            'notification_email.required' => '送信先メールアドレスを入力してください。',
-            'notification_email.email' => '有効なメールアドレス形式で入力してください。',
-            'notification_email.max' => 'メールアドレスは255文字以内で入力してください。',
-        ]);
+        $raw = $request->input('notification_email', '');
+        $parts = preg_split('/[\r\n,]+/', $raw) ?: [];
+        $emails = array_values(array_filter(array_map('trim', $parts)));
+
+        if (empty($emails)) {
+            return back()
+                ->withInput()
+                ->withErrors(['notification_email' => '送信先メールアドレスを1件以上入力してください。']);
+        }
+
+        $invalid = [];
+        foreach ($emails as $e) {
+            if (strlen($e) > 255) {
+                $invalid[] = $e . '（255文字以内）';
+            } elseif (filter_var($e, FILTER_VALIDATE_EMAIL) === false) {
+                $invalid[] = $e;
+            }
+        }
+        if ($invalid !== []) {
+            return back()
+                ->withInput()
+                ->withErrors(['notification_email' => '有効なメールアドレス形式で入力してください: ' . implode(', ', array_slice($invalid, 0, 3)) . (count($invalid) > 3 ? '...' : '')]);
+        }
 
         try {
+            $value = implode("\n", $emails);
             SiteSetting::setTextValue(
                 'notification_email',
-                $validated['notification_email'],
-                '申込受付時の通知メール送信先アドレス'
+                $value,
+                '申込受付時の通知メール送信先アドレス（複数可）'
             );
 
             return redirect()
                 ->route('admin.users.index')
-                ->with('success', '送信先メールアドレスを更新しました。');
+                ->with('success', '送信先メールアドレスを更新しました。（' . count($emails) . '件）');
         } catch (\Exception $e) {
             return back()
                 ->withInput()
@@ -186,29 +202,35 @@ class UserController extends Controller
     }
 
     /**
-     * 送信テスト：登録済みの送信先メールアドレスにテストメールを送信
+     * 送信テスト：登録済みの送信先メールアドレス全てにテストメールを送信
      */
     public function sendTestNotificationEmail(): RedirectResponse
     {
-        $notificationEmail = SiteSetting::getTextValue('notification_email', '');
+        $notificationEmails = SiteSetting::getNotificationEmailsArray();
 
-        if (empty($notificationEmail)) {
+        if (empty($notificationEmails)) {
             return redirect()
                 ->route('admin.users.edit-notification-email')
                 ->withErrors(['error' => '送信先メールアドレスが未設定です。先にアドレスを保存してください。']);
         }
 
         try {
-            Mail::to($notificationEmail)->send(new NotificationTestMail());
-            Log::channel('mail')->info('送信テストメール送信完了', ['to' => $notificationEmail]);
+            foreach ($notificationEmails as $email) {
+                Mail::to($email)->send(new NotificationTestMail());
+            }
+            Log::channel('mail')->info('送信テストメール送信完了', ['to' => $notificationEmails]);
+
+            $message = count($notificationEmails) === 1
+                ? '送信テストメールを送信しました。' . $notificationEmails[0] . ' をご確認ください。'
+                : '送信テストメールを送信しました。（' . count($notificationEmails) . '件）ご確認ください。';
 
             return redirect()
-                ->route('admin.users.edit-notification-email')
-                ->with('success', '送信テストメールを送信しました。' . $notificationEmail . ' をご確認ください。');
+                ->back()
+                ->with('success', $message);
         } catch (\Throwable $e) {
             $previous = $e->getPrevious();
             Log::channel('mail')->error('送信テストメール送信エラー', [
-                'to' => $notificationEmail,
+                'to' => $notificationEmails,
                 'exception_class' => get_class($e),
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -219,7 +241,7 @@ class UserController extends Controller
             ]);
 
             return redirect()
-                ->route('admin.users.edit-notification-email')
+                ->back()
                 ->withErrors(['error' => '送信に失敗しました: ' . $e->getMessage()]);
         }
     }

@@ -5,7 +5,7 @@
 @section('content')
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">製品管理</h1>
-        <a href="{{ route('admin.contract-plans.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+        <a href="{{ route('admin.contract-plans.create') }}" class="btn-cta font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
             <i class="fas fa-plus mr-2"></i>新規作成
         </a>
     </div>
@@ -33,7 +33,7 @@
             </div>
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                    <tr class="theme-table-header uppercase text-sm leading-normal">
                         <th class="py-3 px-6 text-left w-12"></th>
                         <th class="py-3 px-6 text-left">製品コード</th>
                         <th class="py-3 px-6 text-left">製品名</th>
@@ -51,7 +51,7 @@
                             </td>
                             <td class="py-3 px-6 text-left whitespace-nowrap font-mono font-semibold">{{ $plan->item }}</td>
                             <td class="py-3 px-6 text-left">{{ $plan->name }}</td>
-                            <td class="py-3 px-6 text-left font-semibold text-indigo-600">{{ $plan->formatted_price }}</td>
+                            <td class="py-3 px-6 text-left font-semibold theme-price">{{ $plan->formatted_price }}</td>
                             <td class="py-3 px-6 text-left">
                                 @if($plan->billing_type === 'monthly')
                                     <span class="bg-blue-200 text-blue-600 py-1 px-3 rounded-full text-xs font-semibold">月額課金</span>
@@ -68,10 +68,10 @@
                             </td>
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center space-x-2">
-                                    <a href="{{ route('admin.contract-plans.edit', $plan->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                    <a href="{{ route('admin.contract-plans.edit', $plan->id) }}" class="theme-link font-semibold">
                                         <i class="fas fa-edit mr-1"></i>編集
                                     </a>
-                                    <form action="{{ route('admin.contract-plans.destroy', $plan->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                    <form action="{{ route('admin.contract-plans.destroy', $plan->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">
@@ -101,7 +101,7 @@
             @else
                 <table class="min-w-full leading-normal">
                     <thead>
-                        <tr class="bg-gradient-to-r from-green-500 to-emerald-600 text-white uppercase text-sm leading-normal">
+                        <tr class="theme-table-header uppercase text-sm leading-normal">
                             <th class="py-3 px-6 text-left">製品コード</th>
                             <th class="py-3 px-6 text-left">製品名</th>
                             <th class="py-3 px-6 text-left">料金</th>
@@ -114,7 +114,7 @@
                             <tr class="border-b border-gray-200 hover:bg-gray-100">
                                 <td class="py-3 px-6 text-left whitespace-nowrap font-mono font-semibold">{{ $product->code }}</td>
                                 <td class="py-3 px-6 text-left">{{ $product->name }}</td>
-                                <td class="py-3 px-6 text-left font-semibold text-indigo-600">{{ $product->formatted_price }}</td>
+                                <td class="py-3 px-6 text-left font-semibold theme-price">{{ $product->formatted_price }}</td>
                                 <td class="py-3 px-6 text-left">
                                     @if($product->is_active)
                                         <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">有効</span>
@@ -124,10 +124,10 @@
                                 </td>
                                 <td class="py-3 px-6 text-center">
                                     <div class="flex item-center justify-center space-x-2">
-                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="theme-link font-semibold">
                                             <i class="fas fa-edit mr-1"></i>編集
                                         </a>
-                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">
@@ -230,10 +230,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 .sortable-ghost {
     opacity: 0.4;
-    background-color: #e0e7ff !important;
+    background-color: var(--color-primary-soft) !important;
 }
 .sortable-chosen {
-    background-color: #ddd6fe !important;
+    background-color: var(--color-primary-soft) !important;
 }
 .sortable-drag {
     opacity: 0.8;
@@ -242,20 +242,20 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: background-color 0.2s;
 }
 #sortable-table tr:hover {
-    background-color: #f3f4f6;
+    background-color: var(--color-bg);
 }
 .handle-column {
     cursor: move;
     user-select: none;
 }
 .handle-column:hover {
-    background-color: #f3f4f6;
+    background-color: var(--color-bg);
 }
 .handle-column .fa-grip-vertical {
     transition: color 0.2s;
 }
 .handle-column:hover .fa-grip-vertical {
-    color: #4f46e5 !important;
+    color: var(--color-primary) !important;
 }
 </style>
 @endsection

@@ -16,5 +16,7 @@ class TrimStrings extends Middleware
         'password',
         'password_confirmation',
         'terms_of_service', // HTMLコンテンツなのでトリムしない
+        'reply_mail_header', // 上部・下部の先頭/末尾改行を保持するためトリムしない
+        'reply_mail_footer',
     ];
 }

@@ -22,7 +22,7 @@
 
         {{-- 1. 申込企業情報 --}}
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 theme-section-border">
                 <i class="fas fa-building mr-2"></i>1. 申込企業情報
             </h2>
 
@@ -33,7 +33,7 @@
                         会社名 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="company_name" id="company_name" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('company_name') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('company_name') border-red-500 @enderror" 
                         value="{{ old('company_name') }}" required>
                     @error('company_name')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -46,7 +46,7 @@
                         会社名（フリガナ）
                     </label>
                     <input type="text" name="company_name_kana" id="company_name_kana" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('company_name_kana') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('company_name_kana') border-red-500 @enderror" 
                         value="{{ old('company_name_kana') }}" placeholder="カブシキガイシャ サンプル">
                     @error('company_name_kana')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -59,7 +59,7 @@
                         部署名
                     </label>
                     <input type="text" name="department" id="department" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
                         value="{{ old('department') }}">
                 </div>
 
@@ -69,7 +69,7 @@
                         役職
                     </label>
                     <input type="text" name="position" id="position" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
                         value="{{ old('position') }}">
                 </div>
 
@@ -79,7 +79,7 @@
                         担当者名 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="contact_name" id="contact_name" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('contact_name') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('contact_name') border-red-500 @enderror" 
                         value="{{ old('contact_name') }}" required>
                     @error('contact_name')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -92,7 +92,7 @@
                         担当者名（フリガナ）
                     </label>
                     <input type="text" name="contact_name_kana" id="contact_name_kana" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('contact_name_kana') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('contact_name_kana') border-red-500 @enderror" 
                         value="{{ old('contact_name_kana') }}" placeholder="ヤマダ タロウ">
                     @error('contact_name_kana')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -105,7 +105,7 @@
                         メールアドレス <span class="text-red-500">*</span>
                     </label>
                     <input type="email" name="email" id="email" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('email') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('email') border-red-500 @enderror" 
                         value="{{ old('email') }}" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" style="ime-mode: disabled;" required>
                     @error('email')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -118,7 +118,7 @@
                         電話番号 <span class="text-red-500">*</span>
                     </label>
                     <input type="tel" name="phone" id="phone" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('phone') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('phone') border-red-500 @enderror" 
                         value="{{ old('phone') }}" placeholder="03-1234-5678" required>
                     @error('phone')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -132,10 +132,10 @@
                     </label>
                     <div class="flex gap-2">
                         <input type="text" name="postal_code" id="postal_code" maxlength="8"
-                            class="flex-1 px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('postal_code') border-red-500 @enderror" 
+                            class="flex-1 px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('postal_code') border-red-500 @enderror" 
                             value="{{ old('postal_code') }}" placeholder="123-4567">
                         <button type="button" id="search_address_btn" 
-                            class="px-3 md:px-4 py-3 md:py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition duration-300 text-sm md:text-base whitespace-nowrap">
+                            class="btn-primary px-3 md:px-4 py-3 md:py-2 transition duration-300 text-sm md:text-base whitespace-nowrap">
                             <i class="fas fa-search mr-2"></i>検索
                         </button>
                     </div>
@@ -155,7 +155,7 @@
                         都道府県
                     </label>
                     <select name="prefecture" id="prefecture" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base">
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base">
                         <option value="">選択してください</option>
                         @foreach(['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'] as $pref)
                             <option value="{{ $pref }}" {{ old('prefecture') == $pref ? 'selected' : '' }}>{{ $pref }}</option>
@@ -169,7 +169,7 @@
                         市区町村
                     </label>
                     <input type="text" name="city" id="city" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
                         value="{{ old('city') }}" placeholder="渋谷区">
                 </div>
 
@@ -179,7 +179,7 @@
                         番地
                     </label>
                     <input type="text" name="address_line1" id="address_line1" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
                         value="{{ old('address_line1') }}" placeholder="渋谷1-2-3">
                 </div>
 
@@ -189,7 +189,7 @@
                         建物名
                     </label>
                     <input type="text" name="address_line2" id="address_line2" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
                         value="{{ old('address_line2') }}" placeholder="○○ビル 5F">
                 </div>
             </div>
@@ -197,7 +197,7 @@
 
         {{-- 2. ご利用情報 --}}
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 theme-section-border">
                 <i class="fas fa-globe mr-2"></i>2. ご利用情報
             </h2>
 
@@ -208,7 +208,7 @@
                         ご利用URL・ドメイン <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="usage_url_domain" id="usage_url_domain" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base @error('usage_url_domain') border-red-500 @enderror" 
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('usage_url_domain') border-red-500 @enderror" 
                         value="{{ old('usage_url_domain') }}" placeholder="https://example.com または example.com" required>
                     @error('usage_url_domain')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -219,7 +219,7 @@
                 <div class="md:col-span-2">
                     <label class="flex items-center">
                         <input type="checkbox" name="import_from_trial" id="import_from_trial" value="1"
-                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 @error('import_from_trial') border-red-500 @enderror"
+                            class="w-4 h-4 theme-checkbox-accent border-gray-300 rounded @error('import_from_trial') border-red-500 @enderror"
                             {{ old('import_from_trial') ? 'checked' : '' }}>
                         <span class="ml-2 text-sm font-semibold text-gray-700">体験版からのインポートを希望する</span>
                     </label>
@@ -232,7 +232,7 @@
 
         {{-- 3. 契約内容の選択 --}}
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 theme-section-border">
                 <i class="fas fa-file-contract mr-2"></i>3. 契約内容の選択
             </h2>
 
@@ -247,10 +247,10 @@
                             <input type="radio" name="contract_plan_id" value="{{ $plan->id }}" 
                                 class="peer sr-only" 
                                 {{ old('contract_plan_id') == $plan->id ? 'checked' : '' }} required>
-                            <div class="border-2 border-gray-300 rounded-lg p-3 md:p-4 transition-all peer-checked:border-indigo-500 peer-checked:bg-indigo-50 hover:border-indigo-300">
+                            <div class="theme-option-card border-2 border-gray-300 rounded-lg p-3 md:p-4 transition-all peer-checked:border-[var(--color-primary)] peer-checked:bg-[var(--color-primary-soft)] hover:border-[var(--color-primary)]">
                                 <div class="text-center">
                                     <div class="text-base md:text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
-                                    <div class="text-2xl md:text-3xl font-bold text-indigo-600 mb-2">{{ $plan->formatted_price }}</div>
+                                    <div class="text-2xl md:text-3xl font-bold theme-price mb-2">{{ $plan->formatted_price }}</div>
                                     <div class="text-xs md:text-sm text-gray-600">{{ $plan->description }}</div>
                                 </div>
                             </div>
@@ -286,7 +286,7 @@
         {{-- 4. 利用規約 --}}
         @if($termsOfService)
         <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 border-b-2 border-indigo-500">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 theme-section-border">
                 <i class="fas fa-file-contract mr-2"></i>4. 利用規約
             </h2>
 
@@ -300,7 +300,7 @@
             {{-- 同意チェックボックス --}}
             <div class="flex items-center justify-center flex-wrap">
                 <input type="checkbox" name="terms_agreed" id="terms_agreed" value="1"
-                    class="mr-2 md:mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded @error('terms_agreed') border-red-500 @enderror"
+                    class="mr-2 md:mr-3 w-5 h-5 theme-checkbox-accent border-gray-300 rounded @error('terms_agreed') border-red-500 @enderror"
                     {{ old('terms_agreed') ? 'checked' : '' }} required>
                 <label for="terms_agreed" class="text-gray-700 text-sm md:text-base">
                     <span class="text-red-500">*</span>
@@ -318,7 +318,7 @@
             <a href="{{ url('/') }}" class="px-6 md:px-8 py-3 md:py-3 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md transition duration-300 text-center text-base">
                 キャンセル
             </a>
-            <button type="submit" class="px-6 md:px-8 py-3 md:py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300 text-base">
+            <button type="submit" class="btn-cta px-6 md:px-8 py-3 md:py-3 font-bold rounded-lg shadow-md transition duration-300 text-base">
                 確認画面へ <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </div>
@@ -410,13 +410,13 @@
                 data.option_products.forEach(function(product) {
                     console.log('オプション製品:', product);
                     const label = document.createElement('label');
-                    label.className = 'flex items-start cursor-pointer border border-gray-300 rounded-lg p-4 hover:bg-gray-50 hover:border-indigo-300 transition';
+                    label.className = 'flex items-start cursor-pointer border border-gray-300 rounded-lg p-4 hover:bg-gray-50 theme-option-card-hover transition';
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.name = 'option_product_ids[]';
                     checkbox.value = product.id;
-                    checkbox.className = 'mt-1 mr-3 w-5 h-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded';
+                    checkbox.className = 'mt-1 mr-3 w-5 h-5 theme-checkbox-accent border-gray-300 rounded';
                     
                     // old()の値を復元
                     const oldValues = @json(old('option_product_ids', []));
@@ -433,7 +433,7 @@
                                 ${product.description ? `<p class="text-sm text-gray-600 mt-1">${escapeHtml(product.description)}</p>` : ''}
                             </div>
                             <div class="text-right ml-4">
-                                <p class="text-lg font-bold text-indigo-600">${formatNumber(product.unit_price)}円</p>
+                                <p class="text-lg font-bold theme-price">${escapeHtml(product.formatted_price || (formatNumber(product.unit_price) + '円'))}</p>
                             </div>
                         </div>
                     `;

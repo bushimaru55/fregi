@@ -78,6 +78,14 @@ class Contract extends Model
     }
 
     /**
+     * 契約ステータス（マスター。contracts.status は code を保持）
+     */
+    public function contractStatus(): BelongsTo
+    {
+        return $this->belongsTo(ContractStatus::class, 'status', 'code');
+    }
+
+    /**
      * 完全な住所を取得
      */
     public function getFullAddressAttribute(): string
@@ -113,18 +121,10 @@ class Contract extends Model
     }
 
     /**
-     * ステータスラベルを取得
+     * ステータスラベルを取得（マスター参照。マスターにない code は「不明」）
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
-            'draft' => '下書き',
-            'pending_payment' => '決済待ち',
-            'submitted' => '申込受付済み',
-            'active' => '有効',
-            'canceled' => 'キャンセル',
-            'expired' => '期限切れ',
-            default => '不明',
-        };
+        return $this->contractStatus?->name ?? '不明';
     }
 }

@@ -57,7 +57,7 @@
                 <i class="fas fa-times mr-2"></i>キャンセル
             </a>
             <button type="submit" 
-                    class="gradient-bg text-white px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg">
+                    class="theme-btn-primary inline-block px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg no-underline border-0 cursor-pointer">
                 <i class="fas fa-save mr-2"></i>更新する
             </button>
         </div>

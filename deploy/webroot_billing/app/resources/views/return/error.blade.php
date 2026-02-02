@@ -14,7 +14,7 @@
         <h2 class="text-3xl font-bold text-gray-800 mb-4">エラーが発生しました</h2>
         <p class="text-lg text-gray-600 mb-8">{{ $message }}</p>
         
-        <a href="/billing/" class="inline-block gradient-bg text-white px-8 py-4 rounded-lg hover:opacity-90 transition shadow-lg">
+        <a href="/billing/" class="inline-block theme-btn-primary px-8 py-4 rounded-lg hover:opacity-90 transition shadow-lg no-underline">
             <i class="fas fa-home mr-2"></i>トップページへ戻る
         </a>
     </div>

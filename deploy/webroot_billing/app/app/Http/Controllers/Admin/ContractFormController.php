@@ -25,8 +25,12 @@ class ContractFormController extends Controller
         // 保存されているURL一覧を取得（新しい順）
         $savedUrls = ContractFormUrl::orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // 一覧に含まれる plan_ids からプラン名マップを取得（選択されているプラン名表示用）
+        $planIds = $savedUrls->pluck('plan_ids')->flatten()->unique()->filter()->values()->all();
+        $planNames = ContractPlan::whereIn('id', $planIds)->pluck('name', 'id')->all();
         
-        return view('admin.contract-forms.index', compact('plans', 'savedUrls'));
+        return view('admin.contract-forms.index', compact('plans', 'savedUrls', 'planNames'));
     }
 
     /**

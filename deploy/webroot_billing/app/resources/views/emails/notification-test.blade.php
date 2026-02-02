@@ -6,7 +6,7 @@
     <title>送信テスト</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 100%); color: #1a5f4a; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .header { background-color: #00B4A1; color: #FFFFFF; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
         .content { background: #f9f9f9; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 8px 8px; }
         .footer { text-align: center; padding: 16px; color: #718096; font-size: 12px; margin-top: 24px; border-top: 1px solid #e2e8f0; }
     </style>

@@ -14,7 +14,7 @@
             padding: 20px;
         }
         .header {
-            background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
+            background-color: #00B4A1;
             color: white;
             padding: 30px;
             text-align: center;

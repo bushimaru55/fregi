@@ -9,19 +9,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Filament Styles -->
+    <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/filament/support/support.css') }}">
     <link rel="stylesheet" href="{{ asset('css/filament/forms/forms.css') }}">
     
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
-        }
-        .card-shadow {
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
         /* Filament RichEditor 調整 */
         .fi-fo-rich-editor .tiptap {
             min-height: 300px;
@@ -67,38 +60,41 @@
     @livewireStyles
     @stack('styles')
 </head>
-<body class="bg-gray-50">
+<body class="theme-page">
     <!-- Header -->
-    <header class="gradient-bg text-white shadow-lg">
-        <div class="container mx-auto px-4 py-4">
+    <header class="admin-header shadow-sm">
+        <div class="container mx-auto admin-content-inner py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <a href="{{ route('admin.dashboard') }}">
-                        <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer">
+                <div class="flex items-center shrink-0 admin-logo-wrap">
+                    <a href="{{ route('admin.dashboard') }}" class="block admin-logo-link">
+                        <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer block admin-logo-img">
                     </a>
                 </div>
-                <nav class="hidden md:flex space-x-6">
-                    <a href="{{ route('admin.contracts.index') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-list-alt mr-2"></i>契約管理
+                <nav class="hidden md:flex items-center flex-wrap gap-x-5 gap-y-0">
+                    <a href="{{ route('admin.contracts.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
+                        <i class="fas fa-list-alt mr-2"></i>申し込み一覧
                     </a>
-                    <a href="{{ route('admin.contract-plan-masters.index') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-folder-open mr-2"></i>契約プランマスター管理
+                    <a href="{{ route('admin.contract-plan-masters.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
+                        <i class="fas fa-folder-open mr-2"></i>契約プランマスター
                     </a>
-                    <a href="{{ route('admin.contract-plans.index') }}" class="hover:text-indigo-200 transition">
+                    <a href="{{ route('admin.contract-plans.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-layer-group mr-2"></i>製品管理
                     </a>
-                    <a href="{{ route('admin.contract-forms.index') }}" class="hover:text-indigo-200 transition">
-                        <i class="fas fa-link mr-2"></i>新規申込フォーム管理
+                    <a href="{{ route('admin.contract-forms.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
+                        <i class="fas fa-link mr-2"></i>リンク発行
                     </a>
-                    <a href="{{ route('admin.site-settings.index') }}" class="hover:text-indigo-200 transition">
+                    <a href="{{ route('admin.contract-statuses.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
+                        <i class="fas fa-tags mr-2"></i>ステータスマスター
+                    </a>
+                    <a href="{{ route('admin.site-settings.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-globe mr-2"></i>サイト管理
                     </a>
-                    <a href="{{ route('admin.users.index') }}" class="hover:text-indigo-200 transition">
+                    <a href="{{ route('admin.users.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-user-shield mr-2"></i>管理者管理
                     </a>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                    <form method="POST" action="{{ route('logout') }}" class="inline shrink-0">
                         @csrf
-                        <button type="submit" class="hover:text-indigo-200 transition">
+                        <button type="submit" class="hover:opacity-90 transition whitespace-nowrap">
                             <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
                         </button>
                     </form>
@@ -108,9 +104,9 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
+    <main class="container mx-auto admin-content-inner py-8">
         @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r">
+            <div class="theme-alert-success p-4 mb-6 rounded-r">
                 <div class="flex items-center">
                     <i class="fas fa-check-circle mr-3"></i>
                     <p>{{ session('success') }}</p>
@@ -118,8 +114,17 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="theme-alert-error p-4 mb-6 rounded-r">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-3"></i>
+                    <p>{{ session('error') }}</p>
+                </div>
+            </div>
+        @endif
+
         @if($errors->any())
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="theme-alert-error p-4 mb-6 rounded-r">
                 <div class="flex items-start">
                     <i class="fas fa-exclamation-triangle mr-3 mt-1"></i>
                     <div>
@@ -135,11 +140,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-16">
+    <footer class="theme-footer mt-16">
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">© 2026 DSchatbot. All rights reserved.</p>
-                <p class="text-sm text-gray-400">Powered by Laravel 10</p>
+                <p class="text-sm opacity-90">© 2026 DSchatbot. All rights reserved.</p>
+                <p class="text-sm opacity-80">Powered by Laravel 10</p>
             </div>
         </div>
     </footer>
@@ -194,7 +199,53 @@
             subtree: true
         });
     </script>
-    
+    {{-- 削除・確認系フォーム: 画面中央モーダルで確認 --}}
+    <div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;" onclick="window._confirmModalBgClick && window._confirmModalBgClick(event)">
+        <div style="background:white;border-radius:0.5rem;padding:1.5rem;max-width:400px;width:90%;box-shadow:0 10px 25px rgba(0,0,0,0.2);pointer-events:auto;" onclick="event.stopPropagation()">
+            <p id="confirm-modal-message" style="font-size:1rem;color:#333;margin-bottom:1.5rem;text-align:center;"></p>
+            <div style="display:flex;justify-content:center;gap:1rem;">
+                <button type="button" id="confirm-modal-ok" onclick="window._confirmModalOk && window._confirmModalOk()" style="padding:0.5rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:0.375rem;font-weight:600;cursor:pointer;pointer-events:auto;">OK</button>
+                <button type="button" id="confirm-modal-cancel" onclick="window._confirmModalCancel && window._confirmModalCancel()" style="padding:0.5rem 1.5rem;background:#6b7280;color:white;border:none;border-radius:0.375rem;font-weight:600;cursor:pointer;pointer-events:auto;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var modal, modalMsg, currentForm = null;
+        window._confirmModalOk = function() {
+            if (currentForm) currentForm.submit();
+            hideModal();
+        };
+        window._confirmModalCancel = function() { hideModal(); };
+        window._confirmModalBgClick = function(e) {
+            if (e.target.id === 'confirm-modal') hideModal();
+        };
+        function showModal(msg, form) {
+            currentForm = form;
+            modal = document.getElementById('confirm-modal');
+            modalMsg = document.getElementById('confirm-modal-message');
+            if (modalMsg) modalMsg.textContent = msg;
+            if (modal) modal.style.display = 'flex';
+        }
+        function hideModal() {
+            modal = document.getElementById('confirm-modal');
+            if (modal) modal.style.display = 'none';
+            currentForm = null;
+        }
+        function run() {
+            document.addEventListener('click', function(e) {
+                var form = e.target.closest('form.inline-confirm-form');
+                var btn = form && e.target.closest('button[type="submit"]');
+                if (!form || !btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                showModal(form.getAttribute('data-confirm') || 'よろしいですか？', form);
+            }, true);
+        }
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', run); } else { run(); }
+    })();
+    </script>
+    @stack('scripts')
     @yield('scripts')
 </body>
 </html>

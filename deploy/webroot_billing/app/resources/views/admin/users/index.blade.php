@@ -21,9 +21,18 @@
         </div>
     @endif
 
+    @if($errors->has('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle mr-3"></i>
+                <p>{{ $errors->first('error') }}</p>
+            </div>
+        </div>
+    @endif
+
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">管理者管理</h1>
-        <a href="{{ route('admin.users.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+        <a href="{{ route('admin.users.create') }}" class="btn-cta font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
             <i class="fas fa-plus mr-2"></i>新規作成
         </a>
     </div>
@@ -38,15 +47,30 @@
                 <p class="text-sm text-gray-600">
                     申込受付時の通知メール送信先アドレス
                 </p>
-                @if($notificationEmail)
-                    <p class="text-lg font-semibold text-gray-800 mt-2">{{ $notificationEmail }}</p>
+                @if(count($notificationEmails) > 0)
+                    <ul class="text-gray-800 mt-2 space-y-1">
+                        @foreach($notificationEmails as $email)
+                            <li class="font-medium">{{ $email }}</li>
+                        @endforeach
+                    </ul>
+                    <p class="text-sm text-gray-500 mt-1">（{{ count($notificationEmails) }}件）</p>
                 @else
                     <p class="text-sm text-yellow-600 mt-2">未設定</p>
                 @endif
             </div>
-            <a href="{{ route('admin.users.edit-notification-email') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-                <i class="fas fa-edit mr-2"></i>編集
-            </a>
+            <div class="flex items-center space-x-2">
+                @if(count($notificationEmails) > 0)
+                    <form action="{{ route('admin.users.send-test-notification-email') }}" method="POST" class="inline inline-confirm-form" data-confirm="登録済みの送信先（{{ count($notificationEmails) }}件）にテストメールを送信します。よろしいですか？">
+                        @csrf
+                        <button type="submit" class="btn-primary font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                            <i class="fas fa-paper-plane mr-2"></i>送信テスト
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('admin.users.edit-notification-email') }}" class="btn-primary font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                    <i class="fas fa-edit mr-2"></i>編集
+                </a>
+            </div>
         </div>
     </div>
 
@@ -64,7 +88,7 @@
         @else
             <table class="min-w-full leading-normal">
                 <thead>
-                    <tr class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white uppercase text-sm leading-normal">
+                    <tr class="theme-table-header uppercase text-sm leading-normal">
                         <th class="py-3 px-6 text-left">ID</th>
                         <th class="py-3 px-6 text-left">名前</th>
                         <th class="py-3 px-6 text-left">メールアドレス</th>
@@ -81,11 +105,11 @@
                             <td class="py-3 px-6 text-left">{{ $user->created_at->format('Y年m月d日 H:i') }}</td>
                             <td class="py-3 px-6 text-center">
                                 <div class="flex item-center justify-center space-x-2">
-                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="theme-link font-semibold">
                                         <i class="fas fa-edit mr-1"></i>編集
                                     </a>
                                     @if($user->id !== auth()->id())
-                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" onsubmit="return confirm('本当に削除しますか？');" class="inline-block">
+                                    <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST" class="inline-block inline-confirm-form" data-confirm="本当に削除しますか？">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">

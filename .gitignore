@@ -38,6 +38,11 @@
 *.sqlite
 *.sqlite3
 
+# Deploy: 本番用 .env はリポジトリに含めない
+deploy/webroot_billing/app/.env
+# Deploy: ビルドスクリプトのバックアップ
+deploy/webroot_billing_backup_*/
+
 # Temporary files
 *.tmp
 *.bak

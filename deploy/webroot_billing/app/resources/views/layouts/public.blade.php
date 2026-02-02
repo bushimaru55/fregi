@@ -6,20 +6,13 @@
     <title>@yield('title', 'DSchatbot') - 申込管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/theme.css') }}">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 50%, #b8e6d3 100%);
-        }
-        .card-shadow {
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; }
     </style>
     @stack('styles')
 </head>
-<body class="bg-gray-50">
+<body class="theme-page">
     {{-- フロントエンドエラーログ用のスクリプト（本番環境でも有効） --}}
     <script>
         // グローバルエラーハンドラ：未処理のJavaScriptエラーをキャッチ
@@ -77,7 +70,7 @@
         });
     </script>
     <!-- Header -->
-    <header class="gradient-bg text-white shadow-lg">
+    <header class="theme-header shadow-sm">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
@@ -88,7 +81,7 @@
                         // 管理画面で設定された製品ページのURLを取得（設定がない場合はデフォルト）
                         $productPageUrl = \App\Models\SiteSetting::getTextValue('product_page_url', 'https://www.dschatbot.ai/');
                     @endphp
-                    <a href="{{ $productPageUrl }}" target="_blank" class="hover:text-indigo-200 transition">
+                    <a href="{{ $productPageUrl }}" target="_blank" class="hover:opacity-90 transition">
                         <i class="fas fa-arrow-left mr-2"></i>製品ページへ戻る
                     </a>
                 </nav>
@@ -99,7 +92,7 @@
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
         @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r">
+            <div class="theme-alert-success p-4 mb-6 rounded-r">
                 <div class="flex items-center">
                     <i class="fas fa-check-circle mr-3"></i>
                     <p>{{ session('success') }}</p>
@@ -108,7 +101,7 @@
         @endif
 
         @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="theme-alert-error p-4 mb-6 rounded-r">
                 <div class="flex items-center">
                     <i class="fas fa-exclamation-circle mr-3"></i>
                     <p>{{ session('error') }}</p>
@@ -117,7 +110,7 @@
         @endif
 
         @if($errors->any())
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-r">
+            <div class="theme-alert-error p-4 mb-6 rounded-r">
                 <div class="flex items-start">
                     <i class="fas fa-exclamation-triangle mr-3 mt-1"></i>
                     <div>
@@ -133,11 +126,11 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-16">
+    <footer class="theme-footer mt-16">
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row justify-between items-center">
-                <p class="text-sm text-gray-400">© 2026 DSchatbot. All rights reserved.</p>
-                <p class="text-sm text-gray-400">Powered by Laravel 10</p>
+                <p class="text-sm opacity-90">© 2026 DSchatbot. All rights reserved.</p>
+                <p class="text-sm opacity-80">Powered by Laravel 10</p>
             </div>
         </div>
     </footer>
