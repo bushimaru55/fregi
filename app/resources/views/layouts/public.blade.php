@@ -74,7 +74,7 @@
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto">
+                    <img src="{{ asset('images/DSchatbot_logo.png') }}" alt="DSchatbot" class="h-12 w-auto">
                 </div>
                 <nav class="hidden md:flex space-x-6">
                     @php

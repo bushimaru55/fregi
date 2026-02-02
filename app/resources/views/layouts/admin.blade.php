@@ -67,7 +67,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center shrink-0 admin-logo-wrap">
                     <a href="{{ route('admin.dashboard') }}" class="block admin-logo-link">
-                        <img src="{{ asset('images/dschatbot_logo.svg') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer block admin-logo-img">
+                        <img src="{{ asset('images/DSchatbot_logo.png') }}" alt="DSchatbot" class="h-12 w-auto cursor-pointer block admin-logo-img">
                     </a>
                 </div>
                 <nav class="hidden md:flex items-center flex-wrap gap-x-5 gap-y-0">

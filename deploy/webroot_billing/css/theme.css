@@ -169,10 +169,16 @@ input.theme-input.border-error,
   color: var(--color-primary);
 }
 
-/* === ヘッダー（単色） === */
+/* === 申し込みフォームヘッダー（背景なし：ロゴとの色被りを避ける） === */
 .theme-header {
-  background-color: var(--color-primary);
-  color: var(--color-surface);
+  background-color: transparent;
+  color: var(--color-text);
+}
+.theme-header nav a {
+  color: var(--color-text);
+}
+.theme-header nav a:hover {
+  color: var(--color-primary);
 }
 
 /* 管理画面ヘッダー：白背景（キャプチャ画像のテイスト） */
