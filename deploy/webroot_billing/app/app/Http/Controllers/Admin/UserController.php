@@ -214,6 +214,19 @@ class UserController extends Controller
                 ->withErrors(['error' => '送信先メールアドレスが未設定です。先にアドレスを保存してください。']);
         }
 
+        // #region agent log（本番メール不達の原因切り分け用：設定状態のみ記録、パスワードは記録しない）
+        $mailConfig = config('mail.mailers.smtp');
+        Log::channel('mail')->info('送信テストメール送信試行', [
+            'to_count' => count($notificationEmails),
+            'MAIL_MAILER' => config('mail.default'),
+            'MAIL_HOST' => $mailConfig['host'] ?? null,
+            'MAIL_PORT' => $mailConfig['port'] ?? null,
+            'MAIL_USERNAME' => isset($mailConfig['username']) && (string) $mailConfig['username'] !== '' ? '(set)' : '(empty)',
+            'MAIL_PASSWORD' => isset($mailConfig['password']) && (string) $mailConfig['password'] !== '' ? '(set)' : '(empty)',
+            'MAIL_ENCRYPTION' => $mailConfig['encryption'] ?? null,
+        ]);
+        // #endregion
+
         try {
             foreach ($notificationEmails as $email) {
                 Mail::to($email)->send(new NotificationTestMail());

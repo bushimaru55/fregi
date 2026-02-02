@@ -44,6 +44,8 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
+            // SSL証明書検証をスキップ（Symfony Mailer が DSN オプションで参照）
+            'verify_peer' => false,
         ],
 
         'ses' => [

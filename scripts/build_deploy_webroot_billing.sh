@@ -117,6 +117,12 @@ if [ -d "$APP_DIR/public/js" ]; then
     echo -e "${GREEN}js/ をコピー完了${NC}"
 fi
 
+# images/のコピー（ロゴ等）
+if [ -d "$APP_DIR/public/images" ]; then
+    cp -r "$APP_DIR/public/images" "$DEPLOY_DIR/images"
+    echo -e "${GREEN}images/ をコピー完了${NC}"
+fi
+
 # favicon.icoのコピー
 if [ -f "$APP_DIR/public/favicon.ico" ]; then
     cp "$APP_DIR/public/favicon.ico" "$DEPLOY_DIR/favicon.ico"

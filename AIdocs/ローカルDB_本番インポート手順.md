@@ -25,7 +25,17 @@
 3. **初回構築（空のDBに投入）する場合**
    - 上記と同様に、対象DBを選択してから SQL を実行またはダンプをインポート。
 
+## 3. 既存DBの localhost URL を本番URLに更新する場合
+
+既にインポート済みで、`contract_form_urls` や `fregi_configs` に localhost のURLが残っている場合は、以下を実行する。
+
+1. phpMyAdmin で対象DB（例: `billing_prod`）を開く。
+2. 「SQL」タブを開く。
+3. **`AIdocs/本番URLへ更新するSQL.sql`** の内容を貼り付けて「実行」する。
+
+これで `contract_form_urls.url`、`fregi_configs` の通知URL・戻りURL、`fregi_config_versions.snapshot_json` 内の localhost が `https://dschatbot.ai/webroot/billing/` に置き換わる。
+
 ## 注意事項
 
-- インポート後、本番の `APP_URL` 等に依存するデータ（例: `contract_form_urls.url` に含まれる localhost URL）は、必要に応じて管理画面や SQL で本番用URLに修正すること。
+- インポート後、本番の `APP_URL` 等に依存するデータ（例: `contract_form_urls.url` に含まれる localhost URL）は、上記「本番URLへ更新するSQL」または管理画面で本番用URLに修正すること。
 - `*.sql` は `.gitignore` で除外されているため、`ローカルDB_本番インポート用.sql` はリポジトリに含まれない。再エクスポートする場合は上記スクリプトを再実行すること。
