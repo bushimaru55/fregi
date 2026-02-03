@@ -11,7 +11,7 @@
 1. **管理画面で申込フォーム（選択されたプランのみ）を作成する**
 2. **コピーされたURLは一般的なホームページからフォームへのリンクを行う為のURL**
 3. **ホームページの閲覧者は不特定多数**
-4. **ホームページからリンクされたURLからFレジ決済を利用する**
+4. **ホームページからリンクされたURLから決済（ROBOT PAYMENT 等）を利用する**
 5. **Laravelの管理画面にはログインしないでこのフォームは利用される**
 
 ---
@@ -85,16 +85,16 @@ Route::prefix('contract')->name('contract.')->group(function () {
 
 ---
 
-### ✅ 仕様4: ホームページからリンクされたURLからFレジ決済を利用
+### ✅ 仕様4: ホームページからリンクされたURLから決済を利用
 
 **検証内容:**
 - 申込フォームから決済までのフローを確認
-- F-REGI決済へのリダイレクト処理を確認
+- 決済連携先へのリダイレクト処理を確認
 
 **実装フロー:**
 1. `/contract/create?plans=1,2,3` → 申込フォーム表示（選択プランのみ表示）
 2. フォーム入力 → `/contract/confirm` (POST) → 確認画面
-3. 確認画面 → `/contract/store` (POST) → 契約・決済データ作成 → F-REGI決済画面へリダイレクト
+3. 確認画面 → `/contract/store` (POST) → 契約・決済データ作成 → 決済連携先の画面へリダイレクト
 
 **実装コード:**
 ```php
@@ -117,14 +117,14 @@ public function create(Request $request): View
 }
 ```
 
-**F-REGI決済処理:**
+**決済処理:**
 ```php
 // app/Http/Controllers/ContractController.php
 public function store(ContractRequest $request): RedirectResponse
 {
     // 契約・決済データ作成
-    // F-REGI発行受付API呼び出し
-    // F-REGI決済画面へリダイレクト
+    // 決済連携（ROBOT PAYMENT 等）の API 呼び出し
+    // 決済画面へリダイレクト
     return redirect($paymentPageUrl);
 }
 ```
@@ -239,7 +239,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 1. ✅ 管理画面でプランを選択して申込フォームURLを生成
 2. ✅ 生成されたURLをコピーしてホームページからリンク可能
 3. ✅ 不特定多数のユーザーが認証なしでアクセス可能
-4. ✅ フォームからF-REGI決済まで正常に動作
+4. ✅ フォームから決済連携まで正常に動作
 5. ✅ 管理画面にログインしなくてもフォームが利用可能
 
 **問題点や改善が必要な箇所はありません。**

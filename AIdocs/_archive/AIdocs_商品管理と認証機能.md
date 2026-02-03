@@ -115,9 +115,7 @@
 - `/billing/admin/products`: 商品一覧
 - `/billing/admin/products/create`: 商品新規作成
 - `/billing/admin/products/{id}/edit`: 商品編集
-- `/billing/admin/fregi-configs`: F-REGI設定一覧
-- `/billing/admin/fregi-configs/create`: F-REGI設定新規作成
-- `/billing/admin/fregi-configs/{id}/edit`: F-REGI設定編集
+- 決済連携（ROBOT PAYMENT 等）の設定画面は、実装する決済方式に応じてルート・メニューを整備する
 
 ### 5. レイアウト構造
 
@@ -127,7 +125,7 @@
 
 #### layouts/admin.blade.php
 - 管理画面用レイアウト
-- フルナビゲーション（ダッシュボード、契約管理、商品管理、F-REGI設定、ログアウト）
+- フルナビゲーション（ダッシュボード、契約管理、商品管理、決済連携設定、ログアウト）
 
 #### layouts/app.blade.php（Breeze用）
 - 認証関連ページ用
@@ -149,7 +147,7 @@
 - 契約一覧へのリンク
 - 商品管理へのリンク
 - 商品新規作成へのリンク
-- F-REGI設定へのリンク
+- 決済連携設定へのリンク
 
 ### 7. 初期データ
 
@@ -175,7 +173,7 @@
 
 ### CSRF保護
 - すべてのPOST/PUT/DELETEリクエストにCSRFトークン必須
-- F-REGI通知エンドポイント（`/billing/api/fregi/notify`）のみ除外
+- 決済通知エンドポイント（実装する決済方式のパス）のみ除外
 
 ### パスワードハッシュ
 - Laravelの標準ハッシュ機能（bcrypt）を使用

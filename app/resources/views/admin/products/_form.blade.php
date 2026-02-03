@@ -122,9 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (billingTypeSelect) {
             billingTypeSelect.required = isOption;
         }
-    }
-
-    if (typeSelect) {
+    }    if (typeSelect) {
         typeSelect.addEventListener('change', toggleBillingTypeField);
         toggleBillingTypeField();
     }

@@ -2,7 +2,7 @@
 
 ## 概要
 
-F-REGI決済システムと連携した契約申込フォームの仕様を定義します。
+決済連携（ROBOT PAYMENT 等）を用いた契約申込フォームの仕様を定義します。
 
 ## データベース設計
 
@@ -12,7 +12,7 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 |---------|-----|------|------|
 | id | BIGINT UNSIGNED | PK, AUTO_INCREMENT | プランID |
 | contract_plan_master_id | BIGINT UNSIGNED | FK(contract_plan_masters.id), NULL | 契約プランマスターID |
-| item | VARCHAR(50) | NOT NULL, UNIQUE | プランコード（F-REGI標準: ITEM） |
+| item | VARCHAR(50) | NOT NULL, UNIQUE | プランコード（決済連携先の商品コード等） |
 | name | VARCHAR(255) | NOT NULL | プラン名 |
 | price | INT UNSIGNED | NOT NULL | 料金（税込） |
 | billing_type | ENUM | NOT NULL, DEFAULT 'one_time' | 決済タイプ（one_time: 一回限り, monthly: 月額課金） |
@@ -24,7 +24,7 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 
 **決済タイプ（billing_type）:**
 - `one_time`: 一回限りの決済（リダイレクト決済）
-- `monthly`: 月額課金（F-REGI月次課金サービス）※実装中
+- `monthly`: 月額課金（決済連携先の月額課金サービス）
 
 **インデックス:**
 - `UNIQUE(item)`
@@ -72,7 +72,7 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 | updated_at | TIMESTAMP | NULL | 更新日時 |
 
 **カード情報の取扱い（2026-01-23）:**
-- **保存しない:** フルPAN（pan1〜pan4）、セキュリティコード（scode）、有効期限、カード名義 — 一切 DB に保存しない。F-REGI へのオーソリリクエスト時のみメモリ上で使用。
+- **保存しない:** フルPAN、セキュリティコード、有効期限、カード名義 — 一切 DB に保存しない。決済連携時のみメモリ上で使用する。
 
 **ステータス:**
 - `draft`: 下書き（入力中）
@@ -165,31 +165,26 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
    - currency: JPY
    - payment_method: credit_card
 3. ContractにPayment IDを紐付け（status: pending_payment）
-4. プランの決済タイプ（billing_type）を確認
-   - `one_time`（一回限り）: F-REGI発行受付API（`compsettleapply.cgi`）を使用
-   - `monthly`（月額課金）: 暫定実装としてエラーメッセージを表示（F-REGI月次課金サービスAPI実装が必要）
-5. F-REGI設定取得
-6. F-REGIへのPOSTパラメータ生成
-7. F-REGI決済画面へリダイレクト
+4. プランの決済タイプ（billing_type）に応じて決済連携（ROBOT PAYMENT 等）の API を呼び出し、決済画面へリダイレクトする。
 
-### 4. F-REGI決済画面
+### 4. 決済画面（決済連携先）
 
-- F-REGI側でクレジットカード情報を入力
+- 決済連携先の画面でクレジットカード情報等を入力
 - 決済処理実行
 
-### 5. F-REGI通知受領（/api/fregi/notify）
+### 5. 決済通知受領（実装する決済方式に応じたエンドポイント）
 
 **処理内容:**
-1. チェックサム検証
+1. 通知の検証（署名・チェックサム等）
 2. Paymentステータス更新（冪等処理）
-   - SUCCESS → paid
-   - FAILURE → failed
-   - CANCEL → canceled
+   - 成功 → paid
+   - 失敗 → failed
+   - キャンセル → canceled
 3. Contractステータス更新
    - paid → active
    - failed/canceled → pending_payment（再決済可能）
 
-### 6. 戻りURL（/return/success）
+### 6. 戻りURL（/return/success 等）
 
 - 決済結果表示
 - 契約完了画面へ遷移（/contract/complete）
@@ -303,14 +298,14 @@ F-REGI決済システムと連携した契約申込フォームの仕様を定�
 
 ### CSRF保護
 - 申込フォーム: CSRF トークン必須
-- F-REGI通知: CSRF除外（`VerifyCsrfToken.php`）
+- 決済通知: CSRF除外（`VerifyCsrfToken.php`）
 
 ### バリデーション
 - サーバーサイドバリデーション必須
 - クライアントサイドバリデーション推奨
 
 ### 個人情報保護
-- カード情報は当システムで扱わない（F-REGI側で入力）
+- カード情報は当システムで扱わない（決済連携先の画面で入力）
 - 通知ペイロードは暗号化推奨
 
 ## 今後の拡張

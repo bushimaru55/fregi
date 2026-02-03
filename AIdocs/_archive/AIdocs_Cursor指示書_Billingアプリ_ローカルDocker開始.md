@@ -1,4 +1,4 @@
-# Cursor指示書（AIdocs）: Billing（F-REGI決済）アプリ 開発開始（Dockerローカル）
+# Cursor指示書（AIdocs）: Billing（決済連携）アプリ 開発開始（Dockerローカル）
 
 最終更新: 2026-01-07  
 本番URL: `https://dschatbot.ai/billing/`  
@@ -11,8 +11,8 @@
 ## 0. 目的（What）
 ローカル（Docker）で開発を開始し、以下を満たす Billing アプリを実装する。
 
-- F-REGI（まずは **リダイレクト方式**）で決済を開始し、**通知（受付CGI）**で決済結果を確定
-- F-REGI接続設定（SHOPID/接続パスワード/通知URL/戻りURL/環境）を**DBに保存**し、管理画面から変更可能
+- 決済連携（**ROBOT PAYMENT** 等）で決済を開始し、**通知**で決済結果を確定
+- 決済連携の接続設定を**DBまたは設定で保持**し、管理画面から変更可能
 - 決済（payments）を**状態遷移**で管理し、通知は**冪等**に処理
 - 本番が `/billing/` 配下のため、ローカルでも **`/billing` を意識**してURL生成・アセット参照が壊れないようにする
 
@@ -202,10 +202,10 @@ docker compose exec app bash -lc "php artisan migrate"
 
 ---
 
-## 4. アプリケーション仕様（Billing / F-REGI）
+## 4. アプリケーション仕様（Billing / 決済連携）
 
 ### 4.1 採用する決済方式（第一段階）
-- **F-REGI リダイレクト接続**を主に採用
+- **決済連携（ROBOT PAYMENT 等）のリダイレクト方式**を採用
 - 決済確定は **受付CGI（通知）** によって行う
 - 戻りURL（成功/キャンセル等）は画面表示のために利用し、**確定処理はしない**（DB状態参照）
 
@@ -214,7 +214,7 @@ docker compose exec app bash -lc "php artisan migrate"
 
 - 管理画面（例）: `/billing/admin/`
 - API（例）: `/billing/api/...`
-- F-REGI 通知受領（受付CGI）: `/billing/api/fregi/notify`
+- 決済通知受領: 実装する決済方式のエンドポイント（例: `/billing/api/robot-payment/notify`）
 - 戻りURL:
   - `/billing/return/success`
   - `/billing/return/cancel`
@@ -224,9 +224,9 @@ docker compose exec app bash -lc "php artisan migrate"
 
 ### 4.3 主要フロー
 1. 契約/申込（contract）に対して請求（payment）を生成
-2. 決済開始APIでF-REGIへPOSTするためのパラメータを生成（チェックサム含む）
-3. ブラウザがF-REGI決済画面へ遷移（自動submit）
-4. F-REGIが **受付CGIへ通知POST**（成功/失敗/キャンセル等）
+2. 決済開始APIで決済連携先へPOSTするためのパラメータを生成（署名等含む）
+3. ブラウザが決済連携先の決済画面へ遷移（自動submit）
+4. 決済連携先が **通知エンドポイントへPOST**（成功/失敗/キャンセル等）
 5. 通知を検証（チェックサム）し、paymentを **paid/failed/canceled** へ遷移
 6. 戻りURL画面はDBの状態に応じて表示（通知遅延なら「決済確認中」）
 
@@ -258,8 +258,8 @@ docker compose exec app bash -lc "php artisan migrate"
 ## 5. データベース仕様（最小セット）
 既にDB定義書（Excel）に追加済みの前提だが、ローカル開発に必要なテーブル仕様をここに集約する。
 
-### 5.1 `fregi_configs`（F-REGI接続設定：現在有効な設定）
-目的: テナント/会社単位で、F-REGI接続設定を保持し、管理画面から変更できるようにする。
+### 5.1 決済連携の接続設定
+目的: テナント/会社単位で、決済連携（ROBOT PAYMENT 等）の接続設定を保持し、管理画面から変更できるようにする。実装する決済方式に応じてテーブル名・カラムを定義する。
 
 推奨カラム（例）
 - `id` (PK)
@@ -277,11 +277,11 @@ docker compose exec app bash -lc "php artisan migrate"
 - `unique(company_id, environment, is_active)` はDBにより工夫が必要（partial unique等）
   - DB制約が難しい場合は **アプリ側でトランザクション保証**し、監視ログを残す
 
-### 5.2 `fregi_config_versions`（接続設定の変更履歴）
+### 5.2 接続設定の変更履歴（任意）
 目的: 監査/ロールバックのために履歴保持。
 
 - `id` (PK)
-- `config_id`（FK -> `fregi_configs.id`）
+- `config_id`（FK -> 決済連携設定テーブル）
 - `version_no`
 - `snapshot_json`（変更後のスナップショット推奨）
 - `changed_at`, `changed_by`
@@ -294,8 +294,7 @@ docker compose exec app bash -lc "php artisan migrate"
 - `company_id` / `tenant_id`
 - `contract_id`（既存の契約/申込と紐付け）
 - `order_no`（自社採番: 外部公開OKな識別子）
-- `fregi_receipt_no`（発行番号）
-- `fregi_slip_no`（伝票番号）
+- 決済連携先の発行番号・伝票番号等（決済方式に応じてカラム名を定義）
 - `amount`（税込）
 - `currency`（JPY固定でも可）
 - `payment_method`（例: `card`）
@@ -307,7 +306,7 @@ docker compose exec app bash -lc "php artisan migrate"
 
 推奨制約/インデックス
 - `unique(company_id, order_no)`
-- `unique(fregi_receipt_no, fregi_slip_no)`
+- 決済連携先の伝票等のユニーク制約（決済方式に応じて定義）
 
 ### 5.4 `payment_events`（監査ログ）
 目的: 重複通知/障害調査のためのイベント履歴。
@@ -322,14 +321,14 @@ docker compose exec app bash -lc "php artisan migrate"
 
 ## 6. 実装スコープ（MVP）
 ### 6.1 必須
-- F-REGI設定管理（CRUD）
+- 決済連携設定の管理（CRUD または編集のみ）
   - パスワードはマスク表示、変更時のみ入力
   - 保存時に暗号化してDBへ
   - 変更履歴を必ず保存（versions）
 - 決済開始
-  - DBから有効な `fregi_configs` を取得
+  - DBから有効な決済連携設定を取得
   - チェックサム生成
-  - F-REGIへPOSTするためのフォーム生成（HTML）
+  - 決済連携先へPOSTするためのフォーム生成（HTML）
 - 通知受領（受付CGI）
   - 署名/チェックサム検証
   - 冪等更新（paid/failed/canceled）
@@ -362,13 +361,12 @@ FTPアップロード方針
 1. Dockerローカル環境（compose, nginx, php-fpm）を作成して起動
 2. Laravel 10 を作成し、`/billing` ベースで表示できるようにする
 3. DBマイグレーション作成
-   - `fregi_configs`
-   - `fregi_config_versions`
+   - 決済連携設定テーブル（実装方式に応じて）
    - `payments`
    - `payment_events`
 4. 暗号化ユーティリティ（AES-GCM推奨）を実装し、接続パスワードを暗号化保存
 5. 管理画面（最小）
-   - F-REGI設定の登録/更新（パスワードマスク）
+   - 決済連携設定の登録/更新（機密項目はマスク）
 6. 決済開始（フォーム生成）
 7. notify受領（冪等）
 8. return画面（確認中含む）
@@ -377,7 +375,7 @@ FTPアップロード方針
 
 ## 9. 受け入れ条件（Acceptance Criteria）
 - ローカル: `http://localhost:8080/billing` でアプリが動く
-- F-REGI設定がDBに保存でき、パスワードは暗号化される
+- 決済連携設定がDBに保存でき、機密項目は暗号化する
 - 決済開始でフォーム生成できる（ダミーでもOK）
 - notifyで支払い状態が確定し、冪等である
 - 戻りURL画面はDB状態に従って表示できる
