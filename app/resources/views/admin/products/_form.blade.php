@@ -113,9 +113,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const typeSelect = document.getElementById('type');
     const billingTypeField = document.getElementById('product-billing-type-field');
-    const billingTypeSelect = document.getElementById('billing_type');
-
-    function toggleBillingTypeField() {
+    const billingTypeSelect = document.getElementById('billing_type');    function toggleBillingTypeField() {
         if (!typeSelect || !billingTypeField) return;
         const isOption = typeSelect.value === 'option';
         billingTypeField.style.display = isOption ? 'block' : 'none';

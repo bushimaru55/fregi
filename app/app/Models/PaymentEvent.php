@@ -15,6 +15,9 @@ class PaymentEvent extends Model
     protected $fillable = [
         'payment_id',
         'event_type',
+        'raw_query',
+        'rp_gid',
+        'rp_acid',
         'payload',
         'created_at',
     ];

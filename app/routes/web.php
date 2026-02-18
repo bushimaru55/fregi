@@ -29,7 +29,12 @@ Route::prefix('contract')->name('contract.')->group(function () {
     Route::post('/confirm', [\App\Http\Controllers\ContractController::class, 'confirm'])->name('confirm');
     Route::post('/store', [\App\Http\Controllers\ContractController::class, 'store'])->name('store');
     Route::get('/complete/{contract}', [\App\Http\Controllers\ContractController::class, 'complete'])->name('complete')->middleware('signed');
-    
+    // ROBOT PAYMENT 決済ページ（確認後→決済→通知で完了）
+    Route::get('/payment', [\App\Http\Controllers\ContractController::class, 'payment'])->name('payment');
+    Route::post('/payment/execute', [\App\Http\Controllers\RobotPaymentController::class, 'execute'])->name('payment.execute');
+    // カード入力検証用ログ（桁数・下4桁・有効期限のみ。フル番号は送受信しない）
+    Route::post('/payment/card-hint', [\App\Http\Controllers\RobotPaymentController::class, 'logCardHint'])->name('payment.card-hint');
+    Route::post('/payment/token-create-failed', [\App\Http\Controllers\RobotPaymentController::class, 'logTokenCreateFailed'])->name('payment.token-create-failed');
     // オプション商品取得API（選択されたベース商品に紐づくオプション商品を取得）
     Route::get('/api/option-products/{contractPlanId}', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
 });

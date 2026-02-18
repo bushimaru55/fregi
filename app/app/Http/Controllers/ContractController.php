@@ -8,6 +8,7 @@ use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Product;
 use App\Models\SiteSetting;
+use App\Services\RobotPayment\PurchasePatternService;
 use App\Mail\ContractNotificationMail;
 use App\Mail\ContractReplyMail;
 use Illuminate\Http\RedirectResponse;
@@ -100,9 +101,9 @@ class ContractController extends Controller
 
     /**
      * 申込内容確認画面を表示
-     * POSTリクエスト時は必ず確認画面を表示する
+     * POSTリクエスト時は必ず確認画面を表示する（ROBOT PAYMENT 有効時は決済ページへリダイレクト）
      */
-    public function confirm(ContractRequest $request): View
+    public function confirm(ContractRequest $request): View|RedirectResponse
     {
         try {
             // POSTリクエストであることを確認（GETリクエストの場合はconfirmGet()に処理を委譲）
@@ -130,6 +131,15 @@ class ContractController extends Controller
                 'timestamp' => now()->toIso8601String(),
             ];
             Log::channel('contract_payment')->info('確認画面表示（POST）', $logData);
+
+            // ROBOT PAYMENT 有効時は決済ページへリダイレクト（契約・明細は決済実行時に作成）
+            if (config('robotpayment.enabled', false)) {
+                $request->session()->put('contract_confirm_data', $validated);
+                Log::channel('contract_payment')->info('確認送信→決済ページへリダイレクト', [
+                    'contract_plan_id' => $validated['contract_plan_id'],
+                ]);
+                return redirect()->route('contract.payment');
+            }
             
             // オプション商品を取得
             $optionProductIds = $validated['option_product_ids'] ?? [];
@@ -342,6 +352,7 @@ class ContractController extends Controller
                     'quantity' => 1,
                     'unit_price' => $plan->price,
                     'subtotal' => $plan->price,
+                    'billing_type' => $plan->billing_type ?? 'one_time',
                 ]);
 
                 $optionProductIds = $validated['option_product_ids'] ?? [];
@@ -360,6 +371,7 @@ class ContractController extends Controller
                         'quantity' => 1,
                         'unit_price' => $product->unit_price,
                         'subtotal' => $product->unit_price,
+                        'billing_type' => $product->billing_type ?? 'one_time',
                     ]);
                 }
 
@@ -490,6 +502,51 @@ class ContractController extends Controller
                 }
             }
         });
+    }
+
+    /**
+     * 決済ページ（ROBOT PAYMENT トークン+3DS）。セッションに contract_confirm_data がある場合のみ表示。
+     */
+    public function payment(Request $request)
+    {
+        $data = $request->session()->get('contract_confirm_data');
+        $storeId = config('robotpayment.store_id', '');
+        $enabled = config('robotpayment.enabled', false);
+        if (!$data) {
+            return redirect()->route('contract.create')->with('error', '申込内容が見つかりません。最初から入力し直してください。');
+        }
+        $plan = ContractPlan::findOrFail($data['contract_plan_id']);
+        $optionProductIds = $data['option_product_ids'] ?? [];
+        $desiredStartDate = $data['desired_start_date'] ?? now()->format('Y-m-d');
+
+        $patternService = app(PurchasePatternService::class);
+        $amounts = $patternService->getAmountsFromPlanAndOptions($plan, $optionProductIds, $desiredStartDate);
+
+        if (!$storeId || !$enabled) {
+            return redirect()->route('contract.create')->with('error', '決済は現在ご利用いただけません。');
+        }
+
+        $paymentError = $request->session()->get('payment_error');
+        $request->session()->forget('payment_error');
+
+        Log::channel('contract_payment')->info('決済ページ表示', [
+            'contract_plan_id' => $plan->id,
+            'pattern' => $amounts['pattern'],
+            'am' => $amounts['am'],
+            'tx' => $amounts['tx'],
+            'sf' => $amounts['sf'],
+            'ta' => $amounts['ta'] ?? null,
+        ]);
+
+        $customerPhone = $data['phone'] ?? '';
+        $customerPhoneDigits = preg_replace('/\D/', '', $customerPhone);
+        return view('contracts.payment', [
+            'amounts' => $amounts,
+            'store_id' => $storeId,
+            'customer_email' => $data['email'] ?? '',
+            'customer_phone' => $customerPhoneDigits,
+            'error' => $paymentError,
+        ]);
     }
 
     /**

@@ -37,13 +37,13 @@ class CreateTestPlans extends Command
             ]
         );
 
-        // 一回限りのプラン
+        // 一回限りのプラン（買い切り単品・テスト用1円）
         $oneTimePlan = ContractPlan::updateOrCreate(
             ['item' => 'TEST-ONE-TIME'],
             [
                 'contract_plan_master_id' => $testMaster->id,
                 'name' => 'テスト用 一回限りプラン',
-                'price' => 10000,
+                'price' => 1,
                 'billing_type' => 'one_time',
                 'description' => '動作テスト用：一回限りの決済プラン',
                 'is_active' => true,
@@ -51,13 +51,13 @@ class CreateTestPlans extends Command
             ]
         );
 
-        // 月額課金のプラン
+        // 月額課金のプラン（テスト用2円/月）
         $monthlyPlan = ContractPlan::updateOrCreate(
             ['item' => 'TEST-MONTHLY'],
             [
                 'contract_plan_master_id' => $testMaster->id,
                 'name' => 'テスト用 月額課金プラン',
-                'price' => 5000,
+                'price' => 2,
                 'billing_type' => 'monthly',
                 'description' => '動作テスト用：月額課金プラン',
                 'is_active' => true,

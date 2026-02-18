@@ -19,6 +19,7 @@ class ContractItem extends Model
         'quantity',
         'unit_price',
         'subtotal',
+        'billing_type',
         'product_attributes',
     ];
 
