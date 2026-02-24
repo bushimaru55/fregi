@@ -101,6 +101,15 @@ class RobotPaymentService
             ]);
 
             $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token);
+            if ($this->patternService->isAutoBillingInitial($pattern)) {
+                Log::channel('contract_payment')->info('自動課金初回決済（商品登録なし）: actp, acam, ac1, ac4 を送信', [
+                    'contract_id' => $contract->id,
+                    'actp' => $amounts['actp'] ?? null,
+                    'acam' => $amounts['acam'] ?? null,
+                    'ac1' => $amounts['ac1'] ?? null,
+                    'ac4' => $amounts['ac4'] ?? null,
+                ]);
+            }
             $response = Http::asForm()->timeout(30)->post(config('robotpayment.gateway_url'), $params);
             $body = $response->body();
 

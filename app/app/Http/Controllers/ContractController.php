@@ -529,14 +529,19 @@ class ContractController extends Controller
         $paymentError = $request->session()->get('payment_error');
         $request->session()->forget('payment_error');
 
-        Log::channel('contract_payment')->info('決済ページ表示', [
+        $logData = [
             'contract_plan_id' => $plan->id,
             'pattern' => $amounts['pattern'],
             'am' => $amounts['am'],
             'tx' => $amounts['tx'],
             'sf' => $amounts['sf'],
             'ta' => $amounts['ta'] ?? null,
-        ]);
+        ];
+        if ($amounts['pattern'] !== \App\Services\RobotPayment\PurchasePatternService::PATTERN_ONE_TIME_ONLY) {
+            $logData['amount_recurring'] = $amounts['amount_recurring'] ?? null;
+            $logData['ac4'] = $amounts['ac4'] ?? null;
+        }
+        Log::channel('contract_payment')->info('決済ページ表示', $logData);
 
         $customerPhone = $data['phone'] ?? '';
         $customerPhoneDigits = preg_replace('/\D/', '', $customerPhone);
