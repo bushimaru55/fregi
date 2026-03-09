@@ -17,6 +17,8 @@ class Payment extends Model
         'provider',
         'payment_kind',
         'merchant_order_no',
+        'billing_payment_method_number',
+        'billing_payment_method_code',
         'rp_gid',
         'rp_acid',
         'orderid',

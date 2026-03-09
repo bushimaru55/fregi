@@ -8,6 +8,7 @@ use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Product;
 use App\Models\SiteSetting;
+use App\Services\BillingRobo\BillingRoboBillingService;
 use App\Services\RobotPayment\PurchasePatternService;
 use App\Mail\ContractNotificationMail;
 use App\Mail\ContractReplyMail;
@@ -379,6 +380,29 @@ class ContractController extends Controller
                     'contract_id' => $contract->id,
                     'option_count' => count($optionProductIds),
                 ]);
+
+                if (config('billing_robo.base_url') && config('billing_robo.user_id')) {
+                    try {
+                        $billingService = app(BillingRoboBillingService::class);
+                        $api1Result = $billingService->upsertBillingFromContract($contract);
+                        if ($api1Result['success']) {
+                            Log::channel('contract_payment')->info('請求管理ロボ API 1 請求先登録完了（申込保存時）', [
+                                'contract_id' => $contract->id,
+                                'billing_code' => $api1Result['billing_code'],
+                            ]);
+                        } else {
+                            Log::channel('contract_payment')->warning('請求管理ロボ API 1 失敗（申込保存時）', [
+                                'contract_id' => $contract->id,
+                                'error' => $api1Result['error'] ?? '',
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        Log::channel('contract_payment')->warning('請求管理ロボ API 1 例外（申込保存時）', [
+                            'contract_id' => $contract->id,
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                }
 
                 $contractItems = $contract->contractItems()->with('product')->get();
                 $optionItems = $contractItems->filter(fn ($item) => $item->product_id !== null);

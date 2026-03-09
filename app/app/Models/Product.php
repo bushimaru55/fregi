@@ -16,6 +16,8 @@ class Product extends Model
         'name',
         'description',
         'unit_price',
+        'tax_category',
+        'tax',
         'type',
         'billing_type',
         'is_active',
@@ -24,10 +26,14 @@ class Product extends Model
 
     protected $attributes = [
         'billing_type' => 'one_time',
+        'tax_category' => 1,
+        'tax' => 10,
     ];
 
     protected $casts = [
         'unit_price' => 'integer',
+        'tax_category' => 'integer',
+        'tax' => 'integer',
         'is_active' => 'boolean',
         'display_order' => 'integer',
     ];
@@ -111,5 +117,53 @@ class Product extends Model
     public function isOption(): bool
     {
         return $this->type === 'option';
+    }
+
+    /**
+     * 請求管理ロボ API 3（demand）用: 商品名（goods_name）
+     */
+    public function getGoodsNameForBillingRobo(): string
+    {
+        return $this->name ?? '';
+    }
+
+    /**
+     * 請求管理ロボ API 3（demand）用: 単価（price）。税込のためそのまま返す。
+     */
+    public function getPriceForBillingRobo(): int
+    {
+        return (int) $this->unit_price;
+    }
+
+    /**
+     * 請求管理ロボ API 3（demand）用: 税区分（tax_category）0:外税 1:内税 2:対象外 3:非課税
+     */
+    public function getTaxCategoryForBillingRobo(): int
+    {
+        $v = (int) ($this->tax_category ?? 1);
+        return in_array($v, [0, 1, 2, 3], true) ? $v : 1;
+    }
+
+    /**
+     * 請求管理ロボ API 3（demand）用: 消費税率（tax）5/8/10
+     */
+    public function getTaxRateForBillingRobo(): int
+    {
+        $v = (int) ($this->tax ?? 10);
+        return in_array($v, [5, 8, 10], true) ? $v : 10;
+    }
+
+    /**
+     * 税区分ラベル（請求管理ロボ用）
+     */
+    public function getTaxCategoryLabelAttribute(): string
+    {
+        return match((int) ($this->tax_category ?? 1)) {
+            0 => '外税',
+            1 => '内税',
+            2 => '対象外',
+            3 => '非課税',
+            default => '内税',
+        };
     }
 }

@@ -15,6 +15,9 @@ class Contract extends Model
         'contract_plan_id',
         'payment_id',
         'customer_id',
+        'billing_code',
+        'billing_individual_number',
+        'billing_individual_code',
         'status',
         'company_name',
         'company_name_kana',
@@ -75,6 +78,14 @@ class Contract extends Model
     public function contractItems(): HasMany
     {
         return $this->hasMany(ContractItem::class, 'contract_id');
+    }
+
+    /**
+     * 請求管理ロボ 請求情報（API 3 で登録した請求情報番号・コード）
+     */
+    public function billingRoboDemands(): HasMany
+    {
+        return $this->hasMany(BillingRoboDemand::class, 'contract_id');
     }
 
     /**

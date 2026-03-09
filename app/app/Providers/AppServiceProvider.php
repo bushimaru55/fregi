@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\BillingRobo\BillingRoboApiClient;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\URL;
@@ -15,7 +16,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(BillingRoboApiClient::class, function () {
+            return BillingRoboApiClient::fromConfig();
+        });
     }
 
     /**

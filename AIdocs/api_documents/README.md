@@ -11,6 +11,9 @@
 - **公式マニュアル**: [billing-robo-apispec | 請求管理ロボのAPI仕様書](https://apispec.billing-robo.jp/)
 - **システム要件範囲**: [02_scope_billing_robo.md](02_scope_billing_robo.md) … 本システムの請求管理ロボ連携の範囲（請求先登録更新・クレジットカード登録・請求情報登録更新・請求書発行・即時決済）と対応API一覧。
 - **実行計画**: [08_execution_plan_billing_robo.md](08_execution_plan_billing_robo.md) … 方針（商品マスタは本システムを正・請求管理ロボは実行層）とタスク概要。
+- **実装順序案**: [10_implementation_order_billing_robo.md](10_implementation_order_billing_robo.md) … 基盤→API1・2→API3→API4→API5→フロー統合→テストの実装順と依存関係。
+- **フェーズ3 確認手順**: [11_phase3_verification_steps.md](11_phase3_verification_steps.md) … 請求先・決済手段（API 1・2）の実装をステップバイステップで確認する手順。
+- **請求管理ロボのみ検証**: [13_billing_robo_only_verification.md](13_billing_robo_only_verification.md) … ROBOT PAYMENT を使わず、請求管理ロボ API（API 1）だけを検証する手順。
 - **デモ環境接続**: [09_demo_connection_billing_robo.md](09_demo_connection_billing_robo.md) … デモ（https://demo.billing-robo.jp/）接続に必要な情報の箇条書き。
 - **概要・一覧**: [00_billing_robo_api_overview.md](00_billing_robo_api_overview.md) … Base URL・API一覧・Webhook・注釈・共通エラー・SSL推奨をまとめたドキュメント。
 - **シーケンス**: [01_billing_robo_api_sequence.md](01_billing_robo_api_sequence.md) … 請求管理ロボ_APIシーケンス図.pdf を参照し、請求先登録〜商品参照までの流れを決済手段別（銀行振込・クレジットカード・バンクチェック・RP口座振替・RL・その他口座振替・コンビニ払込票）に整理したドキュメント。

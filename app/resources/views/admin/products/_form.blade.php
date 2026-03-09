@@ -38,6 +38,41 @@
         @enderror
     </div>
 
+    {{-- 税区分（請求管理ロボ連携用） --}}
+    <div>
+        <label for="tax_category" class="block text-sm font-semibold text-gray-700 mb-2">
+            税区分
+        </label>
+        <select name="tax_category" id="tax_category"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('tax_category') border-red-500 @enderror">
+            <option value="0" {{ old('tax_category', $product->tax_category ?? 1) == 0 ? 'selected' : '' }}>外税</option>
+            <option value="1" {{ old('tax_category', $product->tax_category ?? 1) == 1 ? 'selected' : '' }}>内税</option>
+            <option value="2" {{ old('tax_category', $product->tax_category ?? 1) == 2 ? 'selected' : '' }}>対象外</option>
+            <option value="3" {{ old('tax_category', $product->tax_category ?? 1) == 3 ? 'selected' : '' }}>非課税</option>
+        </select>
+        @error('tax_category')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        <p class="text-xs text-gray-600 mt-1">請求管理ロボ連携で使用</p>
+    </div>
+
+    {{-- 消費税率（請求管理ロボ連携用） --}}
+    <div>
+        <label for="tax" class="block text-sm font-semibold text-gray-700 mb-2">
+            消費税率（%）
+        </label>
+        <select name="tax" id="tax"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('tax') border-red-500 @enderror">
+            <option value="5" {{ old('tax', $product->tax ?? 10) == 5 ? 'selected' : '' }}>5%</option>
+            <option value="8" {{ old('tax', $product->tax ?? 10) == 8 ? 'selected' : '' }}>8%</option>
+            <option value="10" {{ old('tax', $product->tax ?? 10) == 10 ? 'selected' : '' }}>10%</option>
+        </select>
+        @error('tax')
+            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+        @enderror
+        <p class="text-xs text-gray-600 mt-1">税区分が外税・内税のとき使用</p>
+    </div>
+
     {{-- 商品種別 --}}
     <div>
         <label for="type" class="block text-sm font-semibold text-gray-700 mb-2">

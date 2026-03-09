@@ -5,6 +5,8 @@ namespace App\Services\RobotPayment;
 use App\Mail\ContractNotificationMail;
 use App\Mail\ContractReplyMail;
 use App\Models\Contract;
+use App\Services\BillingRobo\BillingRoboBillingService;
+use App\Services\BillingRobo\BillingRoboCreditCardService;
 use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Payment;
@@ -100,7 +102,56 @@ class RobotPaymentService
                 'requested_at' => now(),
             ]);
 
-            $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token);
+            $api1Success = null;
+            if (config('billing_robo.base_url') && config('billing_robo.user_id')) {
+                try {
+                    $billingService = app(BillingRoboBillingService::class);
+                    $api1Result = $billingService->upsertBillingFromContract($contract);
+                    $api1Success = $api1Result['success'];
+                    if ($api1Result['success']) {
+                        $payment->refresh();
+                        $cod = $payment->merchant_order_no ?? $cod;
+                        Log::channel('contract_payment')->info('請求管理ロボ API 1 請求先登録完了', [
+                            'contract_id' => $contract->id,
+                            'billing_code' => $api1Result['billing_code'],
+                            'cod' => $api1Result['cod'],
+                        ]);
+                    } else {
+                        Log::channel('contract_payment')->warning('請求管理ロボ API 1 失敗（決済は cod=契約ID で継続）', [
+                            'contract_id' => $contract->id,
+                            'error' => $api1Result['error'] ?? '',
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    $api1Success = false;
+                    Log::channel('contract_payment')->warning('請求管理ロボ API 1 例外（決済は cod=契約ID で継続）', [
+                        'contract_id' => $contract->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
+
+            $storeId = config('robotpayment.store_id', '');
+            $accessKey = config('robotpayment.access_key', '');
+            $gatewayUrl = config('robotpayment.gateway_url');
+            Log::channel('contract_payment')->info('[DIAG] gateway 送信前パラメータ診断', [
+                'contract_id' => $contract->id,
+                'gateway_url' => $gatewayUrl,
+                'aid_set' => $storeId !== '',
+                'aid_length' => strlen($storeId),
+                'access_key_set' => $accessKey !== '',
+                'param_keys' => array_keys($params),
+                'cod' => $params['cod'] ?? null,
+                'am' => $params['am'] ?? null,
+                'tx' => $params['tx'] ?? null,
+                'sf' => $params['sf'] ?? null,
+                'tkn_set' => !empty($params['tkn']),
+                'pattern' => $pattern,
+                'api1_success' => $api1Success,
+            ]);
+
             if ($this->patternService->isAutoBillingInitial($pattern)) {
                 Log::channel('contract_payment')->info('自動課金初回決済（商品登録なし）: actp, acam, ac1, ac4 を送信', [
                     'contract_id' => $contract->id,
@@ -110,23 +161,55 @@ class RobotPaymentService
                     'ac4' => $amounts['ac4'] ?? null,
                 ]);
             }
-            $response = Http::asForm()->timeout(30)->post(config('robotpayment.gateway_url'), $params);
+            $response = Http::asForm()->timeout(30)->post($gatewayUrl, $params);
             $body = $response->body();
 
-            Log::channel('contract_payment')->info('ROBOT PAYMENT gateway_token 送信', [
+            Log::channel('contract_payment')->info('[DIAG] gateway 応答', [
                 'contract_id' => $contract->id,
                 'cod' => $cod,
                 'pattern' => $pattern,
                 'http_status' => $response->status(),
                 'response_body' => $body,
+                'response_headers' => $response->headers(),
+                'body_contains_ER003' => str_contains((string)$body, 'ER003'),
             ]);
 
             if ($response->successful() && $this->isGatewaySuccess($body)) {
                 $contract->update(['payment_id' => $payment->id]);
+
+                if (config('billing_robo.base_url') && config('billing_robo.user_id')
+                    && $contract->billing_code && ($payment->billing_payment_method_number !== null || $payment->billing_payment_method_code)) {
+                    try {
+                        $creditCardService = app(BillingRoboCreditCardService::class);
+                        $api2Result = $creditCardService->registerToken($contract, $payment, $token);
+                        if ($api2Result['success']) {
+                            Log::channel('contract_payment')->info('請求管理ロボ API 2 クレジットカード登録完了', ['contract_id' => $contract->id]);
+                        } else {
+                            Log::channel('contract_payment')->warning('請求管理ロボ API 2 クレジットカード登録失敗', [
+                                'contract_id' => $contract->id,
+                                'error' => $api2Result['error'] ?? '',
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        Log::channel('contract_payment')->warning('請求管理ロボ API 2 例外', [
+                            'contract_id' => $contract->id,
+                            'message' => $e->getMessage(),
+                        ]);
+                    }
+                }
+
                 return ['success' => true, 'contract' => $contract, 'error' => null];
             }
 
             $errorMessage = $this->parseGatewayError($body) ?: '決済処理に失敗しました。';
+            Log::channel('contract_payment')->warning('[DIAG] gateway エラー詳細', [
+                'contract_id' => $contract->id,
+                'raw_body' => $body,
+                'parsed_error' => $errorMessage,
+                'gateway_url' => $gatewayUrl ?? config('robotpayment.gateway_url'),
+                'aid_sent' => $params['aid'] ?? '(empty)',
+                'access_key_sent' => !empty($params['access_key']) ? '(set)' : '(empty)',
+            ]);
             $payment->update([
                 'status' => 'failed',
                 'failure_reason' => $errorMessage,
@@ -135,13 +218,16 @@ class RobotPaymentService
         });
     }
 
-    private function buildGatewayParams(Contract $contract, array $amounts, string $pattern, string $token): array
+    private function buildGatewayParams(Contract $contract, array $amounts, string $pattern, string $token, ?Payment $payment = null): array
     {
+        $cod = $payment && $payment->merchant_order_no
+            ? $payment->merchant_order_no
+            : (string) $contract->id;
         $params = [
             'aid' => config('robotpayment.store_id'),
             'jb' => config('robotpayment.job_type', 'CAPTURE'),
             'rt' => config('robotpayment.reply_type', '0'),
-            'cod' => (string) $contract->id,
+            'cod' => $cod,
         ];
         $accessKey = config('robotpayment.access_key', '');
         if ($accessKey !== '') {
