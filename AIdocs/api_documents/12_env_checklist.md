@@ -25,6 +25,8 @@
   - 請求管理ロボの「API接続編集」には店舗IDは表示されない。  
   - デモ用は ROBOT PAYMENT サポート（support@billing-robo.jp）等で案内された値を使用。
 
+**ローカルで決済を検証する場合**: 上記に加え、**決済システムコントロールパネル**で「決済データ送信元IP」と「決済データ送信元URL」（例: `http://localhost:8080`）の登録が必要。一覧は [13_billing_robo_only_verification.md](13_billing_robo_only_verification.md) の「ROBOT PAYMENT 管理画面で設定する箇所」を参照。
+
 ---
 
 ## 2. 請求管理ロボ API（API 1〜5）

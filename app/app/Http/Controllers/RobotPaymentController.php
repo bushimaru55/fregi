@@ -94,8 +94,10 @@ class RobotPaymentController extends Controller
     public function logTokenCreateFailed(Request $request): Response
     {
         $errMsg = $request->input('err_msg', '');
+        $pageOrigin = $request->input('page_origin', '');
         Log::channel('contract_payment')->warning('トークン作成失敗（クライアント）', [
             'err_msg' => mb_substr($errMsg, 0, 500),
+            'page_origin' => $pageOrigin,
         ]);
         return response('', 204);
     }

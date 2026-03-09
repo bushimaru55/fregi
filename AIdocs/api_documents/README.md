@@ -4,7 +4,7 @@
 
 - **目的**: AI および開発者が **現行** API 仕様を参照できるようにする。
 - **作成方針**: ウェブ上のマニュアルの内容を読み取り、本ディレクトリ内の md ファイルに整理して記載する。
-- **注意**: 旧連携（ROBOT PAYMENT トークン＋3DS2）のドキュメントは [../archive_robotpayment_token_3ds2/](../archive_robotpayment_token_3ds2/) に退避してあり**利用できません**。実装・仕様確認は本 api_documents および公式マニュアルを参照してください。
+- **注意**: 旧連携（ROBOT PAYMENT トークン＋3DS2）のドキュメントは [../archive_robotpayment_token_3ds2/](../archive_robotpayment_token_3ds2/) に退避してあり、仕様の**正**は本 api_documents および公式マニュアルです。**ローカル環境で ROBOT PAYMENT 連携**（送信元IP・リファラー設定で localhost 可）を試す場合は [デモアカウント_ローカル開発テスト.md](../archive_robotpayment_token_3ds2/payment_integration_robotpayment/デモアカウント_ローカル開発テスト.md) を参照してください。
 
 ## 請求管理ロボ API
 

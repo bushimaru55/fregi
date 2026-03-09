@@ -82,6 +82,10 @@
     </div>
 </div>
 
+@push('styles')
+<meta name="referrer" content="origin">
+@endpush
+
 @push('scripts')
 <script src="https://credit.j-payment.co.jp/gateway/js/jquery.js"></script>
 <script src="https://credit.j-payment.co.jp/gateway/js/CPToken.js"></script>
@@ -151,7 +155,7 @@
                 fetch('{{ route('contract.payment.token-create-failed') }}', {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-                    body: new URLSearchParams({ _token: csrf, err_msg: msg })
+                    body: new URLSearchParams({ _token: csrf, err_msg: msg, page_origin: window.location.origin || (window.location.protocol + '//' + window.location.host) })
                 }).catch(function() {});
                 alert(msg);
                 btn.disabled = false;

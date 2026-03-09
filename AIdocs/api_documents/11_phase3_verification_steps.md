@@ -92,11 +92,22 @@ ROBOT PAYMENT を無効にした状態で「申込内容を送信」すると、
 
 ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で、**確認画面送信 → 決済ページ → カード情報送信** まで行うと、**API 1 → 決済 gateway（cod 使用）→ 成功時 API 2** の順で実行されます。
 
+### Step B-0: ローカルで決済フローを検証する場合（ROBOT PAYMENT 管理画面の設定）
+
+**ローカル（Docker / localhost）から決済まで行う場合**は、**決済システムコントロールパネル**（https://credit.j-payment.co.jp/cp/SignIn.aspx）で次を設定する。
+
+| 設定場所 | 設定項目 | 設定内容 |
+|----------|----------|----------|
+| 設定 → 決済システム → **決済ゲートウェイ＆CTI決済設定** | 決済データ送信元IP | ローカルの送信元IP（Docker の場合は `docker compose exec app curl -s -4 ifconfig.me` で確認した値）。未設定だと ER003。 |
+| 設定 → 決済システム → **PC用決済フォーム設定** | 決済データ送信元URL（または複数決済データ送信元URL） | `http://localhost:8080` または `http://127.0.0.1:8080`（ブラウザで開くオリジンに合わせる）。未設定だとリファラーエラー。 |
+
+※ デモ契約で credit.j-payment.co.jp にログインできない場合は、ROBOT PAYMENT サポート（support@billing-robo.jp）に上記の登録を依頼する。詳細は [13_billing_robo_only_verification.md](13_billing_robo_only_verification.md) の「ローカル環境での ROBOT PAYMENT 連携」「ROBOT PAYMENT 管理画面で設定する箇所」を参照。
+
 ### Step B-1: 決済・請求管理ロボの設定を有効にする
 
 1. `app/.env` で次を設定する。
    - `ROBOTPAYMENT_ENABLED=true`
-   - `ROBOTPAYMENT_STORE_ID`（決済システムの店舗ID・6桁）
+   - `ROBOTPAYMENT_STORE_ID`（決済システムの店舗ID・6桁。決済システムCPの画面に表示）
    - 必要に応じて `ROBOTPAYMENT_ACCESS_KEY`
    - `BILLING_ROBO_BASE_URL`, `BILLING_ROBO_USER_ID`, `BILLING_ROBO_ACCESS_KEY`（パターンA と同様）
 2. 設定をクリアする。
