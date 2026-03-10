@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-6 md:space-y-8">
+    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-6 md:space-y-8" id="contract-confirm-form">
         @csrf
 
         {{-- 1. 申込企業情報 --}}

@@ -27,6 +27,14 @@ class BillingRoboBillingService
         $body = $this->buildBillingBody($contract);
         $path = 'api/v1.0/billing/bulk_upsert';
 
+        Log::channel('contract_payment')->info('請求管理ロボ API 1 リクエストボディ', [
+            'contract_id' => $contract->id,
+            'billing_code' => $body['billing'][0]['code'] ?? null,
+            'individual_code' => $body['billing'][0]['individual'][0]['code'] ?? '(未設定)',
+            'individual_number' => $body['billing'][0]['individual'][0]['number'] ?? '(未設定)',
+            'payment_code' => $body['billing'][0]['payment'][0]['code'] ?? null,
+        ]);
+
         try {
             $result = $this->client->post($path, $body, true);
         } catch (BillingRoboApiException $e) {
@@ -49,6 +57,18 @@ class BillingRoboBillingService
         $status = $result['status'];
         $resBody = $result['body'];
         $error = $result['error'];
+
+        $paymentResponse = $resBody['billing'][0]['payment'] ?? null;
+        Log::channel('contract_payment')->info('請求管理ロボ API 1 フルレスポンス', [
+            'contract_id' => $contract->id,
+            'http_status' => $status,
+            'billing_error_code' => $resBody['billing'][0]['error_code'] ?? null,
+            'billing_error_message' => $resBody['billing'][0]['error_message'] ?? null,
+            'billing_code_resp' => $resBody['billing'][0]['code'] ?? null,
+            'individual_resp' => $resBody['billing'][0]['individual'] ?? null,
+            'payment_raw' => $paymentResponse,
+            'top_level_error' => $error,
+        ]);
 
         if ($status >= 400) {
             $msg = $error['message'] ?? "HTTP {$status}";
@@ -88,6 +108,50 @@ class BillingRoboBillingService
             'billing_individual_number' => $parsed['individual_number'],
             'billing_individual_code' => $parsed['individual_code'],
         ]);
+
+        // 請求先部署にデフォルト決済手段を紐付け（API 3 の 1340 対策）
+        $pmCode = $parsed['payment_code'] ?? '';
+        if ($pmCode === '' && ($parsed['payment_number'] ?? null) !== null) {
+            // code が返らない場合、リクエスト時に設定した code で再試行
+            $pmCode = 'PMT-' . $contract->id;
+        }
+        if ($pmCode !== '' && ($parsed['individual_number'] !== null || ($parsed['individual_code'] ?? '') !== '')) {
+            $updateIndividual = ['payment_method_code' => $pmCode];
+            if ($parsed['individual_number'] !== null) {
+                $updateIndividual['number'] = $parsed['individual_number'];
+            } else {
+                $updateIndividual['code'] = $parsed['individual_code'];
+            }
+            $updateBody = [
+                'billing' => [
+                    [
+                        'code' => $parsed['billing_code'],
+                        'individual' => [$updateIndividual],
+                    ],
+                ],
+            ];
+            try {
+                $updateResult = $this->client->post('billing/bulk_upsert', $updateBody, true);
+                if ($updateResult['status'] >= 400) {
+                    Log::channel('contract_payment')->warning('請求先部署への決済手段紐付け失敗', [
+                        'contract_id' => $contract->id,
+                        'status' => $updateResult['status'],
+                        'payment_method_code' => $pmCode,
+                        'error' => $updateResult['error'] ?? null,
+                    ]);
+                } else {
+                    Log::channel('contract_payment')->info('請求先部署にデフォルト決済手段を紐付け完了', [
+                        'contract_id' => $contract->id,
+                        'payment_method_code' => $pmCode,
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::channel('contract_payment')->warning('請求先部署への決済手段紐付け例外', [
+                    'contract_id' => $contract->id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        }
 
         if ($parsed['payment_number'] !== null || $parsed['payment_code'] !== null || $parsed['cod'] !== null) {
             $payment = $contract->payments()->where('provider', 'robotpayment')->first();
@@ -130,12 +194,13 @@ class BillingRoboBillingService
     public function buildBillingBody(Contract $contract): array
     {
         $billingCode = $contract->billing_code ?? $this->generateBillingCode($contract);
+        $zipCode = $contract->postal_code ? preg_replace('/\D/', '', $contract->postal_code) : '1000001';
         $individual = [
             'name' => $contract->department ?: $contract->company_name,
             'address1' => $this->buildAddress1($contract),
-            'zip_code' => $contract->postal_code ? preg_replace('/\D/', '', $contract->postal_code) : '',
+            'zip_code' => $zipCode,
             'pref' => $contract->prefecture ?? 'その他',
-            'city_address' => trim(($contract->city ?? '') . ($contract->address_line1 ?? '') . ($contract->address_line2 ?? '')),
+            'city_address' => trim(($contract->city ?? '') . ($contract->address_line1 ?? '') . ($contract->address_line2 ?? '')) ?: '未入力',
             'email' => $contract->email ?? '',
             'tel' => $contract->phone ? preg_replace('/\D/', '', $contract->phone) : '',
         ];
@@ -144,9 +209,13 @@ class BillingRoboBillingService
             $individual['number'] = $contract->billing_individual_number;
         } elseif ($contract->billing_individual_code !== null) {
             $individual['code'] = $contract->billing_individual_code;
+        } else {
+            $individual['code'] = 'IND-' . ($contract->id ?? '0');
         }
 
+        $paymentCode = 'PMT-' . ($contract->id ?? '0');
         $payment = [
+            'code' => $paymentCode,
             'name' => 'クレジットカード',
             'payment_method' => 1,
             'credit_card_regist_kind' => 1,

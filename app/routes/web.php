@@ -35,6 +35,12 @@ Route::prefix('contract')->name('contract.')->group(function () {
     // カード入力検証用ログ（桁数・下4桁・有効期限のみ。フル番号は送受信しない）
     Route::post('/payment/card-hint', [\App\Http\Controllers\RobotPaymentController::class, 'logCardHint'])->name('payment.card-hint');
     Route::post('/payment/token-create-failed', [\App\Http\Controllers\RobotPaymentController::class, 'logTokenCreateFailed'])->name('payment.token-create-failed');
+    // 3DS なしテストページ（ER584 切り分け用。本番では削除すること）
+    Route::get('/payment/no3ds-test', function () {
+        return view('contracts.payment_no3ds_test');
+    })->name('payment.no3ds-test');
+    // API 2 だけを直接テスト（ER584 切り分け用。本番では削除すること）
+    Route::post('/payment/api2-direct-test', [\App\Http\Controllers\RobotPaymentController::class, 'api2DirectTest'])->name('payment.api2-direct-test');
     // オプション商品取得API（選択されたベース商品に紐づくオプション商品を取得）
     Route::get('/api/option-products/{contractPlanId}', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
 });

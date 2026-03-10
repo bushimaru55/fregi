@@ -88,9 +88,9 @@ ROBOT PAYMENT を無効にした状態で「申込内容を送信」すると、
 
 ---
 
-## 確認パターンB: 決済ありフロー（API 1 → gateway → API 2）
+## 確認パターンB: 決済ありフロー（API 1 → gateway → API 2 → API 3 → API 4）
 
-ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で、**確認画面送信 → 決済ページ → カード情報送信** まで行うと、**API 1 → 決済 gateway（cod 使用）→ 成功時 API 2** の順で実行されます。
+ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で、**確認画面送信 → 決済ページ → カード情報送信** まで行うと、**API 1 → 決済 gateway（cod 使用）→ 成功時 API 2 → API 3 請求情報登録 → 成功時 API 4 請求書発行** の順で実行されます。
 
 ### Step B-0: ローカルで決済フローを検証する場合（ROBOT PAYMENT 管理画面の設定）
 
@@ -171,6 +171,27 @@ ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で
    - **失敗時**: `請求管理ロボ API 2 クレジットカード登録失敗` または `請求管理ロボ API 2 例外` と `error` / `message`
 2. 請求管理ロボのデモ環境にログインし、該当する請求先の決済手段にクレジットカードが登録されているかもあわせて確認できる（任意）。
 
+### Step B-8: API 3（請求情報登録）が呼ばれているか確認（ログ・DB）
+
+1. 決済が **成功** した後、同じ `contract_payment` ログに次のいずれかが出ていることを確認する。
+   - **成功時**: `請求管理ロボ API 3 請求情報登録完了` および `contract_id`, `count`, `demands`
+   - **失敗時**: `請求管理ロボ API 3 失敗（決済は完了）` または `請求管理ロボ API 3 例外` と `error` / `message`
+2. DB で該当契約の請求情報が保存されているか確認する。
+   ```bash
+   docker compose exec db mysql -u billing -pbilling_pass billing -e "
+   SELECT id, contract_id, demand_number, demand_code, demand_type FROM billing_robo_demands ORDER BY id DESC LIMIT 5;
+   "
+   ```
+3. **期待**: 契約明細（プラン＋オプション）に応じた件数で `billing_robo_demands` に `demand_number` または `demand_code` が入っている。
+
+### Step B-9: API 4（請求書発行）が呼ばれているか確認（ログ）
+
+1. API 3 が成功している場合、続けて **API 4 請求書発行** が呼ばれる。
+2. ログで次のいずれかを確認する。
+   - **成功時**: `請求管理ロボ API 4 請求書発行完了` および `contract_id`, `results`
+   - **失敗時**: `請求管理ロボ API 4 請求書発行失敗または一部エラー` または `請求管理ロボ API 4 例外`
+3. 請求管理ロボのデモ環境で、該当請求先の請求書が発行されているかもあわせて確認できる（任意）。
+
 ---
 
 ## トラブルシュート
@@ -182,6 +203,8 @@ ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で
 | `billing_code` が DB に残らない | API 1 のレスポンス解析で `billing[0].code` が取れているか。レスポンス形式が仕様と異なっていないか。 |
 | 決済は成功するが API 2 のログが出ない | 契約に `billing_code` が入っているか。Payment に `billing_payment_method_number` または `billing_payment_method_code` が入っているか。 |
 | gateway に送る cod が契約IDのまま | API 1 が失敗しているか、Payment の `merchant_order_no` が更新される前に `buildGatewayParams` が呼ばれていないか。`payment->refresh()` のあと `$payment` を `buildGatewayParams` に渡しているか。 |
+| API 3 のログが出ない／失敗する | 契約に `billing_code` が入っているか。契約明細（contract_items）が存在するか。ログの `error` を確認（1301 等は請求先・部署・必須パラメータ）。 |
+| API 4 のログが出ない／失敗する | API 3 が成功し `billing_robo_demands` に請求情報が保存されているか。3301（発行日がまだ来ていない）等のエラーコードを確認。 |
 
 ---
 
@@ -196,6 +219,8 @@ ROBOT PAYMENT を有効にし、請求管理ロボの設定も行った状態で
 - [ ] パターンB: ログで「API 1 請求先登録完了」と「API 2 クレジットカード登録完了」を確認した
 - [ ] パターンB: `payments.merchant_order_no` に API 1 の cod が入っていることを確認した
 - [ ] パターンB: `contracts.billing_code` および `payments.billing_payment_method_*` に値が入っていることを確認した
+- [ ] パターンB: ログで「API 3 請求情報登録完了」を確認し、`billing_robo_demands` に請求情報が保存されていることを確認した
+- [ ] パターンB: ログで「API 4 請求書発行完了」を確認した（API 3 成功時のみ）
 
 ---
 

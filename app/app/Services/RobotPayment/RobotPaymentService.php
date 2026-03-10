@@ -7,6 +7,7 @@ use App\Mail\ContractReplyMail;
 use App\Models\Contract;
 use App\Services\BillingRobo\BillingRoboBillingService;
 use App\Services\BillingRobo\BillingRoboCreditCardService;
+use App\Services\BillingRobo\BillingRoboBulkRegisterService;
 use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Payment;
@@ -29,9 +30,11 @@ class RobotPaymentService
 
     /**
      * セッションの申込データとトークンで契約・明細・Payment を作成し、gateway へ POST
-     * 戻り値: ['success' => bool, 'contract' => Contract|null, 'error' => string|null]
+     *
+     * @param  array  $debugContext  ER584 原因特定用（correlation_id, token_age_ms 等）。API2 失敗時に [ER584_DEBUG] で出力
+     * @return array{success: bool, contract: Contract|null, error: string|null}
      */
-    public function executePayment(array $sessionData, string $token): array
+    public function executePayment(array $sessionData, string $token, array $debugContext = []): array
     {
         $plan = ContractPlan::findOrFail($sessionData['contract_plan_id']);
         $optionProductIds = $sessionData['option_product_ids'] ?? [];
@@ -40,7 +43,7 @@ class RobotPaymentService
         $amounts = $this->patternService->getAmountsFromPlanAndOptions($plan, $optionProductIds, $desiredStartDate);
         $pattern = $amounts['pattern'];
 
-        return DB::transaction(function () use ($sessionData, $token, $plan, $optionProductIds, $desiredStartDate, $amounts, $pattern) {
+        return DB::transaction(function () use ($sessionData, $token, $debugContext, $plan, $optionProductIds, $desiredStartDate, $amounts, $pattern) {
             $createData = $sessionData;
             unset($createData['option_product_ids'], $createData['terms_agreed']);
             if (empty($createData['desired_start_date'])) {
@@ -131,29 +134,76 @@ class RobotPaymentService
                 }
             }
 
-            $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
+            // API 2: クレジットカード登録（トークン方式）。仕様どおりトークンは API 2 のみで使用。
+            $api2Success = false;
+            if (config('billing_robo.base_url') && config('billing_robo.user_id')
+                && $contract->billing_code && ($payment->billing_payment_method_number !== null || $payment->billing_payment_method_code)) {
+                try {
+                    $creditCardService = app(BillingRoboCreditCardService::class);
+                    $api2Result = $creditCardService->registerToken($contract, $payment, $token, $debugContext);
+                    $api2Success = $api2Result['success'];
+                    if ($api2Result['success']) {
+                        Log::channel('contract_payment')->info('請求管理ロボ API 2 クレジットカード登録完了', ['contract_id' => $contract->id]);
+                    } else {
+                        Log::channel('contract_payment')->warning('請求管理ロボ API 2 クレジットカード登録失敗', [
+                            'contract_id' => $contract->id,
+                            'error' => $api2Result['error'] ?? '',
+                        ]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::channel('contract_payment')->warning('請求管理ロボ API 2 例外', [
+                        'contract_id' => $contract->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                }
+            }
 
-            $storeId = config('robotpayment.store_id', '');
-            $accessKey = config('robotpayment.access_key', '');
+            $billingRoboEnabled = config('billing_robo.base_url') && config('billing_robo.user_id');
+
+            // 請求管理ロボ有効時: API 1→2→5 で完結。gateway は使わない。
+            if ($billingRoboEnabled) {
+                if (!$api1Success) {
+                    $errorMessage = '請求先登録に失敗しました。しばらくしてから再度お試しください。';
+                    $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
+                    return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
+                }
+                if (!$api2Success) {
+                    $errorMessage = 'クレジットカード登録に失敗しました。カード情報をご確認のうえ再度お試しください。';
+                    $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
+                    return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
+                }
+
+                try {
+                    $bulkRegister = app(BillingRoboBulkRegisterService::class);
+                    $api5Result = $bulkRegister->executeForContract($contract);
+                    if ($api5Result['success']) {
+                        $contract->update(['payment_id' => $payment->id]);
+                        return ['success' => true, 'contract' => $contract, 'error' => null];
+                    }
+                    $errorMessage = $api5Result['error'] ?? '即時決済に失敗しました。';
+                    $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
+                    return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
+                } catch (\Throwable $e) {
+                    Log::channel('contract_payment')->warning('請求管理ロボ API 5 例外', [
+                        'contract_id' => $contract->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                    $payment->update(['status' => 'failed', 'failure_reason' => $e->getMessage()]);
+                    return ['success' => false, 'contract' => $contract, 'error' => $e->getMessage()];
+                }
+            }
+
+            // 請求管理ロボ未使用時: gateway で決済
+            $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
             $gatewayUrl = config('robotpayment.gateway_url');
-            Log::channel('contract_payment')->info('[DIAG] gateway 送信前パラメータ診断', [
+            Log::channel('contract_payment')->info('gateway 送信', [
                 'contract_id' => $contract->id,
-                'gateway_url' => $gatewayUrl,
-                'aid_set' => $storeId !== '',
-                'aid_length' => strlen($storeId),
-                'access_key_set' => $accessKey !== '',
-                'param_keys' => array_keys($params),
                 'cod' => $params['cod'] ?? null,
                 'am' => $params['am'] ?? null,
-                'tx' => $params['tx'] ?? null,
-                'sf' => $params['sf'] ?? null,
-                'tkn_set' => !empty($params['tkn']),
                 'pattern' => $pattern,
-                'api1_success' => $api1Success,
             ]);
-
             if ($this->patternService->isAutoBillingInitial($pattern)) {
-                Log::channel('contract_payment')->info('自動課金初回決済（商品登録なし）: actp, acam, ac1, ac4 を送信', [
+                Log::channel('contract_payment')->info('自動課金初回決済: actp, acam, ac1, ac4 を送信', [
                     'contract_id' => $contract->id,
                     'actp' => $amounts['actp'] ?? null,
                     'acam' => $amounts['acam'] ?? null,
@@ -163,57 +213,25 @@ class RobotPaymentService
             }
             $response = Http::asForm()->timeout(30)->post($gatewayUrl, $params);
             $body = $response->body();
-
-            Log::channel('contract_payment')->info('[DIAG] gateway 応答', [
+            Log::channel('contract_payment')->info('gateway 応答', [
                 'contract_id' => $contract->id,
                 'cod' => $cod,
-                'pattern' => $pattern,
                 'http_status' => $response->status(),
                 'response_body' => $body,
-                'response_headers' => $response->headers(),
-                'body_contains_ER003' => str_contains((string)$body, 'ER003'),
             ]);
 
             if ($response->successful() && $this->isGatewaySuccess($body)) {
                 $contract->update(['payment_id' => $payment->id]);
-
-                if (config('billing_robo.base_url') && config('billing_robo.user_id')
-                    && $contract->billing_code && ($payment->billing_payment_method_number !== null || $payment->billing_payment_method_code)) {
-                    try {
-                        $creditCardService = app(BillingRoboCreditCardService::class);
-                        $api2Result = $creditCardService->registerToken($contract, $payment, $token);
-                        if ($api2Result['success']) {
-                            Log::channel('contract_payment')->info('請求管理ロボ API 2 クレジットカード登録完了', ['contract_id' => $contract->id]);
-                        } else {
-                            Log::channel('contract_payment')->warning('請求管理ロボ API 2 クレジットカード登録失敗', [
-                                'contract_id' => $contract->id,
-                                'error' => $api2Result['error'] ?? '',
-                            ]);
-                        }
-                    } catch (\Throwable $e) {
-                        Log::channel('contract_payment')->warning('請求管理ロボ API 2 例外', [
-                            'contract_id' => $contract->id,
-                            'message' => $e->getMessage(),
-                        ]);
-                    }
-                }
-
                 return ['success' => true, 'contract' => $contract, 'error' => null];
             }
 
             $errorMessage = $this->parseGatewayError($body) ?: '決済処理に失敗しました。';
-            Log::channel('contract_payment')->warning('[DIAG] gateway エラー詳細', [
+            Log::channel('contract_payment')->warning('gateway エラー', [
                 'contract_id' => $contract->id,
                 'raw_body' => $body,
                 'parsed_error' => $errorMessage,
-                'gateway_url' => $gatewayUrl ?? config('robotpayment.gateway_url'),
-                'aid_sent' => $params['aid'] ?? '(empty)',
-                'access_key_sent' => !empty($params['access_key']) ? '(set)' : '(empty)',
             ]);
-            $payment->update([
-                'status' => 'failed',
-                'failure_reason' => $errorMessage,
-            ]);
+            $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
             return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
         });
     }

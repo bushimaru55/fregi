@@ -33,6 +33,11 @@
         <form id="rp-payment-form" method="POST" action="{{ route('contract.payment.execute') }}">
             @csrf
             <input type="hidden" name="tkn" id="tkn" value="">
+            <input type="hidden" name="token_created_ms" id="token_created_ms" value="">
+            <input type="hidden" name="er584_am" id="er584_am" value="">
+            <input type="hidden" name="er584_tx" id="er584_tx" value="">
+            <input type="hidden" name="er584_sf" id="er584_sf" value="">
+            <input type="hidden" name="er584_use_zero" id="er584_use_zero" value="">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -79,6 +84,9 @@
                 </a>
             </div>
         </form>
+        @if(config('app.debug'))
+        <p class="mt-4 text-xs text-gray-400">検証用: 店舗ID={{ $store_id ?: '(未設定)' }} / 3DS am,tx,sf=0={{ $use_zero_amount_for_3ds ? 'はい' : 'いいえ' }}</p>
+        @endif
     </div>
 </div>
 
@@ -93,9 +101,13 @@
 <script>
 (function() {
     var storeId = @json($store_id ?? '');
-    var am = {{ (int)($amounts['am'] ?? 0) }};
-    var tx = {{ (int)($amounts['tx'] ?? 0) }};
-    var sf = {{ (int)($amounts['sf'] ?? 0) }};
+    var useZeroAmountFor3ds = @json($use_zero_amount_for_3ds ?? false);
+    if (typeof console !== 'undefined' && console.log) {
+        console.log('決済ページ検証: 店舗ID(検証用)=', storeId, '3DS am,tx,sf=0=', useZeroAmountFor3ds);
+    }
+    var am = useZeroAmountFor3ds ? 0 : {{ (int)($amounts['am'] ?? 0) }};
+    var tx = useZeroAmountFor3ds ? 0 : {{ (int)($amounts['tx'] ?? 0) }};
+    var sf = useZeroAmountFor3ds ? 0 : {{ (int)($amounts['sf'] ?? 0) }};
     var em = @json($customer_email ?? '');
     var pn = @json($customer_phone ?? '');
 
@@ -146,7 +158,8 @@
             ed: ed,
             cvv: cvv,
             fn: fn,
-            ln: ln
+            ln: ln,
+            md: '10'
         }, function(resultCode, errMsg) {
             if (resultCode !== 'Success') {
                 var msg = errMsg || 'トークン作成に失敗しました。';
@@ -167,7 +180,16 @@
                 btn.disabled = false;
                 return;
             }
+            // #region agent log
+            var tokenCreatedMs = Date.now();
+            document.getElementById('token_created_ms').value = String(tokenCreatedMs);
+            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a186d4'},body:JSON.stringify({sessionId:'a186d4',hypothesisId:'H7_H8',location:'payment.blade.php token created',message:'token ready',data:{token_created_ms:tokenCreatedMs,tkn_len:(tkn||'').length},timestamp:Date.now()})}).catch(function(){});
+            // #endregion
             if (typeof ThreeDSAdapter === 'undefined') {
+                document.getElementById('er584_am').value = String(am);
+                document.getElementById('er584_tx').value = String(tx);
+                document.getElementById('er584_sf').value = String(sf);
+                document.getElementById('er584_use_zero').value = useZeroAmountFor3ds ? '1' : '0';
                 document.getElementById('cn').value = '';
                 document.getElementById('ed_year').value = '';
                 document.getElementById('ed_month').value = '';
@@ -192,6 +214,13 @@
                     btn.disabled = false;
                     return;
                 }
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a186d4'},body:JSON.stringify({sessionId:'a186d4',hypothesisId:'H1_H6',location:'payment.blade.php 3DS success',message:'before submit',data:{am:am,tx:tx,sf:sf,useZeroAmountFor3ds:useZeroAmountFor3ds,aid:storeId,pn_len:(pn||'').length,em_len:(em||'').length},timestamp:Date.now()})}).catch(function(){});
+                // #endregion
+                document.getElementById('er584_am').value = String(am);
+                document.getElementById('er584_tx').value = String(tx);
+                document.getElementById('er584_sf').value = String(sf);
+                document.getElementById('er584_use_zero').value = useZeroAmountFor3ds ? '1' : '0';
                 document.getElementById('cn').value = '';
                 document.getElementById('ed_year').value = '';
                 document.getElementById('ed_month').value = '';
