@@ -45,6 +45,13 @@ class BillingRoboBulkRegisterService
             return ['success' => false, 'error' => '請求先コードが未登録です。先に API 1 を実行してください。'];
         }
 
+        $hasIndividual = $contract->billing_individual_number !== null
+            || ($contract->billing_individual_code !== null && $contract->billing_individual_code !== '');
+        if (!$hasIndividual) {
+            Log::channel('contract_payment')->warning('請求管理ロボ API 5: 請求先部署が未設定', ['contract_id' => $contract->id]);
+            return ['success' => false, 'error' => '請求先部署が未登録です。しばらくしてから再度お試しください。'];
+        }
+
         $bill = $this->buildBill($contract);
         if ($bill === null) {
             return ['success' => false, 'error' => '請求内容を組み立てられませんでした。'];
@@ -89,9 +96,13 @@ class BillingRoboBulkRegisterService
                         'error_message' => $em,
                         'ec' => $b['ec'] ?? null,
                     ]);
+                    $userMessage = $em ?? "エラーコード {$ec}";
+                    if (($b['ec'] ?? null) === 'ER018') {
+                        $userMessage = '決済可能上限額を超えています。契約プラン・オプションの合計金額をご確認いただくか、決済代行会社にお問い合わせください。';
+                    }
                     return [
                         'success' => false,
-                        'error' => $em ?? "エラーコード {$ec}",
+                        'error' => $userMessage,
                         'ec' => $b['ec'] ?? null,
                     ];
                 }

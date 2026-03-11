@@ -174,6 +174,7 @@ class RobotPaymentService
                 }
 
                 try {
+                    $contract->refresh();
                     $bulkRegister = app(BillingRoboBulkRegisterService::class);
                     $api5Result = $bulkRegister->executeForContract($contract);
                     if ($api5Result['success']) {

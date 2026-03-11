@@ -95,9 +95,6 @@ class BillingRoboCreditCardService
                 'status' => $status,
                 'error' => $error,
             ]);
-            // #region agent log
-            $this->logPaymentMethodSearch($contract, $payment, $billingCode);
-            // #endregion
             if (!empty($debugContext)) {
                 $this->logEr584Debug($contract, $payment, $token, $body, $status, $resBody, $error, $debugContext);
             }
