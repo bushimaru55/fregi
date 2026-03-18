@@ -243,4 +243,106 @@ class SiteSettingController extends Controller
                 ->withErrors(['error' => '更新に失敗しました: ' . $e->getMessage()]);
         }
     }
+
+    /**
+     * 請求サイクル設定のデフォルト値（API用: 0=当月, 1=翌月, 2=翌々月 / 99=末日）
+     */
+    private function getDefaultBillingCycleSchedule(): array
+    {
+        return [
+            'within' => [
+                'issue_month' => 0,
+                'issue_day' => 99,
+                'sending_month' => 0,
+                'sending_day' => 99,
+                'deadline_month' => 1,
+                'deadline_day' => 1,
+            ],
+            'after' => [
+                'issue_month' => 1,
+                'issue_day' => 99,
+                'sending_month' => 1,
+                'sending_day' => 99,
+                'deadline_month' => 2,
+                'deadline_day' => 1,
+            ],
+        ];
+    }
+
+    /**
+     * 請求サイクル設定の編集画面を表示
+     */
+    public function editBillingCycle()
+    {
+        $raw = SiteSetting::getTextValue('billing_cycle_schedule', '');
+        $schedule = $raw !== '' ? json_decode($raw, true) : null;
+        $defaults = $this->getDefaultBillingCycleSchedule();
+        if (!is_array($schedule) || !isset($schedule['within'], $schedule['after'])) {
+            $schedule = $defaults;
+        } else {
+            $schedule = [
+                'within' => array_merge($defaults['within'], $schedule['within'] ?? []),
+                'after' => array_merge($defaults['after'], $schedule['after'] ?? []),
+            ];
+        }
+        return view('admin.site-settings.edit-billing-cycle', compact('schedule'));
+    }
+
+    /**
+     * 請求サイクル設定を更新
+     */
+    public function updateBillingCycle(Request $request)
+    {
+        $rules = [
+            'within_issue_month' => 'required|integer|in:0,1,2',
+            'within_issue_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'within_sending_month' => 'required|integer|in:0,1,2',
+            'within_sending_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'within_deadline_month' => 'required|integer|in:0,1,2',
+            'within_deadline_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'after_issue_month' => 'required|integer|in:0,1,2',
+            'after_issue_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'after_sending_month' => 'required|integer|in:0,1,2',
+            'after_sending_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'after_deadline_month' => 'required|integer|in:0,1,2',
+            'after_deadline_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+        ];
+        $validator = Validator::make($request->all(), $rules, [
+            'within_issue_month.required' => '月末5営業日以内の「発行日（月）」を選択してください。',
+            'after_issue_month.required' => '月末5営業日以降の「発行日（月）」を選択してください。',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $schedule = [
+            'within' => [
+                'issue_month' => (int) $request->input('within_issue_month'),
+                'issue_day' => (int) $request->input('within_issue_day'),
+                'sending_month' => (int) $request->input('within_sending_month'),
+                'sending_day' => (int) $request->input('within_sending_day'),
+                'deadline_month' => (int) $request->input('within_deadline_month'),
+                'deadline_day' => (int) $request->input('within_deadline_day'),
+            ],
+            'after' => [
+                'issue_month' => (int) $request->input('after_issue_month'),
+                'issue_day' => (int) $request->input('after_issue_day'),
+                'sending_month' => (int) $request->input('after_sending_month'),
+                'sending_day' => (int) $request->input('after_sending_day'),
+                'deadline_month' => (int) $request->input('after_deadline_month'),
+                'deadline_day' => (int) $request->input('after_deadline_day'),
+            ],
+        ];
+
+        SiteSetting::setTextValue(
+            'billing_cycle_schedule',
+            json_encode($schedule, JSON_UNESCAPED_UNICODE),
+            '請求サイクル（月末5営業日ルール）発行日・送付日・決済期限の相対月/日'
+        );
+
+        return redirect()
+            ->route('admin.site-settings.index')
+            ->with('success', '請求サイクル設定を更新しました。');
+    }
 }

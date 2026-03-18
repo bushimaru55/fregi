@@ -42,7 +42,7 @@ Route::prefix('contract')->name('contract.')->group(function () {
     // API 2 だけを直接テスト（ER584 切り分け用。本番では削除すること）
     Route::post('/payment/api2-direct-test', [\App\Http\Controllers\RobotPaymentController::class, 'api2DirectTest'])->name('payment.api2-direct-test');
     // オプション商品取得API（選択されたベース商品に紐づくオプション商品を取得）
-    Route::get('/api/option-products/{contractPlanId}', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
+    Route::get('/api/option-products', [\App\Http\Controllers\ContractController::class, 'getOptionProducts'])->name('api.option-products');
 });
 
 // 管理画面（認証必須）
@@ -59,26 +59,26 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::prefix('contracts')->name('contracts.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ContractController::class, 'index'])->name('index');
         Route::get('/export', [\App\Http\Controllers\Admin\ContractController::class, 'exportCsv'])->name('export');
+        Route::post('/bulk-destroy', [\App\Http\Controllers\Admin\ContractController::class, 'bulkDestroy'])->name('bulk-destroy');
         Route::get('/{contract}/edit', [\App\Http\Controllers\Admin\ContractController::class, 'edit'])->name('edit');
         Route::put('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'update'])->name('update');
         Route::delete('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'destroy'])->name('destroy');
         Route::get('/{contract}', [\App\Http\Controllers\Admin\ContractController::class, 'show'])->name('show');
     });
 
-    // 契約プラン管理
+    // 製品管理
     Route::resource('contract-plans', \App\Http\Controllers\Admin\ContractPlanController::class);
     Route::post('contract-plans/update-order', [\App\Http\Controllers\Admin\ContractPlanController::class, 'updateOrder'])->name('contract-plans.update-order');
-
-    // 契約プランマスター管理
-    Route::resource('contract-plan-masters', \App\Http\Controllers\Admin\ContractPlanMasterController::class);
 
     // 商品管理
     Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
 
-    // 新規申込フォーム管理
+    // フォーム管理
     Route::prefix('contract-forms')->name('contract-forms.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\ContractFormController::class, 'index'])->name('index');
         Route::post('/generate', [\App\Http\Controllers\Admin\ContractFormController::class, 'generate'])->name('generate');
+        Route::get('/{contractFormUrl}/edit', [\App\Http\Controllers\Admin\ContractFormController::class, 'edit'])->name('edit');
+        Route::patch('/{contractFormUrl}', [\App\Http\Controllers\Admin\ContractFormController::class, 'update'])->name('update');
         Route::delete('/{contractFormUrl}', [\App\Http\Controllers\Admin\ContractFormController::class, 'destroy'])->name('destroy');
     });
 
@@ -96,6 +96,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // 返信メール設定
         Route::get('/reply-mail/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'editReplyMail'])->name('reply-mail.edit');
         Route::put('/reply-mail', [\App\Http\Controllers\Admin\SiteSettingController::class, 'updateReplyMail'])->name('reply-mail.update');
+        // 請求サイクル設定
+        Route::get('/billing-cycle/edit', [\App\Http\Controllers\Admin\SiteSettingController::class, 'editBillingCycle'])->name('billing-cycle.edit');
+        Route::put('/billing-cycle', [\App\Http\Controllers\Admin\SiteSettingController::class, 'updateBillingCycle'])->name('billing-cycle.update');
     });
 
     // 管理者管理（通知メール設定は {user} と衝突するため resource より前に定義）

@@ -29,7 +29,8 @@ class BillingRoboBulkRegisterService
     private const DEMAND_TYPE_RECURRING = 1;
 
     public function __construct(
-        private BillingRoboApiClient $client
+        private BillingRoboApiClient $client,
+        private ContractToBillingLinesMapper $linesMapper
     ) {}
 
     /**
@@ -98,7 +99,7 @@ class BillingRoboBulkRegisterService
                     ]);
                     $userMessage = $em ?? "エラーコード {$ec}";
                     if (($b['ec'] ?? null) === 'ER018') {
-                        $userMessage = '決済可能上限額を超えています。契約プラン・オプションの合計金額をご確認いただくか、決済代行会社にお問い合わせください。';
+                        $userMessage = '決済可能上限額を超えています。製品・オプションの合計金額をご確認いただくか、決済代行会社にお問い合わせください。';
                     }
                     return [
                         'success' => false,
@@ -116,12 +117,12 @@ class BillingRoboBulkRegisterService
     }
 
     /**
-     * 契約から API 5 用の bill 1件を組み立てる。
+     * 契約から API 5 用の bill 1件を組み立てる。発行日・送付日・決済期限は本日固定（API5 制約）。
      */
     private function buildBill(Contract $contract): ?array
     {
-        $items = $contract->contractItems()->with('product')->orderBy('id')->get();
-        if ($items->isEmpty()) {
+        $lines = $this->linesMapper->map($contract);
+        if ($lines === []) {
             return null;
         }
 
@@ -131,35 +132,26 @@ class BillingRoboBulkRegisterService
             return null;
         }
 
+        $startDate = $this->formatStartDate($contract);
         $billDetails = [];
-        foreach ($items as $item) {
-            $demandType = strtolower($item->billing_type ?? 'one_time') === 'monthly'
-                ? self::DEMAND_TYPE_RECURRING
-                : self::DEMAND_TYPE_ONE_TIME;
-            $taxCategory = 1;
-            $tax = 10;
-            if ($item->product_id && $item->product) {
-                $taxCategory = (int) ($item->product->tax_category ?? 1);
-                $tax = (int) ($item->product->tax ?? 10);
-            }
-
+        foreach ($lines as $line) {
             $detail = [
-                'demand_type' => $demandType,
-                'goods_name' => $item->product_name ?? '商品',
-                'price' => (int) $item->unit_price,
-                'quantity' => (int) max(1, $item->quantity),
+                'demand_type' => $line['demand_type'],
+                'goods_name' => $line['goods_name'],
+                'price' => $line['price'],
+                'quantity' => $line['quantity'],
                 'unit' => '円',
-                'tax_category' => $taxCategory,
-                'tax' => $tax,
-                'start_date' => $this->formatStartDate($contract),
+                'tax_category' => $line['tax_category'],
+                'tax' => $line['tax'],
+                'start_date' => $startDate,
                 'period_format' => self::PERIOD_FORMAT_MONTH,
+                'sales_recorded_date' => $today,
             ];
-            if ($demandType === self::DEMAND_TYPE_RECURRING) {
+            if ($line['demand_type'] === self::DEMAND_TYPE_RECURRING) {
                 $detail['repetition_period_number'] = 1;
                 $detail['repetition_period_unit'] = 1;
                 $detail['repeat_count'] = 0;
             }
-            $detail['sales_recorded_date'] = $today;
             $billDetails[] = $detail;
         }
 

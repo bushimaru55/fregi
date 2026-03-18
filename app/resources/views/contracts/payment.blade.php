@@ -114,6 +114,9 @@
     document.getElementById('btn-submit-payment').addEventListener('click', function() {
         var btn = this;
         btn.disabled = true;
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H1',location:'payment.blade.php',message:'click_start',data:{},timestamp:Date.now()})}).catch(function(){});
+        // #endregion
         var cn = document.getElementById('cn').value.replace(/\s/g, '');
         var edYear = document.getElementById('ed_year').value.trim();
         var edMonth = document.getElementById('ed_month').value.trim();
@@ -161,6 +164,11 @@
             ln: ln,
             md: '10'
         }, function(resultCode, errMsg) {
+            // #region agent log
+            var tknEl = document.getElementById('tkn');
+            var tknLen = (tknEl && tknEl.value) ? tknEl.value.length : 0;
+            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H1_H2_H3',location:'payment.blade.php token_callback',message:'token_callback',data:{resultCode:resultCode,errMsg:(errMsg||'').slice(0,80),tknLen:tknLen},timestamp:Date.now()})}).catch(function(){});
+            // #endregion
             if (resultCode !== 'Success') {
                 var msg = errMsg || 'トークン作成に失敗しました。';
                 var form = document.getElementById('rp-payment-form');
@@ -168,7 +176,7 @@
                 fetch('{{ route('contract.payment.token-create-failed') }}', {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-                    body: new URLSearchParams({ _token: csrf, err_msg: msg, page_origin: window.location.origin || (window.location.protocol + '//' + window.location.host) })
+                    body: new URLSearchParams({ _token: csrf, err_msg: msg, page_origin: window.location.origin || (window.location.protocol + '//' + window.location.host), stage: 'token_create', result_code: String(resultCode || '') })
                 }).catch(function() {});
                 alert(msg);
                 btn.disabled = false;
@@ -183,7 +191,7 @@
             // #region agent log
             var tokenCreatedMs = Date.now();
             document.getElementById('token_created_ms').value = String(tokenCreatedMs);
-            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a186d4'},body:JSON.stringify({sessionId:'a186d4',hypothesisId:'H7_H8',location:'payment.blade.php token created',message:'token ready',data:{token_created_ms:tokenCreatedMs,tkn_len:(tkn||'').length},timestamp:Date.now()})}).catch(function(){});
+            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H3',location:'payment.blade.php token ready',message:'token_ready',data:{token_created_ms:tokenCreatedMs,tkn_len:(tkn||'').length},timestamp:Date.now()})}).catch(function(){});
             // #endregion
             if (typeof ThreeDSAdapter === 'undefined') {
                 document.getElementById('er584_am').value = String(am);
@@ -196,6 +204,9 @@
                 if (document.getElementById('cvv')) document.getElementById('cvv').value = '';
                 document.getElementById('fn').value = '';
                 document.getElementById('ln').value = '';
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H5',location:'payment.blade.php',message:'form_submit_no3ds',data:{},timestamp:Date.now()})}).catch(function(){});
+                // #endregion
                 document.getElementById('rp-payment-form').submit();
                 return;
             }
@@ -209,13 +220,24 @@
                 em: em,
                 pn: pn
             }, function(resultCode, errMsg) {
+                // #region agent log
+                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'3DS',location:'payment.blade.php 3DS callback',message:'3ds_callback',data:{resultCode:resultCode,errMsg:(errMsg||'').slice(0,80)},timestamp:Date.now()})}).catch(function(){});
+                // #endregion
                 if (resultCode !== 'Success') {
-                    alert(errMsg || '3Dセキュア認証に失敗しました。');
+                    var form = document.getElementById('rp-payment-form');
+                    var csrf = form && form.querySelector('input[name="_token"]') ? form.querySelector('input[name="_token"]').value : '';
+                    var msg3ds = errMsg || '3Dセキュア認証に失敗しました。';
+                    fetch('{{ route('contract.payment.token-create-failed') }}', {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                        body: new URLSearchParams({ _token: csrf, err_msg: msg3ds, page_origin: window.location.origin || (window.location.protocol + '//' + window.location.host), stage: '3ds_auth', result_code: String(resultCode || '') })
+                    }).catch(function() {});
+                    alert(msg3ds);
                     btn.disabled = false;
                     return;
                 }
                 // #region agent log
-                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'a186d4'},body:JSON.stringify({sessionId:'a186d4',hypothesisId:'H1_H6',location:'payment.blade.php 3DS success',message:'before submit',data:{am:am,tx:tx,sf:sf,useZeroAmountFor3ds:useZeroAmountFor3ds,aid:storeId,pn_len:(pn||'').length,em_len:(em||'').length},timestamp:Date.now()})}).catch(function(){});
+                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H5',location:'payment.blade.php 3DS success',message:'form_submit_3ds',data:{},timestamp:Date.now()})}).catch(function(){});
                 // #endregion
                 document.getElementById('er584_am').value = String(am);
                 document.getElementById('er584_tx').value = String(tx);

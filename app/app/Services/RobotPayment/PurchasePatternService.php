@@ -56,11 +56,27 @@ class PurchasePatternService
         array $optionProductIds,
         string $desiredStartDate
     ): array {
+        return $this->getAmountsFromPlansAndOptions([$plan->id], $optionProductIds, $desiredStartDate);
+    }
+
+    /**
+     * 複数プラン＋オプション商品IDからパターンと金額を取得（契約作成前の決済ページ用）
+     */
+    public function getAmountsFromPlansAndOptions(
+        array $basePlanIds,
+        array $optionProductIds,
+        string $desiredStartDate
+    ): array {
         $items = collect();
-        $items->push((object)[
-            'billing_type' => $plan->billing_type ?? 'one_time',
-            'subtotal' => (int) $plan->price,
-        ]);
+        foreach (array_unique($basePlanIds) as $planId) {
+            $plan = ContractPlan::find($planId);
+            if ($plan) {
+                $items->push((object)[
+                    'billing_type' => $plan->billing_type ?? 'one_time',
+                    'subtotal' => (int) $plan->price,
+                ]);
+            }
+        }
         foreach ($optionProductIds as $productId) {
             $product = Product::where('id', $productId)
                 ->where('type', 'option')

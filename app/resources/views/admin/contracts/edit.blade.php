@@ -15,46 +15,81 @@
         @csrf
         @method('PUT')
 
-        {{-- 契約情報（読取専用） --}}
+        {{-- 選択された商品（一覧・削除・追加） --}}
         <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 pb-2 theme-section-border">契約情報（変更不可）</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-600">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 pb-2 theme-section-border">選択された商品</h2>
+            @if($contract->contractItems->isNotEmpty())
+                <div class="overflow-x-auto mb-4">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-200 text-gray-600 uppercase text-xs">
+                                <th class="py-2 px-4 text-left">商品名</th>
+                                <th class="py-2 px-4 text-right">単価</th>
+                                <th class="py-2 px-4 text-right">数量</th>
+                                <th class="py-2 px-4 text-right">小計</th>
+                                <th class="py-2 px-4 text-center w-20">削除</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($contract->contractItems as $item)
+                            <tr class="border-b border-gray-200">
+                                <td class="py-2 px-4">{{ $item->product_name ?? $item->contractPlan->name ?? $item->product->name ?? '—' }}</td>
+                                <td class="py-2 px-4 text-right">{{ number_format($item->unit_price) }}円</td>
+                                <td class="py-2 px-4 text-right">{{ $item->quantity }}</td>
+                                <td class="py-2 px-4 text-right">{{ number_format($item->subtotal) }}円</td>
+                                <td class="py-2 px-4 text-center">
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" name="delete_item_ids[]" value="{{ $item->id }}" class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                        <span class="ml-1 text-xs text-gray-500">削除</span>
+                                    </label>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-sm text-gray-500 mb-4">選択された商品はありません。下記から追加してください。</p>
+            @endif
+            <p class="text-sm font-semibold text-gray-700 mb-2">商品を追加</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <p class="text-sm text-gray-500 mb-1">契約プラン</p>
-                    <p class="font-semibold">{{ $contract->contractPlan->name }}</p>
+                    <p class="text-xs text-gray-600 mb-2">ベース製品</p>
+                    @if(isset($basePlans) && $basePlans->isNotEmpty())
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            @foreach($basePlans as $plan)
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="new_base_plan_ids[]" value="{{ $plan->id }}"
+                                        {{ in_array($plan->id, old('new_base_plan_ids', [])) ? 'checked' : '' }}
+                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-sm">{{ $plan->name }}</span>
+                                    <span class="text-xs text-gray-500">{{ number_format($plan->price) }}円</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-gray-500">ベース製品がありません。</p>
+                    @endif
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500 mb-1">料金（税込）</p>
-                    <p class="font-semibold theme-price">{{ number_format($contract->contractPlan->price) }}円</p>
+                    <p class="text-xs text-gray-600 mb-2">オプション製品</p>
+                    @if(isset($optionProducts) && $optionProducts->isNotEmpty())
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            @foreach($optionProducts as $product)
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" name="new_option_product_ids[]" value="{{ $product->id }}"
+                                        {{ in_array($product->id, old('new_option_product_ids', [])) ? 'checked' : '' }}
+                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="text-sm">{{ $product->name }}</span>
+                                    <span class="text-xs text-gray-500">{{ $product->formatted_price ?? number_format($product->unit_price) }}円</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-gray-500">オプション製品がありません。</p>
+                    @endif
                 </div>
             </div>
-        </div>
-
-        {{-- オプション商品の有無（チェックボックスで編集） --}}
-        <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4 pb-2 theme-section-border">オプション商品</h2>
-            <p class="text-sm text-gray-600 mb-4">この契約に含めるオプション商品にチェックを入れてください。</p>
-            @if(isset($optionProducts) && $optionProducts->isNotEmpty())
-                <div class="space-y-3">
-                    @foreach($optionProducts as $product)
-                        <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="option_product_ids[]" value="{{ $product->id }}"
-                                {{ in_array($product->id, old('option_product_ids', $selectedOptionProductIds ?? [])) ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="font-medium text-gray-800">{{ $product->name }}</span>
-                            <span class="text-sm text-gray-500">{{ $product->formatted_price ?? number_format($product->unit_price) }}円</span>
-                        </label>
-                    @endforeach
-                </div>
-                @error('option_product_ids')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-                @error('option_product_ids.*')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            @else
-                <p class="text-sm text-gray-500">このプランに紐づくオプション製品はありません。</p>
-            @endif
         </div>
 
         {{-- ステータス --}}

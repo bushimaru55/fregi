@@ -47,7 +47,7 @@ class Product extends Model
     }
 
     /**
-     * このオプション商品が紐づくベース商品（契約プラン）
+     * このオプション商品が紐づくベース商品（製品）
      */
     public function contractPlans(): BelongsToMany
     {

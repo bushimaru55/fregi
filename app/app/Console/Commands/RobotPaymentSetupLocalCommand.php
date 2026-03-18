@@ -26,11 +26,11 @@ class RobotPaymentSetupLocalCommand extends Command
 
         $planCount = DB::table('contract_plans')->where('is_active', true)->count();
         if ($planCount === 0) {
-            $this->info('テスト用契約プランを作成しています...');
+            $this->info('テスト用製品を作成しています...');
             Artisan::call('test:create-plans');
             $this->line(Artisan::output());
         } else {
-            $this->info("契約プランは既に {$planCount} 件あります。");
+            $this->info("製品は既に {$planCount} 件あります。");
         }
 
         $statusCount = DB::table('contract_statuses')->count();

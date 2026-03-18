@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -13,7 +12,6 @@ class ContractPlan extends Model
     use HasFactory;
 
     protected $fillable = [
-        'contract_plan_master_id',
         'item', // F-REGI標準: ITEM（商品コード）
         'name',
         'price',
@@ -30,15 +28,7 @@ class ContractPlan extends Model
     ];
 
     /**
-     * このプランに紐づく契約プランマスター
-     */
-    public function contractPlanMaster(): BelongsTo
-    {
-        return $this->belongsTo(ContractPlanMaster::class, 'contract_plan_master_id');
-    }
-
-    /**
-     * このプランに紐づく契約
+     * この製品に紐づく契約
      */
     public function contracts(): HasMany
     {

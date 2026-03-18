@@ -80,7 +80,7 @@
         </label>
         <select name="type" id="type" 
             class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('type') border-red-500 @enderror" required>
-            <option value="plan" {{ old('type', $product->type ?? '') == 'plan' ? 'selected' : '' }}>プラン</option>
+            <option value="plan" {{ old('type', $product->type ?? '') == 'plan' ? 'selected' : '' }}>製品</option>
             <option value="option" {{ old('type', $product->type ?? '') == 'option' ? 'selected' : '' }}>オプション</option>
             <option value="addon" {{ old('type', $product->type ?? '') == 'addon' ? 'selected' : '' }}>追加商品</option>
         </select>

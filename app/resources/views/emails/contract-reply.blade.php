@@ -117,13 +117,15 @@
                     <div class="info-value">{{ $contract->id }}</div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">契約プラン</div>
-                    <div class="info-value">{{ $contract->contractPlan->name }}</div>
+                    <div class="info-label">代表製品</div>
+                    <div class="info-value">{{ optional($contract->representative_plan)->name ?? '—' }}</div>
                 </div>
+                @if($contract->contractItems->isNotEmpty())
                 <div class="info-row">
-                    <div class="info-label">料金</div>
-                    <div class="info-value">{{ number_format($contract->contractPlan->price) }}円（税込）</div>
+                    <div class="info-label">合計金額（税込）</div>
+                    <div class="info-value">{{ number_format($contract->contractItems->sum('subtotal')) }}円</div>
                 </div>
+                @endif
                 <div class="info-row">
                     <div class="info-label">利用開始希望日</div>
                     <div class="info-value">{{ $contract->desired_start_date ? $contract->desired_start_date->format('Y年m月d日') : '未指定' }}</div>
@@ -145,8 +147,7 @@
                     <div class="info-value"><strong>{{ number_format($optionTotalAmount) }}円</strong></div>
                 </div>
                 @php
-                    $baseAmount = $contract->contractPlan->price ?? 0;
-                    $totalAmount = $baseAmount + $optionTotalAmount;
+                    $totalAmount = $contract->contractItems->sum('subtotal');
                 @endphp
                 <div class="total-row">
                     <div class="info-row" style="border: none;">

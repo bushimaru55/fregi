@@ -36,14 +36,14 @@ class RobotPaymentApi2TestCommand extends Command
 
         $plan = ContractPlan::first();
         if (!$plan) {
-            $this->error('契約プランが1件も登録されていません。contract_plans にデータを入れてから実行してください。');
+            $this->error('製品が1件も登録されていません。contract_plans にデータを入れてから実行してください。');
             return Command::FAILURE;
         }
 
         $sessionData = $this->buildTestSessionData($plan->id);
         $token = $this->option('token') ?: 'TEST_TOKEN_4444333322221111_' . time();
 
-        $this->line('契約プランID: ' . $plan->id . ' (' . $plan->name . ')');
+        $this->line('製品ID: ' . $plan->id . ' (' . $plan->name . ')');
         $this->line('テスト用トークン: ' . (strlen($token) > 24 ? substr($token, 0, 20) . '...' : $token));
         $this->newLine();
 

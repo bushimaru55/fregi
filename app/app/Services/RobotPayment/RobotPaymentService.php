@@ -2,12 +2,11 @@
 
 namespace App\Services\RobotPayment;
 
+use App\Logging\PaymentStageLogger;
 use App\Mail\ContractNotificationMail;
 use App\Mail\ContractReplyMail;
 use App\Models\Contract;
-use App\Services\BillingRobo\BillingRoboBillingService;
-use App\Services\BillingRobo\BillingRoboCreditCardService;
-use App\Services\BillingRobo\BillingRoboBulkRegisterService;
+use App\Services\BillingRobo\BillingRoboExecutionService;
 use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Payment;
@@ -36,36 +35,52 @@ class RobotPaymentService
      */
     public function executePayment(array $sessionData, string $token, array $debugContext = []): array
     {
-        $plan = ContractPlan::findOrFail($sessionData['contract_plan_id']);
+        $correlationId = $debugContext['correlation_id'] ?? null;
+        PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_ENTRY, '決済サービス開始', [
+            'has_token' => !empty($token),
+            'session_keys' => array_keys($sessionData),
+        ], $correlationId);
+
+        $basePlanIds = $sessionData['base_plan_ids'] ?? (isset($sessionData['contract_plan_id']) ? [$sessionData['contract_plan_id']] : []);
         $optionProductIds = $sessionData['option_product_ids'] ?? [];
         $desiredStartDate = $sessionData['desired_start_date'] ?? now()->format('Y-m-d');
 
-        $amounts = $this->patternService->getAmountsFromPlanAndOptions($plan, $optionProductIds, $desiredStartDate);
-        $pattern = $amounts['pattern'];
+        if (empty($basePlanIds)) {
+            throw new \InvalidArgumentException('申込データにベース製品が含まれていません。');
+        }
 
-        return DB::transaction(function () use ($sessionData, $token, $debugContext, $plan, $optionProductIds, $desiredStartDate, $amounts, $pattern) {
+        $amounts = $this->patternService->getAmountsFromPlansAndOptions($basePlanIds, $optionProductIds, $desiredStartDate);
+        $pattern = $amounts['pattern'];
+        $plans = ContractPlan::whereIn('id', $basePlanIds)->get();
+        $representativePlanId = $plans->isNotEmpty() ? $plans->first()->id : null;
+
+        return DB::transaction(function () use ($sessionData, $token, $debugContext, $plans, $representativePlanId, $optionProductIds, $desiredStartDate, $amounts, $pattern, $correlationId) {
             $createData = $sessionData;
-            unset($createData['option_product_ids'], $createData['terms_agreed']);
+            unset($createData['option_product_ids'], $createData['base_plan_ids'], $createData['terms_agreed']);
             if (empty($createData['desired_start_date'])) {
                 $createData['desired_start_date'] = now()->format('Y-m-d');
             }
+            $createData['contract_plan_id'] = $representativePlanId;
 
             $contract = Contract::create([
                 ...$createData,
                 'status' => 'applied',
+                'billing_robo_mode' => Contract::BILLING_ROBO_MODE_API5_IMMEDIATE,
             ]);
 
-            ContractItem::create([
-                'contract_id' => $contract->id,
-                'contract_plan_id' => $plan->id,
-                'product_id' => null,
-                'product_name' => $plan->name,
-                'product_code' => $plan->item,
-                'quantity' => 1,
-                'unit_price' => $plan->price,
-                'subtotal' => $plan->price,
-                'billing_type' => $plan->billing_type ?? 'one_time',
-            ]);
+            foreach ($plans as $plan) {
+                ContractItem::create([
+                    'contract_id' => $contract->id,
+                    'contract_plan_id' => $plan->id,
+                    'product_id' => null,
+                    'product_name' => $plan->name,
+                    'product_code' => $plan->item ?? '',
+                    'quantity' => 1,
+                    'unit_price' => $plan->price,
+                    'subtotal' => $plan->price,
+                    'billing_type' => $plan->billing_type ?? 'one_time',
+                ]);
+            }
 
             foreach ($optionProductIds as $productId) {
                 $product = Product::where('id', $productId)
@@ -77,7 +92,7 @@ class RobotPaymentService
                     'contract_plan_id' => null,
                     'product_id' => $product->id,
                     'product_name' => $product->name,
-                    'product_code' => $product->code,
+                    'product_code' => $product->code ?? '',
                     'quantity' => 1,
                     'unit_price' => $product->unit_price,
                     'subtotal' => $product->unit_price,
@@ -105,87 +120,35 @@ class RobotPaymentService
                 'requested_at' => now(),
             ]);
 
-            $api1Success = null;
-            if (config('billing_robo.base_url') && config('billing_robo.user_id')) {
-                try {
-                    $billingService = app(BillingRoboBillingService::class);
-                    $api1Result = $billingService->upsertBillingFromContract($contract);
-                    $api1Success = $api1Result['success'];
-                    if ($api1Result['success']) {
-                        $payment->refresh();
-                        $cod = $payment->merchant_order_no ?? $cod;
-                        Log::channel('contract_payment')->info('請求管理ロボ API 1 請求先登録完了', [
-                            'contract_id' => $contract->id,
-                            'billing_code' => $api1Result['billing_code'],
-                            'cod' => $api1Result['cod'],
-                        ]);
-                    } else {
-                        Log::channel('contract_payment')->warning('請求管理ロボ API 1 失敗（決済は cod=契約ID で継続）', [
-                            'contract_id' => $contract->id,
-                            'error' => $api1Result['error'] ?? '',
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    $api1Success = false;
-                    Log::channel('contract_payment')->warning('請求管理ロボ API 1 例外（決済は cod=契約ID で継続）', [
-                        'contract_id' => $contract->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            }
-
-            // API 2: クレジットカード登録（トークン方式）。仕様どおりトークンは API 2 のみで使用。
-            $api2Success = false;
-            if (config('billing_robo.base_url') && config('billing_robo.user_id')
-                && $contract->billing_code && ($payment->billing_payment_method_number !== null || $payment->billing_payment_method_code)) {
-                try {
-                    $creditCardService = app(BillingRoboCreditCardService::class);
-                    $api2Result = $creditCardService->registerToken($contract, $payment, $token, $debugContext);
-                    $api2Success = $api2Result['success'];
-                    if ($api2Result['success']) {
-                        Log::channel('contract_payment')->info('請求管理ロボ API 2 クレジットカード登録完了', ['contract_id' => $contract->id]);
-                    } else {
-                        Log::channel('contract_payment')->warning('請求管理ロボ API 2 クレジットカード登録失敗', [
-                            'contract_id' => $contract->id,
-                            'error' => $api2Result['error'] ?? '',
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    Log::channel('contract_payment')->warning('請求管理ロボ API 2 例外', [
-                        'contract_id' => $contract->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            }
-
             $billingRoboEnabled = config('billing_robo.base_url') && config('billing_robo.user_id');
+            PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_CONTRACT_CREATED, '契約・Payment作成済み', [
+                'contract_id' => $contract->id,
+                'payment_id' => $payment->id,
+            ], $correlationId);
+            PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_BILLING_ROBO, '請求ロボ連携分岐', [
+                'enabled' => $billingRoboEnabled,
+                'contract_id' => $contract->id,
+                'pattern' => $pattern,
+            ], $correlationId);
 
-            // 請求管理ロボ有効時: API 1→2→5 で完結。gateway は使わない。
             if ($billingRoboEnabled) {
-                if (!$api1Success) {
-                    $errorMessage = '請求先登録に失敗しました。しばらくしてから再度お試しください。';
-                    $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
-                    return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
-                }
-                if (!$api2Success) {
-                    $errorMessage = 'クレジットカード登録に失敗しました。カード情報をご確認のうえ再度お試しください。';
-                    $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
-                    return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
-                }
-
                 try {
-                    $contract->refresh();
-                    $bulkRegister = app(BillingRoboBulkRegisterService::class);
-                    $api5Result = $bulkRegister->executeForContract($contract);
-                    if ($api5Result['success']) {
+                    $executionService = app(BillingRoboExecutionService::class);
+                    $result = $executionService->executeForContract($contract, $payment, $token, $debugContext);
+                    if ($result['success']) {
+                        $contract->refresh();
                         $contract->update(['payment_id' => $payment->id]);
                         return ['success' => true, 'contract' => $contract, 'error' => null];
                     }
-                    $errorMessage = $api5Result['error'] ?? '即時決済に失敗しました。';
+                    $errorMessage = $result['error'] ?? '請求管理ロボ連携に失敗しました。';
                     $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
                     return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
                 } catch (\Throwable $e) {
-                    Log::channel('contract_payment')->warning('請求管理ロボ API 5 例外', [
+                    PaymentStageLogger::warning(PaymentStageLogger::STAGE_EXEC_FAIL, '請求管理ロボ連携で例外', [
+                        'contract_id' => $contract->id,
+                        'error' => mb_substr($e->getMessage(), 0, 200),
+                    ], $correlationId);
+                    Log::channel('contract_payment')->warning('請求管理ロボ連携 例外', [
                         'contract_id' => $contract->id,
                         'message' => $e->getMessage(),
                     ]);
@@ -197,6 +160,11 @@ class RobotPaymentService
             // 請求管理ロボ未使用時: gateway で決済
             $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
             $gatewayUrl = config('robotpayment.gateway_url');
+            PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_GATEWAY_SEND, 'ROBOT PAYMENT gateway 送信', [
+                'contract_id' => $contract->id,
+                'cod' => $params['cod'] ?? null,
+                'pattern' => $pattern,
+            ], $correlationId);
             Log::channel('contract_payment')->info('gateway 送信', [
                 'contract_id' => $contract->id,
                 'cod' => $params['cod'] ?? null,
@@ -222,11 +190,19 @@ class RobotPaymentService
             ]);
 
             if ($response->successful() && $this->isGatewaySuccess($body)) {
+                PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_GATEWAY_OK, 'ROBOT PAYMENT gateway 成功', [
+                    'contract_id' => $contract->id,
+                ], $correlationId);
                 $contract->update(['payment_id' => $payment->id]);
                 return ['success' => true, 'contract' => $contract, 'error' => null];
             }
 
             $errorMessage = $this->parseGatewayError($body) ?: '決済処理に失敗しました。';
+            PaymentStageLogger::warning(PaymentStageLogger::STAGE_SVC_GATEWAY_FAIL, 'ROBOT PAYMENT gateway 失敗', [
+                'contract_id' => $contract->id,
+                'error' => mb_substr($errorMessage, 0, 200),
+                'response_preview' => mb_substr($body, 0, 200),
+            ], $correlationId);
             Log::channel('contract_payment')->warning('gateway エラー', [
                 'contract_id' => $contract->id,
                 'raw_body' => $body,

@@ -39,7 +39,7 @@ class ContractItem extends Model
     }
 
     /**
-     * 契約プラン（ベース商品の場合）
+     * 製品（ベース商品の場合）
      */
     public function contractPlan(): BelongsTo
     {

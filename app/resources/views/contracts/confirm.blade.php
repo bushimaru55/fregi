@@ -166,19 +166,22 @@
             </h2>
 
             <div class="space-y-3 md:space-y-4">
+                {{-- ベース製品（複数可） --}}
+                @php $plans = $plans ?? collect([$plan ?? null])->filter(); @endphp
+                @foreach($plans as $planItem)
                 <div class="bg-teal-50 border-2 border-teal-300 rounded-lg p-4 md:p-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
                         <div>
                             <p class="text-xs md:text-sm text-gray-600 mb-1">製品</p>
-                            <p class="text-xl md:text-2xl font-bold text-gray-800">{{ $plan->name ?? '' }}</p>
-                            @if(!empty($plan->description))
-                            <p class="text-xs md:text-sm text-gray-600 mt-2">{{ $plan->description }}</p>
+                            <p class="text-xl md:text-2xl font-bold text-gray-800">{{ $planItem->name ?? '' }}</p>
+                            @if(!empty($planItem->description))
+                            <p class="text-xs md:text-sm text-gray-600 mt-2">{{ $planItem->description }}</p>
                             @endif
                         </div>
                         <div class="text-left md:text-right">
                             <p class="text-xs md:text-sm text-gray-600 mb-1">料金</p>
-                            <p class="text-2xl md:text-3xl font-bold text-teal-600">{{ number_format($plan->price ?? 0) }}円</p>
-                            @if(isset($plan->billing_type) && $plan->billing_type === 'monthly')
+                            <p class="text-2xl md:text-3xl font-bold text-teal-600">{{ number_format($planItem->price ?? 0) }}円</p>
+                            @if(isset($planItem->billing_type) && $planItem->billing_type === 'monthly')
                                 <p class="text-xs text-gray-500 mt-1">（税込・月額）</p>
                             @else
                                 <p class="text-xs text-gray-500 mt-1">（税込）</p>
@@ -186,6 +189,7 @@
                         </div>
                     </div>
                 </div>
+                @endforeach
 
                 {{-- オプション製品の表示 --}}
                 @if(isset($optionProducts) && $optionProducts->isNotEmpty())
@@ -208,7 +212,7 @@
 
                 {{-- 合計金額の表示 --}}
                 @php
-                    $baseAmount = $plan->price ?? 0;
+                    $baseAmount = $baseTotalAmount ?? (isset($plan) ? ($plan->price ?? 0) : 0);
                     $optionTotal = $optionTotalAmount ?? 0;
                     $totalAmount = $baseAmount + $optionTotal;
                 @endphp

@@ -18,6 +18,7 @@ class Contract extends Model
         'billing_code',
         'billing_individual_number',
         'billing_individual_code',
+        'billing_robo_mode',
         'status',
         'company_name',
         'company_name_kana',
@@ -49,11 +50,24 @@ class Contract extends Model
     ];
 
     /**
-     * 契約プラン
+     * 代表製品（contract_plan_id が null の場合は最初のベース ContractItem から取得）
      */
     public function contractPlan(): BelongsTo
     {
         return $this->belongsTo(ContractPlan::class, 'contract_plan_id');
+    }
+
+    /**
+     * 代表製品（表示・レガシー用）。contract_plan_id があればその製品、
+     * なければ contract_items のうち最初のベース行の製品を返す。
+     */
+    public function getRepresentativePlanAttribute(): ?ContractPlan
+    {
+        if ($this->contract_plan_id !== null) {
+            return $this->contractPlan;
+        }
+        $firstBaseItem = $this->contractItems()->whereNotNull('contract_plan_id')->first();
+        return $firstBaseItem?->contractPlan;
     }
 
     /**
@@ -78,6 +92,21 @@ class Contract extends Model
     public function contractItems(): HasMany
     {
         return $this->hasMany(ContractItem::class, 'contract_id');
+    }
+
+    /** Billing-Robo 即時決済モード（API5） */
+    public const BILLING_ROBO_MODE_API5_IMMEDIATE = 'api5_immediate';
+
+    /** Billing-Robo 標準運用モード（API3） */
+    public const BILLING_ROBO_MODE_API3_STANDARD = 'api3_standard';
+
+    /**
+     * 即時決済（API5）モードか。null の場合は後方互換のため API5 とみなす。
+     */
+    public function isBillingRoboApi5Immediate(): bool
+    {
+        $mode = $this->billing_robo_mode;
+        return $mode === null || $mode === self::BILLING_ROBO_MODE_API5_IMMEDIATE;
     }
 
     /**

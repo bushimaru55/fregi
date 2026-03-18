@@ -41,12 +41,12 @@
                 </span>
             </div>
             <div>
-                <p class="text-sm text-gray-600 mb-1">契約プラン</p>
-                <p class="text-lg font-semibold text-gray-800">{{ $contract->contractPlan->name }}</p>
+                <p class="text-sm text-gray-600 mb-1">代表製品</p>
+                <p class="text-lg font-semibold text-gray-800">{{ optional($contract->representative_plan)->name ?? '—' }}</p>
             </div>
             <div>
-                <p class="text-sm text-gray-600 mb-1">料金</p>
-                <p class="text-lg font-bold theme-price">{{ number_format($contract->contractPlan->price) }}円（税込）</p>
+                <p class="text-sm text-gray-600 mb-1">合計金額（税込）</p>
+                <p class="text-lg font-bold theme-price">{{ number_format($contract->contractItems->sum('subtotal')) }}円</p>
             </div>
             @if($contract->actual_start_date)
             <div>
@@ -134,12 +134,11 @@
         </div>
     </div>
 
-    {{-- 契約内容（オプション商品） --}}
-    @php $optionItems = $contract->contractItems->whereNotNull('product_id'); @endphp
-    @if($optionItems->isNotEmpty())
+    {{-- 選択された商品 --}}
+    @if($contract->contractItems->isNotEmpty())
     <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-6 pb-3 theme-section-border">
-            <i class="fas fa-puzzle-piece mr-2"></i>オプション商品
+            <i class="fas fa-shopping-cart mr-2"></i>選択された商品
         </h2>
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -153,16 +152,22 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($optionItems as $item)
+                    @foreach($contract->contractItems as $item)
                     <tr class="border-b border-gray-200">
-                        <td class="py-2 px-4">{{ $item->product_name }}</td>
+                        <td class="py-2 px-4">{{ $item->product_name ?? $item->contractPlan->name ?? $item->product->name ?? '—' }}</td>
                         <td class="py-2 px-4">{{ $item->product_code ?? '—' }}</td>
-                        <td class="py-2 px-4 text-right">{{ $item->product ? $item->product->formatted_price : number_format($item->unit_price) . '円' }}</td>
+                        <td class="py-2 px-4 text-right">{{ $item->product ? $item->product->formatted_price : ($item->contractPlan ? $item->contractPlan->formatted_price : number_format($item->unit_price) . '円') }}</td>
                         <td class="py-2 px-4 text-right">{{ $item->quantity }}</td>
-                        <td class="py-2 px-4 text-right">{{ ($item->product && ($item->product->billing_type ?? 'one_time') === 'monthly') ? number_format($item->subtotal) . '円/月額' : number_format($item->subtotal) . '円' }}</td>
+                        <td class="py-2 px-4 text-right">{{ number_format($item->subtotal) }}円</td>
                     </tr>
                     @endforeach
                 </tbody>
+                <tfoot>
+                    <tr class="bg-gray-100 font-semibold">
+                        <td class="py-2 px-4" colspan="4">合計</td>
+                        <td class="py-2 px-4 text-right">{{ number_format($contract->contractItems->sum('subtotal')) }}円</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>

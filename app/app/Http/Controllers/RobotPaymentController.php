@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Logging\PaymentStageLogger;
 use App\Services\RobotPayment\RobotPaymentNotifyService;
 use App\Services\RobotPayment\RobotPaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -19,8 +20,15 @@ class RobotPaymentController extends Controller
     public function execute(Request $request): RedirectResponse
     {
         $token = $request->input('tkn');
-        $tokenCreatedMs = (int) $request->input('token_created_ms', 0);
         $sessionData = $request->session()->get('contract_confirm_data');
+        $correlationId = 'pay_' . uniqid('', true);
+
+        PaymentStageLogger::info(PaymentStageLogger::STAGE_EXEC_ENTRY, '決済実行リクエスト受付', [
+            'has_tkn' => !empty($token),
+            'has_session_data' => !empty($sessionData),
+            'tkn_length' => is_string($token) ? strlen($token) : 0,
+        ], $correlationId);
+        $tokenCreatedMs = (int) $request->input('token_created_ms', 0);
         $nowMs = (int) floor(microtime(true) * 1000);
         $tokenAgeMs = $tokenCreatedMs > 0 ? max(0, $nowMs - $tokenCreatedMs) : null;
         $tokenHash = is_string($token) && $token !== '' ? hash('sha256', $token) : '';
@@ -28,7 +36,6 @@ class RobotPaymentController extends Controller
         $dupCacheKey = $tokenHash !== '' ? 'rp_tkn_' . $tokenHash : '';
         $duplicateDetected = $dupCacheKey !== '' ? !Cache::add($dupCacheKey, 1, now()->addMinutes(15)) : false;
 
-        $correlationId = 'pay_' . uniqid('', true);
         $debugContext = [
             'correlation_id' => $correlationId,
             'token_created_ms' => $tokenCreatedMs > 0 ? $tokenCreatedMs : null,
@@ -49,21 +56,23 @@ class RobotPaymentController extends Controller
             'has_tkn' => !empty($token),
             'tkn_length' => is_string($token) ? strlen($token) : 0,
             'has_session_data' => !empty($sessionData),
+            'base_plan_ids' => $sessionData['base_plan_ids'] ?? null,
             'contract_plan_id' => $sessionData['contract_plan_id'] ?? null,
         ]);
-        // #region agent log
-        Log::channel('contract_payment')->info('[DIAG][H7_H8] トークン再利用・期限チェック', [
+        Log::channel('contract_payment')->info('トークン再利用・期限チェック', [
+            'correlation_id' => $correlationId,
             'token_hash_prefix' => $tokenHashPrefix,
             'duplicate_detected' => $duplicateDetected,
             'token_created_ms' => $tokenCreatedMs > 0 ? $tokenCreatedMs : null,
             'token_age_ms' => $tokenAgeMs,
         ]);
-        // #endregion
 
         if (!$token || !$sessionData) {
             if (!$sessionData) {
+                PaymentStageLogger::warning(PaymentStageLogger::STAGE_NO_SESSION, '申込セッションなしのため申込画面へリダイレクト', [], $correlationId);
                 return redirect()->route('contract.create')->with('error', '申込内容が見つかりません。最初から入力し直してください。');
             }
+            PaymentStageLogger::warning(PaymentStageLogger::STAGE_NO_TOKEN, 'トークン未送信のため決済ページへリダイレクト', [], $correlationId);
             return redirect()->route('contract.payment')->with('payment_error', 'トークンが取得できませんでした。もう一度お試しください。');
         }
 
@@ -72,7 +81,11 @@ class RobotPaymentController extends Controller
             $result = $service->executePayment($sessionData, $token, $debugContext);
 
             if ($result['success'] && $result['contract']) {
+                PaymentStageLogger::info(PaymentStageLogger::STAGE_EXEC_SUCCESS, '決済実行成功・完了画面へリダイレクト', [
+                    'contract_id' => $result['contract']->id,
+                ], $correlationId);
                 Log::channel('contract_payment')->info('決済実行成功', [
+                    'correlation_id' => $correlationId,
                     'contract_id' => $result['contract']->id,
                 ]);
                 $request->session()->forget('contract_confirm_data');
@@ -82,13 +95,24 @@ class RobotPaymentController extends Controller
                 );
             }
 
+            $errorMsg = $result['error'] ?? '決済処理に失敗しました。';
+            PaymentStageLogger::warning(PaymentStageLogger::STAGE_EXEC_FAIL, '決済実行失敗（サービス戻り）', [
+                'error' => mb_substr($errorMsg, 0, 200),
+            ], $correlationId);
             Log::channel('contract_payment')->warning('決済実行失敗', [
-                'error' => $result['error'] ?? '決済処理に失敗しました。',
+                'correlation_id' => $correlationId,
+                'error' => $errorMsg,
             ]);
             return redirect()->route('contract.payment')
-                ->with('payment_error', $result['error'] ?? '決済処理に失敗しました。');
+                ->with('payment_error', $errorMsg);
         } catch (\Throwable $e) {
+            PaymentStageLogger::error(PaymentStageLogger::STAGE_EXEC_EXCEPTION, '決済実行中に例外', [
+                'message' => mb_substr($e->getMessage(), 0, 200),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], $correlationId);
             Log::channel('contract_payment')->error('ROBOT PAYMENT 決済実行エラー', [
+                'correlation_id' => $correlationId,
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -184,15 +208,29 @@ class RobotPaymentController extends Controller
     }
 
     /**
-     * トークン作成失敗時のクライアント報告（ログ用）
+     * トークン作成失敗・3DS失敗時のクライアント報告（ログ用）。
+     * stage: token_create | 3ds_auth（任意）。result_code: 例 ER002（任意）
      */
     public function logTokenCreateFailed(Request $request): Response
     {
         $errMsg = $request->input('err_msg', '');
         $pageOrigin = $request->input('page_origin', '');
+        $stage = $request->input('stage', 'token_create');
+        $resultCode = $request->input('result_code', '');
+
+        $logStage = ($stage === '3ds_auth') ? PaymentStageLogger::STAGE_CLIENT_3DS_FAIL : PaymentStageLogger::STAGE_CLIENT_TOKEN_FAIL;
+        $message = ($stage === '3ds_auth') ? 'クライアント: 3DS認証失敗' : 'クライアント: トークン作成失敗';
+        PaymentStageLogger::warning($logStage, $message, [
+            'err_msg' => mb_substr($errMsg, 0, 500),
+            'page_origin' => $pageOrigin,
+            'result_code' => mb_substr($resultCode, 0, 32),
+        ], null);
+
         Log::channel('contract_payment')->warning('トークン作成失敗（クライアント）', [
             'err_msg' => mb_substr($errMsg, 0, 500),
             'page_origin' => $pageOrigin,
+            'stage' => $stage,
+            'result_code' => $resultCode,
         ]);
         return response('', 204);
     }

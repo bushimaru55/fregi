@@ -27,15 +27,17 @@ class BillingRoboDemandService
     private const PERIOD_FORMAT_MONTH = 0;
 
     public function __construct(
-        private BillingRoboApiClient $client
+        private BillingRoboApiClient $client,
+        private ContractToBillingLinesMapper $linesMapper
     ) {}
 
     /**
      * 契約から請求情報登録（API 3）を実行し、成功した請求情報を billing_robo_demands に保存する。
      *
+     * @param  array{issue_month?: int, issue_day?: int, sending_month?: int, sending_day?: int, deadline_month?: int, deadline_day?: int}|null  $schedule  請求先側スケジュールと合わせる場合。BillingScheduleService::getScheduleForApplication の戻り値。
      * @return array{success: bool, demands: array<int, array{number: int|null, code: string|null}>, error?: string}
      */
-    public function upsertDemandFromContract(Contract $contract): array
+    public function upsertDemandFromContract(Contract $contract, ?array $schedule = null): array
     {
         $billingCode = $contract->billing_code;
         if ($billingCode === null || $billingCode === '') {
@@ -46,7 +48,7 @@ class BillingRoboDemandService
             ];
         }
 
-        $demandArray = $this->buildDemandArray($contract);
+        $demandArray = $this->buildDemandArray($contract, $schedule);
         if (empty($demandArray)) {
             return [
                 'success' => false,
@@ -128,50 +130,49 @@ class BillingRoboDemandService
     }
 
     /**
-     * 契約・契約明細から API 3 用の demand 配列を組み立てる（item_code は使わない）
+     * 契約・契約明細から API 3 用の demand 配列を組み立てる（item_code は使わない）。
      *
+     * @param  array{issue_month?: int, issue_day?: int, sending_month?: int, sending_day?: int, deadline_month?: int, deadline_day?: int}|null  $schedule  請求先側スケジュールと合わせる場合。null のときは 0/1 固定。
      * @return array<int, array<string, mixed>>
      */
-    public function buildDemandArray(Contract $contract): array
+    public function buildDemandArray(Contract $contract, ?array $schedule = null): array
     {
-        $items = $contract->contractItems()->with('product')->orderBy('id')->get();
-        if ($items->isEmpty()) {
+        $lines = $this->linesMapper->map($contract);
+        if ($lines === []) {
             return [];
         }
 
         $startDate = $this->formatStartDate($contract);
         $individual = $this->buildIndividualSpec($contract);
-        // payment_method_code は任意。指定すると請求先部署に未反映の場合は 1340 になるため送らない（デフォルト決済手段を使用）
-        // $paymentCode = $contract->payments()->where('provider', 'robotpayment')->first()?->billing_payment_method_code;
+
+        $issueMonth = $schedule['issue_month'] ?? 0;
+        $issueDay = $schedule['issue_day'] ?? 1;
+        $sendingMonth = $schedule['sending_month'] ?? 0;
+        $sendingDay = $schedule['sending_day'] ?? 1;
+        $deadlineMonth = $schedule['deadline_month'] ?? 0;
+        $deadlineDay = $schedule['deadline_day'] ?? 1;
 
         $demands = [];
-        foreach ($items as $item) {
-            $type = $this->mapBillingTypeToDemandType($item->billing_type ?? 'one_time');
-            $taxCategory = 1;
-            $tax = 10;
-            if ($item->product_id && $item->product) {
-                $taxCategory = (int) ($item->product->tax_category ?? 1);
-                $tax = (int) ($item->product->tax ?? 10);
-            }
-
+        foreach ($lines as $line) {
+            $type = $line['demand_type'];
             $row = [
                 'billing_code' => $contract->billing_code,
                 ...$individual,
                 'type' => $type,
-                'goods_name' => $item->product_name ?? '商品',
-                'price' => (int) $item->unit_price,
-                'quantity' => (int) max(1, $item->quantity),
-                'tax_category' => $taxCategory,
-                'tax' => $tax,
+                'goods_name' => $line['goods_name'],
+                'price' => $line['price'],
+                'quantity' => $line['quantity'],
+                'tax_category' => $line['tax_category'],
+                'tax' => $line['tax'],
                 'billing_method' => self::BILLING_METHOD_AUTO_MAIL,
                 'start_date' => $startDate,
                 'period_format' => self::PERIOD_FORMAT_MONTH,
-                'issue_month' => 0,
-                'issue_day' => 1,
-                'sending_month' => 0,
-                'sending_day' => 1,
-                'deadline_month' => 0,
-                'deadline_day' => 1,
+                'issue_month' => $issueMonth,
+                'issue_day' => $issueDay,
+                'sending_month' => $sendingMonth,
+                'sending_day' => $sendingDay,
+                'deadline_month' => $deadlineMonth,
+                'deadline_day' => $deadlineDay,
             ];
 
             if ($type === self::TYPE_RECURRING) {

@@ -20,11 +20,12 @@ class BillingRoboBillingService
     /**
      * 契約から請求先登録更新（API 1）を実行し、レスポンスを Contract / Payment に保存する。
      *
+     * @param  array{issue_month?: int, issue_day?: int, sending_month?: int, sending_day?: int, deadline_month?: int, deadline_day?: int}|null  $schedule  API3 標準運用時は BillingScheduleService::getScheduleForApplication の戻り値を渡す。null の場合はスケジュールを送らない（API5 即時決済用）。
      * @return array{success: bool, billing_code: string|null, individual_number: int|null, individual_code: string|null, payment_number: int|null, payment_code: string|null, cod: string|null, error?: string}
      */
-    public function upsertBillingFromContract(Contract $contract): array
+    public function upsertBillingFromContract(Contract $contract, ?array $schedule = null): array
     {
-        $body = $this->buildBillingBody($contract);
+        $body = $this->buildBillingBody($contract, $schedule);
         $path = 'api/v1.0/billing/bulk_upsert';
 
         Log::channel('contract_payment')->info('請求管理ロボ API 1 リクエストボディ', [
@@ -187,11 +188,12 @@ class BillingRoboBillingService
     }
 
     /**
-     * Contract から API 1 の billing 配列を組み立てる
+     * Contract から API 1 の billing 配列を組み立てる。
      *
+     * @param  array{issue_month?: int, issue_day?: int, sending_month?: int, sending_day?: int, deadline_month?: int, deadline_day?: int}|null  $schedule  請求先部署にスケジュールを載せる場合（API3 標準運用時）。null ならスケジュールなし。
      * @return array{billing: array<int, array>}
      */
-    public function buildBillingBody(Contract $contract): array
+    public function buildBillingBody(Contract $contract, ?array $schedule = null): array
     {
         $billingCode = $contract->billing_code ?? $this->generateBillingCode($contract);
         $zipCode = $contract->postal_code ? preg_replace('/\D/', '', $contract->postal_code) : '1000001';
@@ -211,6 +213,28 @@ class BillingRoboBillingService
             $individual['code'] = $contract->billing_individual_code;
         } else {
             $individual['code'] = 'IND-' . ($contract->id ?? '0');
+        }
+
+        if ($schedule !== null) {
+            $individual['billing_method'] = 1;
+            if (isset($schedule['issue_month'])) {
+                $individual['issue_month'] = (int) $schedule['issue_month'];
+            }
+            if (isset($schedule['issue_day'])) {
+                $individual['issue_day'] = (int) $schedule['issue_day'];
+            }
+            if (isset($schedule['sending_month'])) {
+                $individual['sending_month'] = (int) $schedule['sending_month'];
+            }
+            if (isset($schedule['sending_day'])) {
+                $individual['sending_day'] = (int) $schedule['sending_day'];
+            }
+            if (isset($schedule['deadline_month'])) {
+                $individual['deadline_month'] = (int) $schedule['deadline_month'];
+            }
+            if (isset($schedule['deadline_day'])) {
+                $individual['deadline_day'] = (int) $schedule['deadline_day'];
+            }
         }
 
         $paymentCode = 'PMT-' . ($contract->id ?? '0');

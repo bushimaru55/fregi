@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\ContractPlan;
-use App\Models\ContractPlanMaster;
 use Illuminate\Console\Command;
 
 class CreateTestPlans extends Command
@@ -20,28 +19,17 @@ class CreateTestPlans extends Command
      *
      * @var string
      */
-    protected $description = 'テスト用の契約プランを作成（一回限りと月額課金の各1つずつ）';
+    protected $description = 'テスト用の製品を作成（一回限りと月額課金の各1つずつ）';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        // テスト用マスターを作成（存在しない場合）
-        $testMaster = ContractPlanMaster::firstOrCreate(
-            ['name' => 'テスト用プラン'],
-            [
-                'description' => '動作テスト用の契約プランマスター',
-                'is_active' => true,
-                'display_order' => 999,
-            ]
-        );
-
-        // 一回限りのプラン（買い切り単品・テスト用1円）
+        // 一回限りの製品（買い切り単品・テスト用1円）
         $oneTimePlan = ContractPlan::updateOrCreate(
             ['item' => 'TEST-ONE-TIME'],
             [
-                'contract_plan_master_id' => $testMaster->id,
                 'name' => 'テスト用 一回限りプラン',
                 'price' => 1,
                 'billing_type' => 'one_time',
@@ -51,11 +39,10 @@ class CreateTestPlans extends Command
             ]
         );
 
-        // 月額課金のプラン（テスト用2円/月）
+        // 月額課金の製品（テスト用2円/月）
         $monthlyPlan = ContractPlan::updateOrCreate(
             ['item' => 'TEST-MONTHLY'],
             [
-                'contract_plan_master_id' => $testMaster->id,
                 'name' => 'テスト用 月額課金プラン',
                 'price' => 2,
                 'billing_type' => 'monthly',
@@ -65,9 +52,9 @@ class CreateTestPlans extends Command
             ]
         );
 
-        $this->info('テスト用プランを作成しました:');
-        $this->line("  - 一回限り: ID={$oneTimePlan->id}, プランコード={$oneTimePlan->item}, プラン名={$oneTimePlan->name}, 料金={$oneTimePlan->formatted_price}");
-        $this->line("  - 月額課金: ID={$monthlyPlan->id}, プランコード={$monthlyPlan->item}, プラン名={$monthlyPlan->name}, 料金={$monthlyPlan->formatted_price}");
+        $this->info('テスト用製品を作成しました:');
+        $this->line("  - 一回限り: ID={$oneTimePlan->id}, 製品コード={$oneTimePlan->item}, 製品名={$oneTimePlan->name}, 料金={$oneTimePlan->formatted_price}");
+        $this->line("  - 月額課金: ID={$monthlyPlan->id}, 製品コード={$monthlyPlan->item}, 製品名={$monthlyPlan->name}, 料金={$monthlyPlan->formatted_price}");
 
         return Command::SUCCESS;
     }
