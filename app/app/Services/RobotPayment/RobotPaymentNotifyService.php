@@ -2,15 +2,12 @@
 
 namespace App\Services\RobotPayment;
 
-use App\Mail\ContractNotificationMail;
-use App\Mail\ContractReplyMail;
 use App\Models\Contract;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
-use App\Models\SiteSetting;
+use App\Services\ContractMailService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * 決済結果通知・自動課金結果通知の冪等処理（03_sequence_and_callbacks / 04_data_model）
@@ -76,7 +73,7 @@ class RobotPaymentNotifyService
             $contract = $payment->contract;
             if ($contract && $rst === 1) {
                 $contract->update(['payment_id' => $payment->id]);
-                $this->sendContractMails($contract);
+                app(ContractMailService::class)->sendOnce($contract);
             }
 
             return ['handled' => true, 'idempotent' => false];
@@ -157,29 +154,4 @@ class RobotPaymentNotifyService
         return $out;
     }
 
-    private function sendContractMails(Contract $contract): void
-    {
-        $contract->load('contractItems');
-        $optionItems = $contract->contractItems->filter(fn ($i) => $i->product_id !== null);
-        $optionTotalAmount = $optionItems->sum('subtotal');
-
-        try {
-            $notificationEmails = SiteSetting::getNotificationEmailsArray();
-            if ($notificationEmails !== []) {
-                foreach ($notificationEmails as $email) {
-                    Mail::to($email)->send(new ContractNotificationMail($contract, $optionItems, $optionTotalAmount));
-                }
-            }
-        } catch (\Throwable $e) {
-            Log::channel('contract_payment')->error('申込通知メール送信エラー', ['contract_id' => $contract->id, 'message' => $e->getMessage()]);
-        }
-
-        try {
-            if ($contract->email) {
-                Mail::to($contract->email)->send(new ContractReplyMail($contract, $optionItems, $optionTotalAmount));
-            }
-        } catch (\Throwable $e) {
-            Log::channel('contract_payment')->error('申込者返信メール送信エラー', ['contract_id' => $contract->id, 'message' => $e->getMessage()]);
-        }
-    }
 }

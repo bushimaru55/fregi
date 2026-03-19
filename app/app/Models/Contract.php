@@ -40,6 +40,7 @@ class Contract extends Model
         'end_date',
         'notes',
         'card_last4',
+        'mail_sent_at',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Contract extends Model
         'actual_start_date' => 'date',
         'end_date' => 'date',
         'import_from_trial' => 'boolean',
+        'mail_sent_at' => 'datetime',
     ];
 
     /**

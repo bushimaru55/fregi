@@ -3,19 +3,16 @@
 namespace App\Services\RobotPayment;
 
 use App\Logging\PaymentStageLogger;
-use App\Mail\ContractNotificationMail;
-use App\Mail\ContractReplyMail;
 use App\Models\Contract;
 use App\Services\BillingRobo\BillingRoboExecutionService;
+use App\Services\ContractMailService;
 use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\SiteSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * ROBOT PAYMENT: 契約・明細・決済レコード作成と gateway_token.aspx へのサーバ間 POST
@@ -138,6 +135,7 @@ class RobotPaymentService
                     if ($result['success']) {
                         $contract->refresh();
                         $contract->update(['payment_id' => $payment->id]);
+                        $this->sendContractMailsOnce($contract);
                         return ['success' => true, 'contract' => $contract, 'error' => null];
                     }
                     $errorMessage = $result['error'] ?? '請求管理ロボ連携に失敗しました。';
@@ -194,6 +192,7 @@ class RobotPaymentService
                     'contract_id' => $contract->id,
                 ], $correlationId);
                 $contract->update(['payment_id' => $payment->id]);
+                $this->sendContractMailsOnce($contract);
                 return ['success' => true, 'contract' => $contract, 'error' => null];
             }
 
@@ -211,6 +210,24 @@ class RobotPaymentService
             $payment->update(['status' => 'failed', 'failure_reason' => $errorMessage]);
             return ['success' => false, 'contract' => $contract, 'error' => $errorMessage];
         });
+    }
+
+    /**
+     * 決済成功直後に申込者・管理者へメール送信（ContractMailService に委譲）
+     */
+    private function sendContractMailsOnce(Contract $contract): void
+    {
+        try {
+            app(ContractMailService::class)->sendOnce($contract);
+        } catch (\Throwable $e) {
+            Log::channel('contract_payment')->error('決済成功時の申込メール送信エラー', [
+                'contract_id' => $contract->id,
+                'message' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+        }
     }
 
     private function buildGatewayParams(Contract $contract, array $amounts, string $pattern, string $token, ?Payment $payment = null): array

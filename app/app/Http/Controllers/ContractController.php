@@ -12,14 +12,12 @@ use App\Services\BillingRobo\BillingRoboBillingService;
 use App\Services\BillingRobo\BillingRoboDemandService;
 use App\Services\BillingRobo\BillingScheduleService;
 use App\Services\RobotPayment\PurchasePatternService;
-use App\Mail\ContractNotificationMail;
-use App\Mail\ContractReplyMail;
+use App\Services\ContractMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
@@ -455,95 +453,7 @@ class ContractController extends Controller
                     }
                 }
 
-                $contractItems = $contract->contractItems()->with('product')->get();
-                $optionItems = $contractItems->filter(fn ($item) => $item->product_id !== null);
-                $optionTotalAmount = $optionItems->sum('subtotal');
-
-                // 管理者への通知メール送信
-                try {
-                    $notificationEmails = SiteSetting::getNotificationEmailsArray();
-                    if ($notificationEmails !== []) {
-                        foreach ($notificationEmails as $email) {
-                            Mail::to($email)->send(
-                                new ContractNotificationMail($contract, $optionItems, $optionTotalAmount)
-                            );
-                        }
-                        Log::channel('contract_payment')->info('通知メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $notificationEmails,
-                        ]);
-                        Log::channel('mail')->info('申込受付通知メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $notificationEmails,
-                        ]);
-                    } else {
-                        Log::channel('contract_payment')->warning('通知メール送信先が設定されていません', [
-                            'contract_id' => $contract->id,
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    $previous = $e->getPrevious();
-                    $notificationEmails = SiteSetting::getNotificationEmailsArray();
-                    $mailErrorContext = [
-                        'contract_id' => $contract->id,
-                        'to' => $notificationEmails,
-                        'exception_class' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'previous_class' => $previous ? get_class($previous) : null,
-                        'trace' => $e->getTraceAsString(),
-                    ];
-                    Log::channel('contract_payment')->error('通知メール送信エラー', [
-                        'contract_id' => $contract->id,
-                        'error_message' => $e->getMessage(),
-                        'exception_class' => get_class($e),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'error_trace' => $e->getTraceAsString(),
-                    ]);
-                    Log::channel('mail')->error('申込受付通知メール送信エラー', $mailErrorContext);
-                }
-
-                // 申込者への返信メール送信
-                try {
-                    $customerEmail = $contract->email;
-                    if ($customerEmail) {
-                        Mail::to($customerEmail)->send(
-                            new ContractReplyMail($contract, $optionItems, $optionTotalAmount)
-                        );
-                        Log::channel('contract_payment')->info('申込者への返信メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $customerEmail,
-                        ]);
-                        Log::channel('mail')->info('申込者への返信メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $customerEmail,
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    $previous = $e->getPrevious();
-                    $replyMailErrorContext = [
-                        'contract_id' => $contract->id,
-                        'to' => $contract->email,
-                        'exception_class' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'previous_class' => $previous ? get_class($previous) : null,
-                        'trace' => $e->getTraceAsString(),
-                    ];
-                    Log::channel('contract_payment')->error('申込者への返信メール送信エラー', [
-                        'contract_id' => $contract->id,
-                        'to' => $contract->email,
-                        'error_message' => $e->getMessage(),
-                        'exception_class' => get_class($e),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'error_trace' => $e->getTraceAsString(),
-                    ]);
-                    Log::channel('mail')->error('申込者への返信メール送信エラー', $replyMailErrorContext);
-                }
+                app(ContractMailService::class)->sendOnce($contract);
 
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
                 Log::channel('contract_payment')->info('申込処理完了', [
