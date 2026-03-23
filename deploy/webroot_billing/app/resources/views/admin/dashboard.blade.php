@@ -37,7 +37,7 @@
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-gray-600 text-sm">契約プラン数</p>
+                <p class="text-gray-600 text-sm">製品数</p>
                 <p class="text-3xl font-bold text-gray-800">{{ \App\Models\ContractPlan::count() }}</p>
             </div>
             <div class="bg-purple-100 rounded-full p-4">
@@ -70,7 +70,7 @@
                 <div class="flex items-center justify-between border-b border-gray-200 pb-3">
                     <div>
                         <p class="font-semibold text-gray-800">{{ $contract->company_name }}</p>
-                        <p class="text-sm text-gray-600">{{ $contract->contractPlan->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-600">{{ optional($contract->representative_plan)->name ?? 'N/A' }}</p>
                     </div>
                     <div class="text-right">
                         <span class="px-2 py-1 rounded-full text-xs font-semibold 
@@ -103,11 +103,11 @@
             </a>
             <a href="{{ route('admin.contract-plans.index') }}" class="btn-primary rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-layer-group text-3xl mb-2"></i>
-                <p class="font-semibold">契約プラン管理</p>
+                <p class="font-semibold">製品管理</p>
             </a>
             <a href="{{ route('admin.contract-plans.create') }}" class="btn-primary rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-plus text-3xl mb-2"></i>
-                <p class="font-semibold">プラン新規作成</p>
+                <p class="font-semibold">製品新規作成</p>
             </a>
             <a href="{{ route('admin.site-settings.index') }}" class="btn-cta rounded-lg p-4 text-center inline-block transform hover:scale-105 transition">
                 <i class="fas fa-globe text-3xl mb-2"></i>

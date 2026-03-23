@@ -52,7 +52,7 @@
         <div class="bg-white shadow-lg rounded-lg p-8">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">システム概要</h3>
             <div class="text-left space-y-4 text-gray-700">
-                <p><i class="fas fa-check-circle text-green-500 mr-2"></i>契約プラン（学習ページ数 50〜300）</p>
+                <p><i class="fas fa-check-circle text-green-500 mr-2"></i>製品（学習ページ数 50〜300）</p>
                 <p><i class="fas fa-check-circle text-green-500 mr-2"></i>申込・契約の一元管理</p>
                 <p><i class="fas fa-check-circle text-green-500 mr-2"></i>暗号化された設定情報の保存</p>
             </div>

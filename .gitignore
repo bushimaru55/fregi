@@ -35,11 +35,14 @@
 
 # Database
 *.sql
+!deploy/billing_schema_no_data.sql
+!deploy/billing_initial_data.sql
 *.sqlite
 *.sqlite3
 
-# Deploy: 本番用 .env はリポジトリに含めない
+# Deploy: 本番用 .env / .env.production（APP_KEY 等の秘密情報）はリポジトリに含めない
 deploy/webroot_billing/app/.env
+deploy/webroot_billing/app/.env.production
 # Deploy: ビルドスクリプトのバックアップ
 deploy/webroot_billing_backup_*/
 

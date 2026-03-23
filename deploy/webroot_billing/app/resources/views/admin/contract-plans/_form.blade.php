@@ -21,32 +21,6 @@
     </div>
     @endif
 
-    {{-- 製品マスター選択（アプリ固有項目・ベース製品のみ） --}}
-    <div class="md:col-span-2" id="contract-plan-master-field">
-        <label for="contract_plan_master_id" class="block text-sm font-semibold text-gray-700 mb-2">
-            製品マスター
-            <span class="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">アプリ固有</span>
-        </label>
-        <select name="contract_plan_master_id" id="contract_plan_master_id" 
-            class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('contract_plan_master_id') border-red-500 @enderror">
-            <option value="">（マスターなし）</option>
-            @if(isset($masters))
-                @foreach($masters as $master)
-                    <option value="{{ $master->id }}" 
-                        {{ old('contract_plan_master_id', optional($contractPlan)->contract_plan_master_id ?? ($selectedMasterId ?? '')) == $master->id ? 'selected' : '' }}>
-                        {{ $master->name }}
-                    </option>
-                @endforeach
-            @endif
-        </select>
-        @error('contract_plan_master_id')
-            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-        @enderror
-        <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-folder-open mr-1"></i>この製品が所属するマスターを選択してください
-        </p>
-    </div>
-
     {{-- 製品コード --}}
     <div>
         <label for="item" class="block text-sm font-semibold text-gray-700 mb-2">
@@ -243,7 +217,6 @@
 // 製品種別に応じてフィールドの表示/非表示を切り替え
 document.addEventListener('DOMContentLoaded', function() {
     const productTypeSelect = document.getElementById('product_type');
-    const contractPlanMasterField = document.getElementById('contract-plan-master-field');
     const billingTypeField = document.getElementById('billing-type-field');
     const billingTypeSelect = document.getElementById('billing_type');
     const priceUnit = document.getElementById('price-unit');
@@ -254,10 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const isOption = productTypeSelect.value === 'option';
         const basePlanSelectionField = document.getElementById('base-plan-selection-field');
         
-        // 契約プランマスターはオプション商品の場合は非表示
-        if (contractPlanMasterField) {
-            contractPlanMasterField.style.display = isOption ? 'none' : 'block';
-        }
         // 決済タイプはベース・オプションの両方で表示（常に表示）
         if (billingTypeField) {
             billingTypeField.style.display = 'block';

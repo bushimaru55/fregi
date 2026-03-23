@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url('/favicon.png') }}?v=3">
+<link rel="shortcut icon" type="image/png" href="{{ url('/favicon.png') }}?v=3">
     <title>@yield('title', 'DSchatbot') - 申込管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -74,14 +76,11 @@
                     <a href="{{ route('admin.contracts.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-list-alt mr-2"></i>申し込み一覧
                     </a>
-                    <a href="{{ route('admin.contract-plan-masters.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
-                        <i class="fas fa-folder-open mr-2"></i>契約プランマスター
-                    </a>
                     <a href="{{ route('admin.contract-plans.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-layer-group mr-2"></i>製品管理
                     </a>
                     <a href="{{ route('admin.contract-forms.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
-                        <i class="fas fa-link mr-2"></i>リンク発行
+                        <i class="fas fa-wpforms mr-2"></i>フォーム管理
                     </a>
                     <a href="{{ route('admin.contract-statuses.index') }}" class="hover:opacity-90 transition whitespace-nowrap">
                         <i class="fas fa-tags mr-2"></i>ステータスマスター

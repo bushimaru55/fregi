@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
-@section('title', '契約プランマスター管理')
+@section('title', '製品マスター管理')
 
 @section('content')
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">契約プランマスター管理</h1>
+        <h1 class="text-3xl font-bold text-gray-800">製品マスター管理</h1>
         <a href="{{ route('admin.contract-plan-masters.create') }}" class="btn-primary font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
             <i class="fas fa-plus mr-2"></i>新規作成
         </a>
@@ -13,7 +13,7 @@
     <div class="bg-white shadow-lg rounded-lg overflow-hidden">
         @if($masters->isEmpty())
             <div class="p-6 text-center text-gray-600">
-                契約プランマスターがありません。
+                製品マスターがありません。
             </div>
         @else
             <table class="min-w-full leading-normal">
@@ -22,7 +22,7 @@
                         <th class="py-3 px-6 text-left">ID</th>
                         <th class="py-3 px-6 text-left">マスター名</th>
                         <th class="py-3 px-6 text-left">説明</th>
-                        <th class="py-3 px-6 text-left">契約プラン数</th>
+                        <th class="py-3 px-6 text-left">製品数</th>
                         <th class="py-3 px-6 text-left">状態</th>
                         <th class="py-3 px-6 text-center">アクション</th>
                     </tr>

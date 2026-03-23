@@ -158,6 +158,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 請求サイクル設定 -->
+            <div class="border-t border-gray-200 pt-6 mt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">
+                            <i class="fas fa-calendar-alt theme-price mr-2"></i>請求サイクル
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">月末5営業日ルールに基づく請求書発行日・送付日・決済期限の設定（請求管理ロボ API 用）</p>
+                    </div>
+                    <a href="{{ route('admin.site-settings.billing-cycle.edit') }}"
+                       class="theme-btn-primary inline-block px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg no-underline">
+                        <i class="fas fa-edit mr-2"></i>編集
+                    </a>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p class="text-gray-600 text-sm">
+                        申込日が「月末5営業日以内」か「以降」かで、発行日・送付日・決済期限の月/日を切り替えます。編集ボタンから各パターンの値を設定してください。
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

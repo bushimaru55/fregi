@@ -1,5 +1,12 @@
-# 本番環境用 .env テンプレート
-# このファイルをコピーして deploy/webroot_billing/app/.env として配置し、実際の値を設定してください
+# =============================================================================
+# 本番環境用 .env テンプレート（Plesk / SSH 不可前提）
+# =============================================================================
+# 手順:
+#   1. APP_KEY をローカルで生成: cd app && php artisan key:generate --show
+#   2. このファイルをコピーし deploy/webroot_billing/app/.env として保存（FTP でアップロード）
+#   3. 空欄・プレースホルダを本番の値に置換（秘密情報はリポジトリにコミットしない）
+# サーバ上では php artisan は実行しない（deploy/AIdocs/deploy_rules.md 参照）
+# =============================================================================
 
 APP_NAME="Billing System"
 APP_ENV=production
@@ -27,6 +34,9 @@ SESSION_LIFETIME=120
 SESSION_COOKIE=billing_session
 SESSION_PATH=/webroot/billing
 
+# 本番ドメイン（同一オリジン API 利用時）。必要に応じて追記
+SANCTUM_STATEFUL_DOMAINS=dschatbot.ai,www.dschatbot.ai
+
 MEMCACHED_HOST=127.0.0.1
 
 REDIS_HOST=127.0.0.1
@@ -52,4 +62,33 @@ AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=
 AWS_USE_PATH_STYLE_ENDPOINT=false
 
+# -----------------------------------------------------------------------------
+# ROBOT PAYMENT（トークン方式 + 3DS2.0）— app/.env.example と整合
+# 決済を使う場合: ROBOTPAYMENT_ENABLED=true と店舗ID必須。
+# CP（credit.j-payment.co.jp）で「決済データ送信元IP」「決済データ送信元URL」を本番に合わせ登録すること。
+# 送信元URLの例: https://dschatbot.ai/webroot/billing （APP_URL とオリジン一致）
+# 詳細: AIdocs/api_documents/12_env_checklist.md / 13_billing_robo_only_verification.md
+# -----------------------------------------------------------------------------
+ROBOTPAYMENT_ENABLED=false
+ROBOTPAYMENT_STORE_ID=
+ROBOTPAYMENT_ACCESS_KEY=
+ROBOTPAYMENT_GATEWAY_URL=https://credit.j-payment.co.jp/gateway/gateway_token.aspx
+ROBOTPAYMENT_COMPANY_ID=1
+# 決済結果通知URL（.env 参照用）。実際の受信 URL は RP 管理画面「決済結果通知設定」に登録
+ROBOTPAYMENT_NOTIFY_INITIAL_URL=
+ROBOTPAYMENT_NOTIFY_RECURRING_URL=
+
+# -----------------------------------------------------------------------------
+# 請求管理ロボ API（API 1〜5）— 本番は demo ではなく契約中のベース URL・認証情報に置換
+# 参照: AIdocs/api_documents/09_demo_connection_billing_robo.md
+# -----------------------------------------------------------------------------
+BILLING_ROBO_BASE_URL=https://demo.billing-robo.jp
+BILLING_ROBO_USER_ID=
+BILLING_ROBO_ACCESS_KEY=
+
 VITE_APP_NAME="${APP_NAME}"
+VITE_PUSHER_APP_KEY=
+VITE_PUSHER_HOST=
+VITE_PUSHER_PORT=
+VITE_PUSHER_SCHEME=
+VITE_PUSHER_APP_CLUSTER=

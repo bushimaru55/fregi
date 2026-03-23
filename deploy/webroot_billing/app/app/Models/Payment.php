@@ -14,26 +14,39 @@ class Payment extends Model
     protected $fillable = [
         'company_id',
         'contract_id',
-        'orderid', // F-REGI標準: ORDERID（伝票番号）
-        'settleno', // F-REGI標準: SETTLENO（発行番号）
-        'receiptno', // F-REGI標準: RECEIPTNO（承認番号）
-        'slipno', // F-REGI標準: SLIPNO（取引番号）
+        'provider',
+        'payment_kind',
+        'merchant_order_no',
+        'billing_payment_method_number',
+        'billing_payment_method_code',
+        'rp_gid',
+        'rp_acid',
+        'orderid',
+        'settleno',
+        'receiptno',
+        'slipno',
         'amount',
+        'amount_initial',
+        'amount_recurring',
         'currency',
         'payment_method',
         'status',
         'requested_at',
         'notified_at',
         'completed_at',
+        'paid_at',
         'failure_reason',
         'raw_notify_payload',
     ];
 
     protected $casts = [
         'amount' => 'integer',
+        'amount_initial' => 'integer',
+        'amount_recurring' => 'integer',
         'requested_at' => 'datetime',
         'notified_at' => 'datetime',
         'completed_at' => 'datetime',
+        'paid_at' => 'datetime',
         'raw_notify_payload' => 'array',
     ];
 

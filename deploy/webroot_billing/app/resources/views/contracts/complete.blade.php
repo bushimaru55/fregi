@@ -20,17 +20,8 @@
         </h2>
 
         <div class="space-y-4 md:space-y-6">
-            {{-- 契約プラン・料金・ステータス（枠のみ・背景色なし） --}}
             <div class="rounded-lg p-4 md:p-6 border border-gray-200">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">契約プラン</p>
-                        <p class="text-xl font-bold text-gray-800">{{ $contract->contractPlan->name }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">料金</p>
-                        <p class="text-xl font-bold theme-price">{{ $contract->contractPlan->formatted_price }}（税込）</p>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">契約ステータス</p>
                         <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold text-white" style="background-color: var(--color-primary);">
@@ -39,36 +30,21 @@
                     </div>
                 </div>
 
-                {{-- オプション製品の表示 --}}
-                @if(isset($optionItems) && $optionItems->isNotEmpty())
+                {{-- 選択された商品（ベース＋オプション） --}}
+                @if(isset($contractItems) && $contractItems->isNotEmpty())
                 <div class="mt-4 pt-4 border-t border-gray-200">
-                    <p class="text-sm text-gray-600 mb-3 font-semibold">オプション製品</p>
+                    <p class="text-sm text-gray-600 mb-3 font-semibold">選択された商品</p>
                     <div class="space-y-2">
-                        @foreach($optionItems as $item)
+                        @foreach($contractItems as $item)
                             <div class="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-100">
-                                <span class="text-gray-800">{{ $item->product_name ?? ($item->product->name ?? '') }}</span>
-                                <span class="font-semibold text-gray-800">{{ $item->product ? $item->product->formatted_price : (number_format($item->subtotal ?? $item->unit_price ?? 0) . '円') }}</span>
+                                <span class="text-gray-800">{{ $item->product_name ?? ($item->contractPlan->name ?? $item->product->name ?? '') }}</span>
+                                <span class="font-semibold text-gray-800">{{ number_format($item->subtotal ?? $item->unit_price ?? 0) }}円</span>
                             </div>
                         @endforeach
                         <div class="flex justify-between items-center pt-2 border-t border-gray-300">
-                            <span class="text-sm text-gray-600">オプション製品合計</span>
-                            <span class="font-semibold text-gray-800">{{ number_format($optionTotalAmount ?? 0) }}円</span>
+                            <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
+                            <span class="text-2xl md:text-3xl font-bold theme-price">{{ number_format($totalAmount ?? 0) }}円</span>
                         </div>
-                    </div>
-                </div>
-                @endif
-
-                {{-- 合計金額の表示 --}}
-                @php
-                    $baseAmount = $contract->contractPlan->price ?? 0;
-                    $optionTotal = $optionTotalAmount ?? 0;
-                    $totalAmount = $baseAmount + $optionTotal;
-                @endphp
-                @if(isset($optionItems) && $optionItems->isNotEmpty())
-                <div class="mt-4 pt-4 border-t border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <span class="text-base md:text-lg font-semibold text-gray-800">合計金額</span>
-                        <span class="text-2xl md:text-3xl font-bold theme-price">{{ number_format($totalAmount) }}円</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 text-right">（税込）</p>
                 </div>

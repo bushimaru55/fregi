@@ -18,7 +18,6 @@ class ContractFormController extends Controller
     public function index(): View
     {
         $plans = ContractPlan::active()
-            ->with('contractPlanMaster')
             ->orderBy('display_order')
             ->get();
         
@@ -26,7 +25,7 @@ class ContractFormController extends Controller
         $savedUrls = ContractFormUrl::orderBy('created_at', 'desc')
             ->paginate(20);
 
-        // 一覧に含まれる plan_ids からプラン名マップを取得（選択されているプラン名表示用）
+        // 一覧に含まれる plan_ids から製品名マップを取得（選択されている製品名表示用）
         $planIds = $savedUrls->pluck('plan_ids')->flatten()->unique()->filter()->values()->all();
         $planNames = ContractPlan::whereIn('id', $planIds)->pluck('name', 'id')->all();
         
@@ -41,10 +40,11 @@ class ContractFormController extends Controller
         $validated = $request->validate([
             'plan_ids' => 'required|array|min:1',
             'plan_ids.*' => 'required|integer|exists:contract_plans,id',
+            'name' => ['nullable', 'string', 'max:255'],
         ], [
-            'plan_ids.required' => '少なくとも1つの契約プランを選択してください。',
-            'plan_ids.min' => '少なくとも1つの契約プランを選択してください。',
-            'plan_ids.*.exists' => '選択されたプランが存在しません。',
+            'plan_ids.required' => '少なくとも1つの製品を選択してください。',
+            'plan_ids.min' => '少なくとも1つの製品を選択してください。',
+            'plan_ids.*.exists' => '選択された製品が存在しません。',
         ]);
 
         $planIds = $validated['plan_ids'];
@@ -56,22 +56,62 @@ class ContractFormController extends Controller
         
         // データベースに保存（有効期限は設定しないが、管理用に保存）
         $contractFormUrl = ContractFormUrl::create([
-            'token' => null, // トークンは使用しない（申込フォームなので）
+            'token' => null,
             'url' => $viewUrl,
             'plan_ids' => $planIds,
-            'name' => null, // 後で編集可能にする
-            'expires_at' => now()->addYears(10), // 実質無期限（フォームは常に有効）
+            'name' => $validated['name'] ?? null,
+            'expires_at' => now()->addYears(10),
             'is_active' => true,
         ]);
         
         return redirect()->route('admin.contract-forms.index')
             ->with('generated_view_url', $viewUrl)
-            ->with('success', '閲覧画面用URLが生成され、保存されました。')
+            ->with('success', 'フォームURLが発行されました。')
             ->with('selected_plan_ids', $planIds);
     }
 
     /**
-     * URLを削除
+     * フォーム編集画面（登録する製品の紐付けも編集可能）
+     */
+    public function edit(ContractFormUrl $contractFormUrl): View
+    {
+        $plans = ContractPlan::active()->orderBy('display_order')->get();
+        return view('admin.contract-forms.edit', compact('contractFormUrl', 'plans'));
+    }
+
+    /**
+     * フォーム更新（フォーム名・登録する製品の紐付け・有効/無効）
+     */
+    public function update(Request $request, ContractFormUrl $contractFormUrl): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+            'plan_ids' => ['required', 'array', 'min:1'],
+            'plan_ids.*' => ['required', 'integer', 'exists:contract_plans,id'],
+            'is_active' => ['required', 'boolean'],
+        ], [
+            'plan_ids.required' => '少なくとも1つの製品を選択してください。',
+            'plan_ids.min' => '少なくとも1つの製品を選択してください。',
+            'plan_ids.*.exists' => '選択された製品が存在しません。',
+        ]);
+
+        $planIds = $validated['plan_ids'];
+        sort($planIds);
+        $viewUrl = route('contract.create', ['plans' => implode(',', $planIds)]);
+
+        $contractFormUrl->update([
+            'name' => $validated['name'] ?: null,
+            'plan_ids' => $planIds,
+            'url' => $viewUrl,
+            'is_active' => (bool) $validated['is_active'],
+        ]);
+
+        return redirect()->route('admin.contract-forms.index')
+            ->with('success', 'フォームを更新しました。');
+    }
+
+    /**
+     * フォーム削除
      */
     public function destroy(ContractFormUrl $contractFormUrl): RedirectResponse
     {
@@ -84,6 +124,6 @@ class ContractFormController extends Controller
         $contractFormUrl->delete();
         
         return redirect()->route('admin.contract-forms.index')
-            ->with('success', 'URLを削除しました。');
+            ->with('success', 'フォームを削除しました。');
     }
 }

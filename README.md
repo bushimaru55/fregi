@@ -181,12 +181,12 @@ docker compose logs app --tail=50
 
 ## 本番デプロイ
 
-本番環境は `/billing` パスで動作します。
-- 公開ディレクトリ: `httpdocs/webroot/billing/`
-- Laravel本体: `httpdocs/laravel_billing/`
-- デプロイ方法: FTPアップロード
-
-詳細は `AIdocs/AIdocs_Cursor指示書_Billingアプリ_ローカルDocker開始.md` を参照してください。
+- **前提**: Plesk・**SSH 不可**・サブディレクトリ `https://dschatbot.ai/webroot/billing`（[deploy/AIdocs/deploy_rules.md](deploy/AIdocs/deploy_rules.md)）
+- **パッケージ生成**: `scripts/build_deploy_webroot_billing.sh` → `deploy/webroot_billing/`（vendor は [deploy/BUILD_NOTES.md](deploy/BUILD_NOTES.md) 参照）
+- **DBスキーマのみ**: `deploy/billing_schema_no_data.sql`（[deploy/README_SCHEMA.md](deploy/README_SCHEMA.md)）
+- **`.env` テンプレート**: [AIdocs/本番環境.envテンプレート.txt](AIdocs/本番環境.envテンプレート.txt)
+- **ROBOT PAYMENT CP チェックリスト**: [AIdocs/deploy_robot_payment_cp_production_checklist.md](AIdocs/deploy_robot_payment_cp_production_checklist.md)
+- デプロイ方法: **FTP**（Plesk ファイルマネージャ可）
 
 ## トラブルシューティング
 

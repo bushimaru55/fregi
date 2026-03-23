@@ -6,7 +6,7 @@
         </label>
         <input type="text" name="name" id="name" 
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('name') border-red-500 @enderror" 
-            value="{{ old('name', $contractPlanMaster->name ?? '') }}" required placeholder="例: 基本プラングループ">
+            value="{{ old('name', $contractPlanMaster->name ?? '') }}" required placeholder="例: 基本製品グループ">
         @error('name')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror

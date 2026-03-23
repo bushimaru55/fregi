@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\RobotPaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// ROBOT PAYMENT 通知（GET キックバック・冪等。ContentLength 0 以上を返す）
+Route::get('robotpayment/notify-initial', [RobotPaymentController::class, 'notifyInitial'])->name('api.robotpayment.notify-initial');
+Route::get('robotpayment/notify-recurring', [RobotPaymentController::class, 'notifyRecurring'])->name('api.robotpayment.notify-recurring');

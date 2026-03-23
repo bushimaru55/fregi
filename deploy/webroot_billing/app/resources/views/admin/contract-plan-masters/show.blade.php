@@ -1,10 +1,10 @@
 @extends('layouts.admin')
 
-@section('title', '契約プランマスター詳細')
+@section('title', '製品マスター詳細')
 
 @section('content')
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">契約プランマスター詳細</h1>
+        <h1 class="text-3xl font-bold text-gray-800">製品マスター詳細</h1>
         <div class="space-x-2">
             <a href="{{ route('admin.contract-plan-masters.edit', $contractPlanMaster->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 <i class="fas fa-edit mr-2"></i>編集
@@ -47,21 +47,21 @@
 
     <div class="bg-white shadow-lg rounded-lg p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-800">関連する契約プラン ({{ $contractPlanMaster->contractPlans->count() }}件)</h2>
+            <h2 class="text-xl font-bold text-gray-800">関連する製品 ({{ $contractPlanMaster->contractPlans->count() }}件)</h2>
             <a href="{{ route('admin.contract-plans.create') }}?master_id={{ $contractPlanMaster->id }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 text-sm">
-                <i class="fas fa-plus mr-2"></i>プランを追加
+                <i class="fas fa-plus mr-2"></i>製品を追加
             </a>
         </div>
         @if($contractPlanMaster->contractPlans->isEmpty())
             <div class="p-6 text-center text-gray-600">
-                関連する契約プランがありません。
+                関連する製品がありません。
             </div>
         @else
             <table class="min-w-full leading-normal">
                 <thead>
                     <tr class="theme-table-header uppercase text-sm leading-normal">
-                        <th class="py-3 px-6 text-left">プランコード</th>
-                        <th class="py-3 px-6 text-left">プラン名</th>
+                        <th class="py-3 px-6 text-left">製品コード</th>
+                        <th class="py-3 px-6 text-left">製品名</th>
                         <th class="py-3 px-6 text-left">料金</th>
                         <th class="py-3 px-6 text-left">状態</th>
                         <th class="py-3 px-6 text-center">アクション</th>

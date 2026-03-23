@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit87a3afe68490257293841d6bde9801d8
+class ComposerStaticInit9c491b8531eec05ba41a11d9276a5749
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -616,8 +616,16 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
         'AnourValar\\EloquentSerialize\\Grammars\\QueryBuilderGrammar' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Grammars/QueryBuilderGrammar.php',
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
+        'App\\Console\\Commands\\BillingRoboPingCommand' => __DIR__ . '/../..' . '/app/Console/Commands/BillingRoboPingCommand.php',
         'App\\Console\\Commands\\CreateTestPlans' => __DIR__ . '/../..' . '/app/Console/Commands/CreateTestPlans.php',
+        'App\\Console\\Commands\\RobotPaymentApi2TestCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentApi2TestCommand.php',
+        'App\\Console\\Commands\\RobotPaymentDiagnoseCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentDiagnoseCommand.php',
+        'App\\Console\\Commands\\RobotPaymentGatewayPingCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentGatewayPingCommand.php',
+        'App\\Console\\Commands\\RobotPaymentSetupLocalCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentSetupLocalCommand.php',
+        'App\\Console\\Commands\\RobotPaymentShowTestLogCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentShowTestLogCommand.php',
+        'App\\Console\\Commands\\RobotPaymentVerifyConfigCommand' => __DIR__ . '/../..' . '/app/Console/Commands/RobotPaymentVerifyConfigCommand.php',
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
+        'App\\Exceptions\\BillingRoboApiException' => __DIR__ . '/../..' . '/app/Exceptions/BillingRoboApiException.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
         'App\\Http\\Controllers\\Admin\\ContractController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/ContractController.php',
         'App\\Http\\Controllers\\Admin\\ContractFormController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/ContractFormController.php',
@@ -639,6 +647,7 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
         'App\\Http\\Controllers\\ContractController' => __DIR__ . '/../..' . '/app/Http/Controllers/ContractController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\ProfileController' => __DIR__ . '/../..' . '/app/Http/Controllers/ProfileController.php',
+        'App\\Http\\Controllers\\RobotPaymentController' => __DIR__ . '/../..' . '/app/Http/Controllers/RobotPaymentController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
         'App\\Http\\Middleware\\EncryptCookies' => __DIR__ . '/../..' . '/app/Http/Middleware/EncryptCookies.php',
@@ -653,17 +662,17 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
         'App\\Http\\Requests\\ContractRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ContractRequest.php',
         'App\\Http\\Requests\\ProfileUpdateRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ProfileUpdateRequest.php',
         'App\\Livewire\\Admin\\TermsOfServiceEditor' => __DIR__ . '/../..' . '/app/Livewire/Admin/TermsOfServiceEditor.php',
+        'App\\Logging\\PaymentStageLogger' => __DIR__ . '/../..' . '/app/Logging/PaymentStageLogger.php',
         'App\\Mail\\ContractNotificationMail' => __DIR__ . '/../..' . '/app/Mail/ContractNotificationMail.php',
         'App\\Mail\\ContractReplyMail' => __DIR__ . '/../..' . '/app/Mail/ContractReplyMail.php',
         'App\\Mail\\NotificationTestMail' => __DIR__ . '/../..' . '/app/Mail/NotificationTestMail.php',
+        'App\\Models\\BillingRoboDemand' => __DIR__ . '/../..' . '/app/Models/BillingRoboDemand.php',
         'App\\Models\\Contract' => __DIR__ . '/../..' . '/app/Models/Contract.php',
         'App\\Models\\ContractFormUrl' => __DIR__ . '/../..' . '/app/Models/ContractFormUrl.php',
         'App\\Models\\ContractItem' => __DIR__ . '/../..' . '/app/Models/ContractItem.php',
         'App\\Models\\ContractPlan' => __DIR__ . '/../..' . '/app/Models/ContractPlan.php',
         'App\\Models\\ContractPlanMaster' => __DIR__ . '/../..' . '/app/Models/ContractPlanMaster.php',
         'App\\Models\\ContractStatus' => __DIR__ . '/../..' . '/app/Models/ContractStatus.php',
-        'App\\Models\\FregiConfig' => __DIR__ . '/../..' . '/app/Models/FregiConfig.php',
-        'App\\Models\\FregiConfigVersion' => __DIR__ . '/../..' . '/app/Models/FregiConfigVersion.php',
         'App\\Models\\Payment' => __DIR__ . '/../..' . '/app/Models/Payment.php',
         'App\\Models\\PaymentEvent' => __DIR__ . '/../..' . '/app/Models/PaymentEvent.php',
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
@@ -674,7 +683,20 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
         'App\\Providers\\BroadcastServiceProvider' => __DIR__ . '/../..' . '/app/Providers/BroadcastServiceProvider.php',
         'App\\Providers\\EventServiceProvider' => __DIR__ . '/../..' . '/app/Providers/EventServiceProvider.php',
         'App\\Providers\\RouteServiceProvider' => __DIR__ . '/../..' . '/app/Providers/RouteServiceProvider.php',
-        'App\\Services\\EncryptionService' => __DIR__ . '/../..' . '/app/Services/EncryptionService.php',
+        'App\\Services\\BillingRobo\\BillingRoboApiClient' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboApiClient.php',
+        'App\\Services\\BillingRobo\\BillingRoboBillIssueService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboBillIssueService.php',
+        'App\\Services\\BillingRobo\\BillingRoboBillingService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboBillingService.php',
+        'App\\Services\\BillingRobo\\BillingRoboBulkRegisterService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboBulkRegisterService.php',
+        'App\\Services\\BillingRobo\\BillingRoboCreditCardService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboCreditCardService.php',
+        'App\\Services\\BillingRobo\\BillingRoboDemandService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboDemandService.php',
+        'App\\Services\\BillingRobo\\BillingRoboErrorMap' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboErrorMap.php',
+        'App\\Services\\BillingRobo\\BillingRoboExecutionService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingRoboExecutionService.php',
+        'App\\Services\\BillingRobo\\BillingScheduleService' => __DIR__ . '/../..' . '/app/Services/BillingRobo/BillingScheduleService.php',
+        'App\\Services\\BillingRobo\\ContractToBillingLinesMapper' => __DIR__ . '/../..' . '/app/Services/BillingRobo/ContractToBillingLinesMapper.php',
+        'App\\Services\\ContractMailService' => __DIR__ . '/../..' . '/app/Services/ContractMailService.php',
+        'App\\Services\\RobotPayment\\PurchasePatternService' => __DIR__ . '/../..' . '/app/Services/RobotPayment/PurchasePatternService.php',
+        'App\\Services\\RobotPayment\\RobotPaymentNotifyService' => __DIR__ . '/../..' . '/app/Services/RobotPayment/RobotPaymentNotifyService.php',
+        'App\\Services\\RobotPayment\\RobotPaymentService' => __DIR__ . '/../..' . '/app/Services/RobotPayment/RobotPaymentService.php',
         'App\\View\\Components\\AppLayout' => __DIR__ . '/../..' . '/app/View/Components/AppLayout.php',
         'App\\View\\Components\\GuestLayout' => __DIR__ . '/../..' . '/app/View/Components/GuestLayout.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
@@ -806,6 +828,7 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
         'Database\\Seeders\\ContractPlanMasterSeeder' => __DIR__ . '/../..' . '/database/seeders/ContractPlanMasterSeeder.php',
         'Database\\Seeders\\ContractPlanSeeder' => __DIR__ . '/../..' . '/database/seeders/ContractPlanSeeder.php',
         'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
+        'Database\\Seeders\\ReplyMailContentSeeder' => __DIR__ . '/../..' . '/database/seeders/ReplyMailContentSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
         'DateInvalidOperationException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateInvalidOperationException.php',
@@ -6315,10 +6338,10 @@ class ComposerStaticInit87a3afe68490257293841d6bde9801d8
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit87a3afe68490257293841d6bde9801d8::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit87a3afe68490257293841d6bde9801d8::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit87a3afe68490257293841d6bde9801d8::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit87a3afe68490257293841d6bde9801d8::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit9c491b8531eec05ba41a11d9276a5749::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit9c491b8531eec05ba41a11d9276a5749::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit9c491b8531eec05ba41a11d9276a5749::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit9c491b8531eec05ba41a11d9276a5749::$classMap;
 
         }, null, ClassLoader::class);
     }

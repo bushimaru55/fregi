@@ -17,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-6 md:space-y-8">
+    <form action="{{ route('contract.confirm') }}" method="POST" class="space-y-6 md:space-y-8" id="contract-confirm-form">
         @csrf
 
         {{-- 1. 申込企業情報 --}}
@@ -236,18 +236,20 @@
                 <i class="fas fa-file-contract mr-2"></i>3. 契約内容の選択
             </h2>
 
-            {{-- 製品選択 --}}
+            {{-- ベース製品（1つのみ選択） --}}
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-4">
-                    製品 <span class="text-red-500">*</span>
+                    ベース製品 <span class="text-red-500">*</span>
                 </label>
+                <p class="text-xs text-gray-500 mb-2">1つ選択してください</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                    @php $oldBasePlanIds = old('base_plan_ids', []); @endphp
                     @foreach($plans as $plan)
                         <label class="relative cursor-pointer">
-                            <input type="radio" name="contract_plan_id" value="{{ $plan->id }}" 
-                                class="peer sr-only" 
-                                {{ old('contract_plan_id') == $plan->id ? 'checked' : '' }} required>
-                            <div class="theme-option-card border-2 border-gray-300 rounded-lg p-3 md:p-4 transition-all peer-checked:border-[var(--color-primary)] peer-checked:bg-[var(--color-primary-soft)] hover:border-[var(--color-primary)]">
+                            <input type="radio" name="base_plan_ids[]" value="{{ $plan->id }}"
+                                class="base-plan-checkbox peer sr-only"
+                                {{ in_array((string)$plan->id, $oldBasePlanIds, true) || in_array($plan->id, $oldBasePlanIds, true) ? 'checked' : '' }}>
+                            <div class="theme-option-card border-2 border-gray-300 rounded-lg p-3 md:p-4 transition-all peer-checked:border-[var(--color-primary)] peer-checked:bg-[var(--color-primary-soft)] hover:border-[var(--color-primary)]" role="button" tabindex="0" aria-label="{{ $plan->name }}">
                                 <div class="text-center">
                                     <div class="text-base md:text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
                                     <div class="text-2xl md:text-3xl font-bold theme-price mb-2">{{ $plan->formatted_price }}</div>
@@ -257,7 +259,7 @@
                         </label>
                     @endforeach
                 </div>
-                @error('contract_plan_id')
+                @error('base_plan_ids')
                     <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                 @enderror
             </div>
@@ -326,58 +328,45 @@
 </div>
 
 <script>
-// オプション製品の動的表示
+// オプション製品の動的表示（複数ベース製品対応）
 (function() {
-    const planRadios = document.querySelectorAll('input[name="contract_plan_id"]');
+    const basePlanCheckboxes = document.querySelectorAll('input.base-plan-checkbox');
     const optionProductsSection = document.getElementById('option-products-section');
     const optionProductsContainer = document.getElementById('option-products-container');
     const optionProductsEmpty = document.getElementById('option-products-empty');
-    
-    if (!planRadios.length || !optionProductsSection) return;
-    
-    // 製品選択時の処理
-    planRadios.forEach(function(radio) {
-        radio.addEventListener('change', function() {
-            if (this.checked) {
-                loadOptionProducts(this.value);
-            }
-        });
-        
-        // 初期状態で選択されている場合はオプション製品を読み込む
-        if (radio.checked) {
-            loadOptionProducts(radio.value);
-        }
+
+    if (!basePlanCheckboxes.length || !optionProductsSection) return;
+
+    function getSelectedPlanIds() {
+        return Array.from(basePlanCheckboxes).filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
+    }
+
+    function updateOptionProducts() {
+        var planIds = getSelectedPlanIds();
+        loadOptionProducts(planIds);
+    }
+
+    basePlanCheckboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateOptionProducts);
     });
-    
-    // オプション製品を取得して表示
-    function loadOptionProducts(contractPlanId) {
-        if (!contractPlanId) {
+
+    // 初期状態で選択されている場合はオプション製品を読み込む
+    updateOptionProducts();
+
+    function loadOptionProducts(planIds) {
+        if (!planIds || planIds.length === 0) {
             optionProductsSection.style.display = 'none';
             return;
         }
-        
-        // ローディング表示
+
         optionProductsContainer.innerHTML = '<p class="text-sm text-gray-500">読み込み中...</p>';
         optionProductsSection.style.display = 'block';
         optionProductsEmpty.style.display = 'none';
-        
-        // APIからオプション製品を取得
-        // URLを動的に構築（url()ヘルパーを使用してベースパスを取得）
-        const apiBaseUrlTemplate = '{{ url("/contract/api/option-products") }}';
-        // 絶対URLからパス部分のみを取得（ドメイン部分を除く）
-        const apiBaseUrl = apiBaseUrlTemplate.replace(window.location.origin, '');
-        const apiPath = apiBaseUrl + '/' + contractPlanId;
-        
-        console.log('オプション製品取得API呼び出し:', {
-            apiBaseUrlTemplate: apiBaseUrlTemplate,
-            apiBaseUrl: apiBaseUrl,
-            apiPath: apiPath,
-            contractPlanId: contractPlanId,
-            fullUrl: window.location.origin + apiPath,
-            currentPath: window.location.pathname
-        });
-        
-        fetch(apiPath, {
+
+        var query = planIds.map(function(id) { return 'plan_ids[]=' + encodeURIComponent(id); }).join('&');
+        var apiUrl = '{{ url("/contract/api/option-products") }}?' + query;
+
+        fetch(apiUrl, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',

@@ -29,7 +29,7 @@
                 </p>
                 <ol class="list-decimal list-inside text-blue-700 text-sm mt-2 space-y-1">
                     <li><strong>上部文章</strong> - 挨拶や案内など</li>
-                    <li><strong>申込内容</strong> - 自動的に挿入されます（会社名、プラン、金額など）</li>
+                    <li><strong>申込内容</strong> - 自動的に挿入されます（会社名、製品、金額など）</li>
                     <li><strong>下部文章</strong> - 署名や連絡先など</li>
                 </ol>
             </div>
@@ -61,7 +61,7 @@
                         <span class="font-semibold">【ここに申込内容が自動で挿入されます】</span>
                     </div>
                     <p class="text-xs text-gray-500 text-center mt-2">
-                        会社名・担当者名・プラン名・料金などの申込内容
+                        会社名・担当者名・製品名・料金などの申込内容
                     </p>
                 </div>
 

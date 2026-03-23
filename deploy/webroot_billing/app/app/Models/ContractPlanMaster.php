@@ -23,7 +23,7 @@ class ContractPlanMaster extends Model
     ];
 
     /**
-     * このマスターに紐づく契約プラン
+     * このマスターに紐づく製品
      */
     public function contractPlans(): HasMany
     {

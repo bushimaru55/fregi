@@ -45,7 +45,9 @@
 
 ## 3. 本番DB構築（migrate不可のためSQLインポート）
 ### 3.1 ローカルDBからスキーマSQLを作成（データなし）
-- 例（Dockerのdbからdump）:
+- **推奨（リポジトリ同梱スクリプト）**: `scripts/export_schema_no_data_for_production.sh`  
+  → 出力: `deploy/billing_schema_no_data.sql`（説明: `deploy/README_SCHEMA.md`）
+- 手動の例（Dockerのdbからdump）:
   - `mysqldump --no-data --routines --triggers ... billing > billing_schema.sql`
 - **データは入れない**（--no-data）
 

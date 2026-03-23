@@ -8,14 +8,16 @@ use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Product;
 use App\Models\SiteSetting;
-use App\Mail\ContractNotificationMail;
-use App\Mail\ContractReplyMail;
+use App\Services\BillingRobo\BillingRoboBillingService;
+use App\Services\BillingRobo\BillingRoboDemandService;
+use App\Services\BillingRobo\BillingScheduleService;
+use App\Services\RobotPayment\PurchasePatternService;
+use App\Services\ContractMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
@@ -43,16 +45,16 @@ class ContractController extends Controller
             
             $plans = $query->orderBy('display_order')->get();
             
-            // プランIDが指定されているのに、該当するプランが見つからない場合は404
+            // 製品IDが指定されているのに、該当する製品が見つからない場合は404
             if ($hasPlanIdsParam && $plans->isEmpty()) {
-                Log::channel('contract_payment')->warning('指定されたプランが見つかりません', [
+                Log::channel('contract_payment')->warning('指定された製品が見つかりません', [
                     'url' => $request->fullUrl(),
                     'plan_ids' => $planIds,
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                     'timestamp' => now()->toIso8601String(),
                 ]);
-                abort(404, '指定されたプランが見つかりません。プランが存在しないか、現在公開されていません。');
+                abort(404, '指定された製品が見つかりません。製品が存在しないか、現在公開されていません。');
             }
             
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
@@ -100,9 +102,9 @@ class ContractController extends Controller
 
     /**
      * 申込内容確認画面を表示
-     * POSTリクエスト時は必ず確認画面を表示する
+     * POSTリクエスト時は必ず確認画面を表示する（ROBOT PAYMENT 有効時は決済ページへリダイレクト）
      */
-    public function confirm(ContractRequest $request): View
+    public function confirm(ContractRequest $request): View|RedirectResponse
     {
         try {
             // POSTリクエストであることを確認（GETリクエストの場合はconfirmGet()に処理を委譲）
@@ -115,23 +117,31 @@ class ContractController extends Controller
             
             // バリデーション済みデータを取得（バリデーションエラー時はfailedValidation()でハンドリング）
             $validated = $request->validated();
-            $plan = ContractPlan::findOrFail($validated['contract_plan_id']);
+            $basePlanIds = $validated['base_plan_ids'] ?? [];
+            $plans = ContractPlan::whereIn('id', $basePlanIds)->orderBy('display_order')->get();
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
-            
+            $baseTotalAmount = $plans->sum('price');
+
             // ログ記録（個人情報はマスク）
             $logData = [
-                'contract_plan_id' => $validated['contract_plan_id'],
-                'plan_name' => $plan->name,
-                'plan_price' => $plan->price,
-                'company_name' => substr($validated['company_name'], 0, 3) . '***', // マスク
-                'email' => substr($validated['email'], 0, 3) . '***', // マスク
+                'base_plan_ids' => $basePlanIds,
+                'company_name' => substr($validated['company_name'], 0, 3) . '***',
+                'email' => substr($validated['email'], 0, 3) . '***',
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent(),
                 'timestamp' => now()->toIso8601String(),
             ];
             Log::channel('contract_payment')->info('確認画面表示（POST）', $logData);
-            
-            // オプション商品を取得
+
+            // ROBOT PAYMENT 有効時は決済ページへリダイレクト（契約・明細は決済実行時に作成）
+            if (config('robotpayment.enabled', false)) {
+                $request->session()->put('contract_confirm_data', $validated);
+                Log::channel('contract_payment')->info('確認送信→決済ページへリダイレクト', [
+                    'base_plan_ids' => $basePlanIds,
+                ]);
+                return redirect()->route('contract.payment');
+            }
+
             $optionProductIds = $validated['option_product_ids'] ?? [];
             $optionProducts = collect();
             $optionTotalAmount = 0;
@@ -142,10 +152,11 @@ class ContractController extends Controller
                     ->get();
                 $optionTotalAmount = $optionProducts->sum('unit_price');
             }
-            
+
             return view('contracts.confirm', [
                 'data' => $validated,
-                'plan' => $plan,
+                'plans' => $plans,
+                'baseTotalAmount' => $baseTotalAmount,
                 'termsOfService' => $termsOfService,
                 'optionProducts' => $optionProducts,
                 'optionTotalAmount' => $optionTotalAmount,
@@ -204,11 +215,16 @@ class ContractController extends Controller
                 return redirect()->route('contract.create')
                     ->with('error', '閲覧用URLの有効期限が切れています。');
             }
-            
-            $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
+
+            $basePlanIds = $viewData['base_plan_ids'] ?? (isset($viewData['contract_plan_id']) ? [$viewData['contract_plan_id']] : []);
+            if (empty($basePlanIds)) {
+                return redirect()->route('contract.create')
+                    ->with('error', '選択された製品が見つかりません。');
+            }
+            $plans = ContractPlan::whereIn('id', $basePlanIds)->orderBy('display_order')->get();
+            $baseTotalAmount = $plans->sum('price');
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
-            
-            // オプション商品を取得
+
             $optionProductIds = $viewData['option_product_ids'] ?? [];
             $optionProducts = collect();
             $optionTotalAmount = 0;
@@ -219,14 +235,15 @@ class ContractController extends Controller
                     ->get();
                 $optionTotalAmount = $optionProducts->sum('unit_price');
             }
-            
+
             return view('contracts.confirm', [
                 'data' => $viewData,
-                'plan' => $plan,
+                'plans' => $plans,
+                'baseTotalAmount' => $baseTotalAmount,
                 'termsOfService' => $termsOfService,
                 'optionProducts' => $optionProducts,
                 'optionTotalAmount' => $optionTotalAmount,
-                'isViewOnly' => true, // 閲覧専用フラグ（フォーム送信を無効化）
+                'isViewOnly' => true,
             ]);
         }
         
@@ -242,10 +259,19 @@ class ContractController extends Controller
             $request->session()->forget('contract_confirm_errors');
             
             try {
-                $plan = ContractPlan::findOrFail($viewData['contract_plan_id']);
+                $basePlanIds = $viewData['base_plan_ids'] ?? (isset($viewData['contract_plan_id']) ? [$viewData['contract_plan_id']] : []);
+                if (empty($basePlanIds)) {
+                    return redirect()->route('contract.create')
+                        ->with('error', '選択された製品が見つかりませんでした。もう一度お試しください。');
+                }
+                $plans = ContractPlan::whereIn('id', $basePlanIds)->orderBy('display_order')->get();
+                if ($plans->isEmpty()) {
+                    return redirect()->route('contract.create')
+                        ->with('error', '選択された製品が見つかりませんでした。もう一度お試しください。');
+                }
+                $baseTotalAmount = $plans->sum('price');
                 $termsOfService = SiteSetting::getValue('terms_of_service', '');
-                
-                // オプション商品を取得
+
                 $optionProductIds = $viewData['option_product_ids'] ?? [];
                 $optionProducts = collect();
                 $optionTotalAmount = 0;
@@ -256,25 +282,26 @@ class ContractController extends Controller
                         ->get();
                     $optionTotalAmount = $optionProducts->sum('unit_price');
                 }
-                
+
                 return view('contracts.confirm', [
                     'data' => $viewData,
-                    'plan' => $plan,
+                    'plans' => $plans,
+                    'baseTotalAmount' => $baseTotalAmount,
                     'termsOfService' => $termsOfService,
                     'optionProducts' => $optionProducts,
                     'optionTotalAmount' => $optionTotalAmount,
-                    'error' => $errorMessage, // エラーメッセージを渡す
-                    'validation_errors' => $validationErrors, // バリデーションエラーを渡す
+                    'error' => $errorMessage,
+                    'validation_errors' => $validationErrors,
                 ]);
             } catch (\Exception $e) {
-                // プランが見つからない場合はcreateに戻る
-                Log::channel('contract_payment')->error('確認画面表示：プランが見つかりません（詳細）', [
+                Log::channel('contract_payment')->error('確認画面表示：製品が見つかりません（詳細）', [
                     'error_message' => $e->getMessage(),
                     'error_code' => $e->getCode(),
                     'error_file' => $e->getFile(),
                     'error_line' => $e->getLine(),
                     'error_class' => get_class($e),
                     'stack_trace' => $e->getTraceAsString(),
+                    'base_plan_ids' => $viewData['base_plan_ids'] ?? null,
                     'contract_plan_id' => $viewData['contract_plan_id'] ?? null,
                     'view_data_keys' => array_keys($viewData ?? []),
                     'request_method' => $request->method(),
@@ -284,7 +311,7 @@ class ContractController extends Controller
                     'timestamp' => now()->toIso8601String(),
                 ]);
                 return redirect()->route('contract.create')
-                    ->with('error', '選択されたプランが見つかりませんでした。もう一度お試しください。');
+                    ->with('error', '選択された製品が見つかりませんでした。もう一度お試しください。');
             }
         }
         
@@ -302,9 +329,11 @@ class ContractController extends Controller
         return DB::transaction(function () use ($request, $startTime) {
             try {
                 $validated = $request->validated();
+                $basePlanIds = $validated['base_plan_ids'] ?? [];
+                $representativePlanId = !empty($basePlanIds) ? $basePlanIds[0] : null;
 
                 Log::channel('contract_payment')->info('申込処理開始', [
-                    'contract_plan_id' => $validated['contract_plan_id'],
+                    'base_plan_ids' => $basePlanIds,
                     'ip' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                     'timestamp' => now()->toIso8601String(),
@@ -312,9 +341,11 @@ class ContractController extends Controller
 
                 $createData = $validated;
                 unset(
+                    $createData['base_plan_ids'],
                     $createData['option_product_ids'],
                     $createData['terms_agreed']
                 );
+                $createData['contract_plan_id'] = $representativePlanId;
 
                 if (!isset($createData['desired_start_date']) || empty($createData['desired_start_date'])) {
                     $createData['desired_start_date'] = now()->format('Y-m-d');
@@ -323,6 +354,7 @@ class ContractController extends Controller
                 $contract = Contract::create([
                     ...$createData,
                     'status' => 'applied',
+                    'billing_robo_mode' => Contract::BILLING_ROBO_MODE_API3_STANDARD,
                 ]);
 
                 Log::channel('contract_payment')->info('契約作成完了', [
@@ -331,18 +363,20 @@ class ContractController extends Controller
                     'status' => $contract->status,
                 ]);
 
-                $plan = $contract->contractPlan;
-
-                ContractItem::create([
-                    'contract_id' => $contract->id,
-                    'contract_plan_id' => $plan->id,
-                    'product_id' => null,
-                    'product_name' => $plan->name,
-                    'product_code' => $plan->item,
-                    'quantity' => 1,
-                    'unit_price' => $plan->price,
-                    'subtotal' => $plan->price,
-                ]);
+                foreach ($basePlanIds as $planId) {
+                    $plan = ContractPlan::findOrFail($planId);
+                    ContractItem::create([
+                        'contract_id' => $contract->id,
+                        'contract_plan_id' => $plan->id,
+                        'product_id' => null,
+                        'product_name' => $plan->name,
+                        'product_code' => $plan->item,
+                        'quantity' => 1,
+                        'unit_price' => $plan->price,
+                        'subtotal' => $plan->price,
+                        'billing_type' => $plan->billing_type ?? 'one_time',
+                    ]);
+                }
 
                 $optionProductIds = $validated['option_product_ids'] ?? [];
                 foreach ($optionProductIds as $productId) {
@@ -360,103 +394,66 @@ class ContractController extends Controller
                         'quantity' => 1,
                         'unit_price' => $product->unit_price,
                         'subtotal' => $product->unit_price,
+                        'billing_type' => $product->billing_type ?? 'one_time',
                     ]);
                 }
 
                 Log::channel('contract_payment')->info('契約明細作成完了', [
                     'contract_id' => $contract->id,
+                    'base_plan_count' => count($basePlanIds),
                     'option_count' => count($optionProductIds),
                 ]);
 
-                $contractItems = $contract->contractItems()->with('product')->get();
-                $optionItems = $contractItems->filter(fn ($item) => $item->product_id !== null);
-                $optionTotalAmount = $optionItems->sum('subtotal');
-
-                // 管理者への通知メール送信
-                try {
-                    $notificationEmails = SiteSetting::getNotificationEmailsArray();
-                    if ($notificationEmails !== []) {
-                        foreach ($notificationEmails as $email) {
-                            Mail::to($email)->send(
-                                new ContractNotificationMail($contract, $optionItems, $optionTotalAmount)
-                            );
+                if (config('billing_robo.base_url') && config('billing_robo.user_id')) {
+                    try {
+                        $billingService = app(BillingRoboBillingService::class);
+                        $schedule = $contract->billing_robo_mode === Contract::BILLING_ROBO_MODE_API3_STANDARD
+                            ? app(BillingScheduleService::class)->getScheduleForApplication($contract)
+                            : null;
+                        $api1Result = $billingService->upsertBillingFromContract($contract, $schedule);
+                        if ($api1Result['success']) {
+                            Log::channel('contract_payment')->info('請求管理ロボ API 1 請求先登録完了（申込保存時）', [
+                                'contract_id' => $contract->id,
+                                'billing_code' => $api1Result['billing_code'],
+                            ]);
+                            // API3 標準運用: 請求情報を Billing-Robo に登録する（申込保存導線で API3 まで実行）
+                            if ($contract->billing_robo_mode === Contract::BILLING_ROBO_MODE_API3_STANDARD) {
+                                $contract->refresh();
+                                try {
+                                    $demandService = app(BillingRoboDemandService::class);
+                                    $api3Result = $demandService->upsertDemandFromContract($contract, $schedule);
+                                    if ($api3Result['success']) {
+                                        Log::channel('contract_payment')->info('請求管理ロボ API 3 請求情報登録完了（申込保存時）', [
+                                            'contract_id' => $contract->id,
+                                        ]);
+                                    } else {
+                                        Log::channel('contract_payment')->warning('請求管理ロボ API 3 失敗（申込保存時）', [
+                                            'contract_id' => $contract->id,
+                                            'error' => $api3Result['error'] ?? '',
+                                        ]);
+                                    }
+                                } catch (\Throwable $e) {
+                                    Log::channel('contract_payment')->warning('請求管理ロボ API 3 例外（申込保存時）', [
+                                        'contract_id' => $contract->id,
+                                        'message' => $e->getMessage(),
+                                    ]);
+                                }
+                            }
+                        } else {
+                            Log::channel('contract_payment')->warning('請求管理ロボ API 1 失敗（申込保存時）', [
+                                'contract_id' => $contract->id,
+                                'error' => $api1Result['error'] ?? '',
+                            ]);
                         }
-                        Log::channel('contract_payment')->info('通知メール送信完了', [
+                    } catch (\Throwable $e) {
+                        Log::channel('contract_payment')->warning('請求管理ロボ API 1 例外（申込保存時）', [
                             'contract_id' => $contract->id,
-                            'to' => $notificationEmails,
-                        ]);
-                        Log::channel('mail')->info('申込受付通知メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $notificationEmails,
-                        ]);
-                    } else {
-                        Log::channel('contract_payment')->warning('通知メール送信先が設定されていません', [
-                            'contract_id' => $contract->id,
+                            'message' => $e->getMessage(),
                         ]);
                     }
-                } catch (\Throwable $e) {
-                    $previous = $e->getPrevious();
-                    $notificationEmails = SiteSetting::getNotificationEmailsArray();
-                    $mailErrorContext = [
-                        'contract_id' => $contract->id,
-                        'to' => $notificationEmails,
-                        'exception_class' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'previous_class' => $previous ? get_class($previous) : null,
-                        'trace' => $e->getTraceAsString(),
-                    ];
-                    Log::channel('contract_payment')->error('通知メール送信エラー', [
-                        'contract_id' => $contract->id,
-                        'error_message' => $e->getMessage(),
-                        'exception_class' => get_class($e),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'error_trace' => $e->getTraceAsString(),
-                    ]);
-                    Log::channel('mail')->error('申込受付通知メール送信エラー', $mailErrorContext);
                 }
 
-                // 申込者への返信メール送信
-                try {
-                    $customerEmail = $contract->email;
-                    if ($customerEmail) {
-                        Mail::to($customerEmail)->send(
-                            new ContractReplyMail($contract, $optionItems, $optionTotalAmount)
-                        );
-                        Log::channel('contract_payment')->info('申込者への返信メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $customerEmail,
-                        ]);
-                        Log::channel('mail')->info('申込者への返信メール送信完了', [
-                            'contract_id' => $contract->id,
-                            'to' => $customerEmail,
-                        ]);
-                    }
-                } catch (\Throwable $e) {
-                    $previous = $e->getPrevious();
-                    $replyMailErrorContext = [
-                        'contract_id' => $contract->id,
-                        'to' => $contract->email,
-                        'exception_class' => get_class($e),
-                        'message' => $e->getMessage(),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'previous_class' => $previous ? get_class($previous) : null,
-                        'trace' => $e->getTraceAsString(),
-                    ];
-                    Log::channel('contract_payment')->error('申込者への返信メール送信エラー', [
-                        'contract_id' => $contract->id,
-                        'to' => $contract->email,
-                        'error_message' => $e->getMessage(),
-                        'exception_class' => get_class($e),
-                        'previous_message' => $previous ? $previous->getMessage() : null,
-                        'error_trace' => $e->getTraceAsString(),
-                    ]);
-                    Log::channel('mail')->error('申込者への返信メール送信エラー', $replyMailErrorContext);
-                }
+                app(ContractMailService::class)->sendOnce($contract);
 
                 $processingTime = round((microtime(true) - $startTime) * 1000, 2);
                 Log::channel('contract_payment')->info('申込処理完了', [
@@ -493,46 +490,117 @@ class ContractController extends Controller
     }
 
     /**
-     * オプション製品取得API（選択されたベース製品に紐づくオプション製品を取得）
+     * 決済ページ（ROBOT PAYMENT トークン+3DS）。セッションに contract_confirm_data がある場合のみ表示。
      */
-    public function getOptionProducts($contractPlanId)
+    public function payment(Request $request)
+    {
+        $data = $request->session()->get('contract_confirm_data');
+        $storeId = config('robotpayment.store_id', '');
+        $enabled = config('robotpayment.enabled', false);
+        if (!$data) {
+            return redirect()->route('contract.create')->with('error', '申込内容が見つかりません。最初から入力し直してください。');
+        }
+        $basePlanIds = $data['base_plan_ids'] ?? (isset($data['contract_plan_id']) ? [$data['contract_plan_id']] : []);
+        if (empty($basePlanIds)) {
+            return redirect()->route('contract.create')->with('error', '申込内容にベース製品が含まれていません。最初から入力し直してください。');
+        }
+        $optionProductIds = $data['option_product_ids'] ?? [];
+        $desiredStartDate = $data['desired_start_date'] ?? now()->format('Y-m-d');
+
+        $patternService = app(PurchasePatternService::class);
+        $amounts = $patternService->getAmountsFromPlansAndOptions($basePlanIds, $optionProductIds, $desiredStartDate);
+
+        if (!$storeId || !$enabled) {
+            return redirect()->route('contract.create')->with('error', '決済は現在ご利用いただけません。');
+        }
+
+        $paymentError = $request->session()->get('payment_error');
+        $request->session()->forget('payment_error');
+
+        $logData = [
+            'base_plan_ids' => $basePlanIds,
+            'pattern' => $amounts['pattern'],
+            'am' => $amounts['am'],
+            'tx' => $amounts['tx'],
+            'sf' => $amounts['sf'],
+            'ta' => $amounts['ta'] ?? null,
+        ];
+        if ($amounts['pattern'] !== \App\Services\RobotPayment\PurchasePatternService::PATTERN_ONE_TIME_ONLY) {
+            $logData['amount_recurring'] = $amounts['amount_recurring'] ?? null;
+            $logData['ac4'] = $amounts['ac4'] ?? null;
+        }
+        Log::channel('contract_payment')->info('決済ページ表示', $logData);
+
+        $customerPhone = $data['phone'] ?? '';
+        $customerPhoneDigits = preg_replace('/\D/', '', $customerPhone);
+        $billingRoboEnabled = (bool) (config('billing_robo.base_url') && config('billing_robo.user_id'));
+
+        return view('contracts.payment', [
+            'amounts' => $amounts,
+            'store_id' => $storeId,
+            'customer_email' => $data['email'] ?? '',
+            'customer_phone' => $customerPhoneDigits,
+            'error' => $paymentError,
+            'use_zero_amount_for_3ds' => $billingRoboEnabled,
+        ]);
+    }
+
+    /**
+     * オプション製品取得API（選択されたベース製品（複数可）に紐づくオプション製品の和集合を取得）
+     */
+    public function getOptionProducts(Request $request)
     {
         try {
-            $plan = ContractPlan::findOrFail($contractPlanId);
-            
-            // このベース製品に紐づくオプション製品を取得
-            $optionProducts = $plan->optionProducts()
-                ->orderBy('products.display_order')
-                ->get()
-                ->map(function ($product) {
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'code' => $product->code,
-                        'unit_price' => $product->unit_price,
-                        'formatted_price' => $product->formatted_price,
-                        'billing_type' => $product->billing_type ?? 'one_time',
-                        'description' => $product->description,
-                    ];
-                });
-            
+            $planIds = $request->input('plan_ids', []);
+            if (!is_array($planIds)) {
+                $planIds = array_filter([$planIds]);
+            }
+            $planIds = array_values(array_unique(array_map('intval', $planIds)));
+
+            if (empty($planIds)) {
+                return response()->json([
+                    'success' => true,
+                    'option_products' => [],
+                ]);
+            }
+
+            $productsById = [];
+            foreach ($planIds as $planId) {
+                $plan = ContractPlan::find($planId);
+                if (!$plan) {
+                    continue;
+                }
+                foreach ($plan->optionProducts()->orderBy('products.display_order')->get() as $product) {
+                    $productsById[$product->id] = $product;
+                }
+            }
+            $optionProducts = collect($productsById)->values()->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'code' => $product->code,
+                    'unit_price' => $product->unit_price,
+                    'formatted_price' => $product->formatted_price,
+                    'billing_type' => $product->billing_type ?? 'one_time',
+                    'description' => $product->description,
+                ];
+            })->values()->all();
+
             Log::channel('contract_payment')->info('オプション製品取得', [
-                'contract_plan_id' => $contractPlanId,
-                'plan_name' => $plan->name,
-                'option_count' => $optionProducts->count(),
+                'plan_ids' => $planIds,
+                'option_count' => count($optionProducts),
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'option_products' => $optionProducts,
             ]);
         } catch (\Exception $e) {
             Log::channel('contract_payment')->error('オプション製品取得エラー', [
-                'contract_plan_id' => $contractPlanId,
+                'plan_ids' => $request->input('plan_ids', []),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
             return response()->json([
                 'success' => false,
                 'message' => 'オプション製品の取得に失敗しました。',
@@ -546,15 +614,20 @@ class ContractController extends Controller
      */
     public function complete(Contract $contract): View
     {
-        $contract->load('contractPlan');
-        $contractItems = $contract->contractItems()->with('product')->get();
+        $contract->load(['contractItems.contractPlan', 'contractItems.product']);
+        $contractItems = $contract->contractItems;
+        $baseItems = $contractItems->filter(fn ($item) => $item->contract_plan_id !== null);
         $optionItems = $contractItems->filter(fn ($item) => $item->product_id !== null);
         $optionTotalAmount = $optionItems->sum('subtotal');
+        $totalAmount = $contractItems->sum('subtotal');
 
         return view('contracts.complete', [
             'contract' => $contract,
+            'contractItems' => $contractItems,
+            'baseItems' => $baseItems,
             'optionItems' => $optionItems,
             'optionTotalAmount' => $optionTotalAmount,
+            'totalAmount' => $totalAmount,
         ]);
     }
 

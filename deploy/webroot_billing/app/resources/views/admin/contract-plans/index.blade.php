@@ -40,6 +40,7 @@
                         <th class="py-3 px-6 text-left">料金</th>
                         <th class="py-3 px-6 text-left">決済タイプ</th>
                         <th class="py-3 px-6 text-left">状態</th>
+                        <th class="py-3 px-6 text-center">申し込み数</th>
                         <th class="py-3 px-6 text-center">アクション</th>
                     </tr>
                 </thead>
@@ -64,6 +65,14 @@
                                     <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">有効</span>
                                 @else
                                     <span class="bg-red-200 text-red-600 py-1 px-3 rounded-full text-xs">無効</span>
+                                @endif
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                @php $count = $contractCountByPlan[$plan->id] ?? 0; @endphp
+                                @if($count > 0)
+                                    <a href="{{ route('admin.contracts.index', ['contract_plan_id' => $plan->id]) }}" class="theme-link font-semibold">{{ $count }}件</a>
+                                @else
+                                    <span class="text-gray-400">0件</span>
                                 @endif
                             </td>
                             <td class="py-3 px-6 text-center">
@@ -106,6 +115,7 @@
                             <th class="py-3 px-6 text-left">製品名</th>
                             <th class="py-3 px-6 text-left">料金</th>
                             <th class="py-3 px-6 text-left">状態</th>
+                            <th class="py-3 px-6 text-center">申し込み数</th>
                             <th class="py-3 px-6 text-center">アクション</th>
                         </tr>
                     </thead>
@@ -120,6 +130,14 @@
                                         <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">有効</span>
                                     @else
                                         <span class="bg-red-200 text-red-600 py-1 px-3 rounded-full text-xs">無効</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-6 text-center">
+                                    @php $pCount = $contractCountByProduct[$product->id] ?? 0; @endphp
+                                    @if($pCount > 0)
+                                        <a href="{{ route('admin.contracts.index', ['product_id' => $product->id]) }}" class="theme-link font-semibold">{{ $pCount }}件</a>
+                                    @else
+                                        <span class="text-gray-400">0件</span>
                                     @endif
                                 </td>
                                 <td class="py-3 px-6 text-center">

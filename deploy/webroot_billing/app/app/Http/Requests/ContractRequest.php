@@ -14,6 +14,14 @@ class ContractRequest extends FormRequest
         return true; // 公開申込フォームなので認証不要
     }
 
+    /** 後方互換: contract_plan_id が送られていたら base_plan_ids に変換する。 */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('contract_plan_id') && $this->filled('contract_plan_id') && !$this->has('base_plan_ids')) {
+            $this->merge(['base_plan_ids' => [$this->input('contract_plan_id')]]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -22,10 +30,11 @@ class ContractRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            // 契約プラン
-            'contract_plan_id' => ['required', 'exists:contract_plans,id'],
-            
-            // オプション商品
+            // ベース製品（1つのみ選択）
+            'base_plan_ids' => ['required', 'array', 'min:1', 'max:1'],
+            'base_plan_ids.*' => ['required', 'exists:contract_plans,id'],
+
+            // オプション商品（選択したベースのいずれかに紐づくもののみ）
             'option_product_ids' => ['nullable', 'array'],
             'option_product_ids.*' => [
                 'exists:products,id',
@@ -33,6 +42,14 @@ class ContractRequest extends FormRequest
                     $product = \App\Models\Product::find($value);
                     if (!$product || $product->type !== 'option' || !$product->is_active) {
                         $fail('選択されたオプション商品が無効です。');
+                        return;
+                    }
+                    $basePlanIds = $this->input('base_plan_ids', []);
+                    if (!empty($basePlanIds)) {
+                        $linked = $product->contractPlans()->whereIn('contract_plans.id', $basePlanIds)->exists();
+                        if (!$linked) {
+                            $fail('選択されたオプション商品は、選択中のベース製品に紐づいていません。');
+                        }
                     }
                 },
             ],
@@ -69,7 +86,8 @@ class ContractRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'contract_plan_id' => '契約プラン',
+            'base_plan_ids' => 'ベース製品',
+            'base_plan_ids.*' => 'ベース製品',
             'option_product_ids' => 'オプション商品',
             'option_product_ids.*' => 'オプション商品',
             'company_name' => '会社名',
@@ -97,6 +115,7 @@ class ContractRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'base_plan_ids.max' => 'ベース製品は1つのみ選択してください。',
             'company_name_kana.regex' => '会社名（フリガナ）は全角カタカナ・数字で入力してください。',
             'contact_name_kana.regex' => '担当者名（フリガナ）は全角カタカナで入力してください。',
             'phone.regex' => '電話番号は数字とハイフンのみで入力してください。',

@@ -11,7 +11,7 @@ use Illuminate\View\View;
 class ContractPlanMasterController extends Controller
 {
     /**
-     * 契約プランマスター一覧
+     * 製品マスター一覧
      */
     public function index(): View
     {
@@ -20,7 +20,7 @@ class ContractPlanMasterController extends Controller
     }
 
     /**
-     * 新規契約プランマスター作成フォーム
+     * 新規製品マスター作成フォーム
      */
     public function create(): View
     {
@@ -28,7 +28,7 @@ class ContractPlanMasterController extends Controller
     }
 
     /**
-     * 新規契約プランマスター保存
+     * 新規製品マスター保存
      */
     public function store(Request $request): RedirectResponse
     {
@@ -43,11 +43,11 @@ class ContractPlanMasterController extends Controller
 
         ContractPlanMaster::create($validated);
 
-        return redirect()->route('admin.contract-plan-masters.index')->with('success', '契約プランマスターが作成されました。');
+        return redirect()->route('admin.contract-plan-masters.index')->with('success', '製品マスターが作成されました。');
     }
 
     /**
-     * 契約プランマスター詳細
+     * 製品マスター詳細
      */
     public function show(ContractPlanMaster $contractPlanMaster): View
     {
@@ -56,7 +56,7 @@ class ContractPlanMasterController extends Controller
     }
 
     /**
-     * 契約プランマスター編集フォーム
+     * 製品マスター編集フォーム
      */
     public function edit(ContractPlanMaster $contractPlanMaster): View
     {
@@ -64,7 +64,7 @@ class ContractPlanMasterController extends Controller
     }
 
     /**
-     * 契約プランマスター更新
+     * 製品マスター更新
      */
     public function update(Request $request, ContractPlanMaster $contractPlanMaster): RedirectResponse
     {
@@ -79,22 +79,22 @@ class ContractPlanMasterController extends Controller
 
         $contractPlanMaster->update($validated);
 
-        return redirect()->route('admin.contract-plan-masters.index')->with('success', '契約プランマスターが更新されました。');
+        return redirect()->route('admin.contract-plan-masters.index')->with('success', '製品マスターが更新されました。');
     }
 
     /**
-     * 契約プランマスター削除
+     * 製品マスター削除
      */
     public function destroy(ContractPlanMaster $contractPlanMaster): RedirectResponse
     {
-        // 関連する契約プランがある場合は削除不可
+        // 関連する製品がある場合は削除不可
         if ($contractPlanMaster->contractPlans()->count() > 0) {
             return redirect()->route('admin.contract-plan-masters.index')
-                ->with('error', 'このマスターに関連する契約プランが存在するため削除できません。');
+                ->with('error', 'このマスターに関連する製品が存在するため削除できません。');
         }
 
         $contractPlanMaster->delete();
 
-        return redirect()->route('admin.contract-plan-masters.index')->with('success', '契約プランマスターが削除されました。');
+        return redirect()->route('admin.contract-plan-masters.index')->with('success', '製品マスターが削除されました。');
     }
 }

@@ -16,25 +16,25 @@ class ContractPlanMasterSeeder extends Seeder
         $masters = [
             [
                 'name' => 'DSチャットボットシリーズ',
-                'description' => 'DSチャットボット製品の契約プランマスター',
+                'description' => 'DSチャットボット製品の製品マスター',
                 'is_active' => true,
                 'display_order' => 1,
             ],
             [
                 'name' => 'DSHRシリーズ',
-                'description' => 'DSHR製品の契約プランマスター',
+                'description' => 'DSHR製品の製品マスター',
                 'is_active' => true,
                 'display_order' => 2,
             ],
             [
                 'name' => 'DSXRシリーズ',
-                'description' => 'DSXR製品の契約プランマスター',
+                'description' => 'DSXR製品の製品マスター',
                 'is_active' => true,
                 'display_order' => 3,
             ],
             [
                 'name' => 'DSオンラインシリーズ',
-                'description' => 'DSオンライン製品の契約プランマスター',
+                'description' => 'DSオンライン製品の製品マスター',
                 'is_active' => true,
                 'display_order' => 4,
             ],

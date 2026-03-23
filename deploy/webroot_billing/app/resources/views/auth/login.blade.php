@@ -10,6 +10,18 @@
             <p class="text-gray-600">システム管理画面へのログイン</p>
         </div>
 
+        @if(app()->environment('local'))
+        <!-- ローカルデバッグ用: テストアカウント -->
+        <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            <p class="font-semibold mb-2">🔧 デバッグ用（ローカルのみ表示）</p>
+            <p class="mb-1"><strong>ID:</strong> dsbrand@example.com</p>
+            <p class="mb-1"><strong>PASS:</strong> cs20051101</p>
+            <p class="mt-2 text-amber-700">または</p>
+            <p class="mb-1"><strong>ID:</strong> kanri@dschatbot.ai</p>
+            <p><strong>PASS:</strong> cs20051101</p>
+        </div>
+        @endif
+
         <!-- Session Status -->
         @if (session('status'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-r">

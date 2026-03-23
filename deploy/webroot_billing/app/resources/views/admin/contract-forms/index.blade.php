@@ -1,16 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', '新規申込フォーム管理')
+@section('title', 'フォーム管理')
 
 @section('content')
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">新規申込フォーム管理</h1>
+        <h1 class="text-3xl font-bold text-gray-800">フォーム管理</h1>
     </div>
 
     <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
         <p class="text-gray-600 mb-4">
             <i class="fas fa-info-circle mr-2"></i>
-            表示したい契約プランを選択してURLを生成してください。生成されたURLにアクセスすると、選択したプランのみが表示される新規申込フォームが表示されます。
+            表示したい製品を選択してURLを生成してください。生成されたURLにアクセスすると、選択した製品のみが表示される新規申込フォームが表示されます。
         </p>
     </div>
 
@@ -50,7 +50,7 @@
                 </a>
             </div>
             <p class="text-xs text-gray-600 mt-2">
-                <i class="fas fa-info-circle mr-1"></i>閲覧画面用URLにアクセスすると、選択したプランのみが表示される申込フォームが開きます
+                <i class="fas fa-info-circle mr-1"></i>閲覧画面用URLにアクセスすると、選択した製品のみが表示される申込フォームが開きます
             </p>
         </div>
     @endif
@@ -60,17 +60,18 @@
         <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
             <div class="p-4 bg-blue-50 border-b border-blue-200">
                 <h2 class="text-lg font-bold text-gray-800">
-                    <i class="fas fa-list mr-2"></i>保存されているURL一覧
+                    <i class="fas fa-list mr-2"></i>発行済みフォーム一覧
                 </h2>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full leading-normal">
                     <thead>
                         <tr class="theme-table-header uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">フォーム名</th>
                             <th class="py-3 px-6 text-left">生成日時</th>
                             <th class="py-3 px-6 text-left">URL</th>
-                            <th class="py-3 px-6 text-left">選択されているプラン名（複数対応）</th>
-                            <th class="py-3 px-6 text-left">プラン数</th>
+                            <th class="py-3 px-6 text-left">選択製品</th>
+                            <th class="py-3 px-6 text-left">製品数</th>
                             <th class="py-3 px-6 text-left">有効期限</th>
                             <th class="py-3 px-6 text-left">ステータス</th>
                             <th class="py-3 px-6 text-center">操作</th>
@@ -79,6 +80,9 @@
                     <tbody class="text-gray-600 text-sm font-light">
                         @foreach($savedUrls as $savedUrl)
                             <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-3 px-6 text-left">
+                                    {{ $savedUrl->name ?: '—' }}
+                                </td>
                                 <td class="py-3 px-6 text-left whitespace-nowrap">
                                     {{ $savedUrl->created_at->format('Y/m/d H:i') }}
                                 </td>
@@ -122,14 +126,20 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-6 text-center">
-                                    <form action="{{ route('admin.contract-forms.destroy', $savedUrl) }}" method="POST" class="inline-confirm-form" data-confirm="このURLを削除してもよろしいですか？">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition duration-300">
-                                            <i class="fas fa-trash mr-1"></i>削除
-                                        </button>
-                                    </form>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="{{ route('admin.contract-forms.edit', $savedUrl) }}" 
+                                            class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded transition duration-300">
+                                            <i class="fas fa-edit mr-1"></i>編集
+                                        </a>
+                                        <form action="{{ route('admin.contract-forms.destroy', $savedUrl) }}" method="POST" class="inline-confirm-form inline" data-confirm="このフォームを削除してもよろしいですか？">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded transition duration-300">
+                                                <i class="fas fa-trash mr-1"></i>削除
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -142,21 +152,35 @@
         </div>
     @endif
 
-    {{-- URL生成フォーム --}}
+    {{-- フォーム発行フォーム --}}
     <div class="bg-white shadow-lg rounded-lg p-6 mb-6">
         <h2 class="text-xl font-bold text-gray-800 mb-4">
-            <i class="fas fa-link mr-2"></i>新規URL生成
+            <i class="fas fa-plus-circle mr-2"></i>新規フォームURL発行
         </h2>
 
     <form action="{{ route('admin.contract-forms.generate') }}" method="POST" id="generate-form">
         @csrf
+
+        <div class="mb-4">
+            <label for="form_name" class="block text-sm font-semibold text-gray-700 mb-2">フォーム名（任意）</label>
+            <input type="text" 
+                id="form_name" 
+                name="name" 
+                value="{{ old('name') }}" 
+                maxlength="255"
+                placeholder="例: 法人向け申込フォーム"
+                class="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg theme-input @error('name') border-red-500 @enderror">
+            @error('name')
+                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+            @enderror
+        </div>
         
         <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
             <div class="p-4 bg-blue-50 border-b border-blue-200">
                 <div class="flex items-center justify-between">
                     <p class="text-sm text-blue-800">
                         <i class="fas fa-list mr-2"></i>
-                        契約プラン一覧（表示したいプランにチェックを入れてください）
+                        製品一覧（表示したい製品にチェックを入れてください）
                     </p>
                     <div class="flex items-center space-x-4">
                         <button type="button" 
@@ -175,7 +199,7 @@
             
             @if($plans->isEmpty())
                 <div class="p-6 text-center text-gray-600">
-                    契約プランがありません。
+                    製品がありません。
                 </div>
             @else
                 <table class="min-w-full leading-normal">
@@ -187,8 +211,8 @@
                                     onclick="toggleAll()"
                                     class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
                             </th>
-                            <th class="py-3 px-6 text-left">プランコード</th>
-                            <th class="py-3 px-6 text-left">プラン名</th>
+                            <th class="py-3 px-6 text-left">製品コード</th>
+                            <th class="py-3 px-6 text-left">製品名</th>
                             <th class="py-3 px-6 text-left">料金</th>
                             <th class="py-3 px-6 text-left">決済タイプ</th>
                             <th class="py-3 px-6 text-left">カテゴリ</th>
@@ -215,7 +239,7 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-6 text-left">
-                                    {{ $plan->contractPlanMaster->name ?? '（カテゴリなし）' }}
+                                    —
                                 </td>
                             </tr>
                         @endforeach
@@ -235,7 +259,7 @@
         <div class="flex justify-end">
             <button type="submit" 
                 class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-md transition duration-300">
-                <i class="fas fa-link mr-2"></i>URL生成
+                <i class="fas fa-link mr-2"></i>フォーム発行
             </button>
         </div>
     </form>

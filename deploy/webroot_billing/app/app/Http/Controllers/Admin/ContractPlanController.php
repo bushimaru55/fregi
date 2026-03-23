@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contract;
+use App\Models\ContractItem;
 use App\Models\ContractPlan;
-use App\Models\ContractPlanMaster;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ use Illuminate\View\View;
 class ContractPlanController extends Controller
 {
     /**
-     * 契約プラン一覧（ベース商品 + オプション商品）
+     * 製品一覧（ベース商品 + オプション商品）。申し込み数は contract_items に含まれる契約数。
      */
     public function index(): View
     {
@@ -22,28 +23,35 @@ class ContractPlanController extends Controller
         $optionProducts = Product::where('type', 'option')
             ->orderBy('display_order')
             ->get();
-        return view('admin.contract-plans.index', compact('plans', 'optionProducts'));
+        $contractCountByPlan = DB::table('contract_items')
+            ->whereNotNull('contract_plan_id')
+            ->selectRaw('contract_plan_id, count(distinct contract_id) as c')
+            ->groupBy('contract_plan_id')
+            ->pluck('c', 'contract_plan_id');
+        $contractCountByProduct = DB::table('contract_items')
+            ->whereNotNull('product_id')
+            ->selectRaw('product_id, count(distinct contract_id) as c')
+            ->groupBy('product_id')
+            ->pluck('c', 'product_id');
+        return view('admin.contract-plans.index', compact('plans', 'optionProducts', 'contractCountByPlan', 'contractCountByProduct'));
     }
 
     /**
-     * 新規契約プラン作成フォーム
+     * 新規製品作成フォーム
      */
     public function create(Request $request): View
     {
-        $masters = ContractPlanMaster::active()->orderBy('display_order')->get();
-        $selectedMasterId = $request->input('master_id');
-        
-        // オプション商品作成時にベース商品を選択できるように、有効な契約プランを取得
+        // オプション商品作成時にベース商品を選択できるように、有効な製品を取得
         $basePlans = ContractPlan::active()->orderBy('display_order')->get();
         
         // _form.blade.phpでoptional($contractPlan)を使うため、nullを明示的に渡す
         $contractPlan = null;
         
-        return view('admin.contract-plans.create', compact('masters', 'selectedMasterId', 'basePlans', 'contractPlan'));
+        return view('admin.contract-plans.create', compact('basePlans', 'contractPlan'));
     }
 
     /**
-     * 新規契約プラン保存（オプション商品の場合はproductsテーブルにも保存）
+     * 新規製品保存（オプション商品の場合はproductsテーブルにも保存）
      */
     public function store(Request $request): RedirectResponse
     {
@@ -60,8 +68,7 @@ class ContractPlanController extends Controller
         ];
 
         if ($productType === 'base') {
-            // ベース商品の場合
-            $rules['contract_plan_master_id'] = 'nullable|exists:contract_plan_masters,id';
+            // ベース商品の場合（製品マスターは廃止のため使用しない）
             $rules['item'] = 'required|string|max:50|unique:contract_plans,item';
             $rules['billing_type'] = 'required|in:one_time,monthly';
         } else {
@@ -93,7 +100,7 @@ class ContractPlanController extends Controller
                     'display_order' => $validated['display_order'],
                 ]);
                 
-                // ベース商品（契約プラン）との関連付け
+                // ベース商品（製品）との関連付け
                 $basePlanIds = $request->input('base_plan_ids', []);
                 if (!empty($basePlanIds)) {
                     $product->contractPlans()->attach($basePlanIds);
@@ -109,7 +116,7 @@ class ContractPlanController extends Controller
     }
 
     /**
-     * 契約プラン詳細
+     * 製品詳細
      */
     public function show(ContractPlan $contractPlan): View
     {
@@ -117,12 +124,10 @@ class ContractPlanController extends Controller
     }
 
     /**
-     * 契約プラン編集フォーム
+     * 製品編集フォーム
      */
     public function edit(ContractPlan $contractPlan): View
     {
-        $masters = ContractPlanMaster::active()->orderBy('display_order')->get();
-        
         // オプション製品一覧を取得（既に紐づいているものは選択済みにする）
         $optionProducts = Product::where('type', 'option')
             ->where('is_active', true)
@@ -132,16 +137,15 @@ class ContractPlanController extends Controller
         // このベース製品に既に紐づいているオプション製品のIDを取得
         $linkedOptionProductIds = $contractPlan->optionProducts()->pluck('products.id')->toArray();
         
-        return view('admin.contract-plans.edit', compact('contractPlan', 'masters', 'optionProducts', 'linkedOptionProductIds'));
+        return view('admin.contract-plans.edit', compact('contractPlan', 'optionProducts', 'linkedOptionProductIds'));
     }
 
     /**
-     * 契約プラン更新
+     * 製品更新
      */
     public function update(Request $request, ContractPlan $contractPlan): RedirectResponse
     {
         $validated = $request->validate([
-            'contract_plan_master_id' => 'nullable|exists:contract_plan_masters,id',
             'item' => 'required|string|max:50|unique:contract_plans,item,' . $contractPlan->id,
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
@@ -167,24 +171,37 @@ class ContractPlanController extends Controller
         return redirect()->route('admin.contract-plans.index')->with('success', '製品が更新されました。');
     }
 
+    /** テスト用製品コード（紐づく契約があっても参照を外して削除可能） */
+    private const TEST_PRODUCT_CODES_FORCE_DELETABLE = ['TEST-ONE-TIME', 'TEST-MONTHLY'];
+
     /**
-     * 契約プラン削除
-     * このプランを参照する契約が1件でもある場合は削除不可とする。
+     * 製品削除
+     * 通常は申し込みが1件でも紐づく場合は削除不可。
+     * TEST-ONE-TIME / TEST-MONTHLY の場合は紐づく契約の参照を外してから削除する。
      */
     public function destroy(ContractPlan $contractPlan): RedirectResponse
     {
-        if ($contractPlan->contracts()->exists()) {
-            $count = $contractPlan->contracts()->count();
-            return redirect()
-                ->route('admin.contract-plans.index')
-                ->withErrors(["この契約プランは契約が{$count}件紐づいているため削除できません。紐づく契約を変更または削除してから再度お試しください。"]);
+        $isTestForceDeletable = in_array($contractPlan->item, self::TEST_PRODUCT_CODES_FORCE_DELETABLE, true);
+
+        if (! $isTestForceDeletable) {
+            $contractCount = Contract::whereHas('contractItems', fn ($q) => $q->where('contract_plan_id', $contractPlan->id))->count();
+            if ($contractCount > 0) {
+                return redirect()
+                    ->route('admin.contract-plans.index')
+                    ->withErrors(["この製品は申し込みが{$contractCount}件紐づいているため削除できません。紐づく契約を変更または削除してから再度お試しください。"]);
+            }
         }
 
-        // オプション製品との紐づけを解除（外部キー制約を避ける）
-        $contractPlan->optionProducts()->detach();
+        DB::transaction(function () use ($contractPlan, $isTestForceDeletable) {
+            if ($isTestForceDeletable) {
+                ContractItem::where('contract_plan_id', $contractPlan->id)->update(['contract_plan_id' => null]);
+                Contract::where('contract_plan_id', $contractPlan->id)->update(['contract_plan_id' => null]);
+            }
+            $contractPlan->optionProducts()->detach();
+            $contractPlan->delete();
+        });
 
-        $contractPlan->delete();
-        return redirect()->route('admin.contract-plans.index')->with('success', '契約プランが削除されました。');
+        return redirect()->route('admin.contract-plans.index')->with('success', '製品が削除されました。');
     }
 
     /**
