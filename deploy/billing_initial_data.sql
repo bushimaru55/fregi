@@ -1,9 +1,8 @@
 -- =====================================================================
 -- 本番初期データ（スキーマ SQL インポート後に実行）
--- 対象: users, contract_plans, products, contract_statuses,
---       site_settings, contract_form_urls
--- 注意: users テーブルのパスワードは開発環境のまま。
---       本番デプロイ後、管理画面でパスワードを変更してください。
+-- 対象: users, contract_plans, products, contract_plan_option_products,
+--       contract_statuses, site_settings, contract_form_urls
+-- 注意: users のパスワードは開発環境由来。本番ログイン後に変更推奨。
 -- =====================================================================
 -- MySQL dump 10.13  Distrib 8.0.44, for Linux (aarch64)
 --
@@ -53,6 +52,17 @@ INSERT INTO `products` (`id`, `code`, `name`, `description`, `unit_price`, `tax_
 UNLOCK TABLES;
 
 --
+-- Dumping data for table `contract_plan_option_products`
+-- DSchatbot 50ページプラン(id=3) に DSchatbot 多言語オプション(product id=2) を紐づけ
+--
+
+LOCK TABLES `contract_plan_option_products` WRITE;
+/*!40000 ALTER TABLE `contract_plan_option_products` DISABLE KEYS */;
+INSERT INTO `contract_plan_option_products` (`id`, `contract_plan_id`, `product_id`, `created_at`, `updated_at`) VALUES (1,3,2,'2026-03-23 08:00:00','2026-03-23 08:00:00');
+/*!40000 ALTER TABLE `contract_plan_option_products` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Dumping data for table `contract_statuses`
 --
 
@@ -91,4 +101,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-23 13:34:27
+-- Dump completed on 2026-03-23 14:53:39
