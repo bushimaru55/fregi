@@ -38,7 +38,7 @@
                     @enderror
                     <p class="text-xs text-gray-500 mt-2">
                         <i class="fas fa-info-circle mr-1"></i>
-                        例: <code class="bg-gray-100 px-1 py-0.5 rounded">http://localhost:8080/billing/</code> または <code class="bg-gray-100 px-1 py-0.5 rounded">https://dschatbot.ai/billing/</code>
+                        例: <code class="bg-gray-100 px-1 py-0.5 rounded">http://127.0.0.1:8080/billing/</code> または <code class="bg-gray-100 px-1 py-0.5 rounded">https://dschatbot.ai/billing/</code>
                     </p>
                 </div>
 

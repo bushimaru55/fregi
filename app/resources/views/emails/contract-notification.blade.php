@@ -4,211 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>申込受付通知</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #00B4A1;
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-radius: 10px 10px 0 0;
-        }
-        .content {
-            background: #f9f9f9;
-            padding: 30px;
-            border: 1px solid #ddd;
-        }
-        .section {
-            background: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #4a5568;
-            border-bottom: 2px solid #4ecdc4;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .info-row {
-            display: flex;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .info-label {
-            font-weight: bold;
-            width: 180px;
-            color: #718096;
-        }
-        .info-value {
-            flex: 1;
-            color: #2d3748;
-        }
-        .card-info {
-            background: #fff5f5;
-            border: 2px solid #fc8181;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        .warning {
-            background: #fffaf0;
-            border-left: 4px solid #f6ad55;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #718096;
-            font-size: 12px;
-            border-top: 1px solid #ddd;
-            margin-top: 30px;
-        }
-    </style>
 </head>
-<body>
-    <div class="header">
-        <h1>申込受付通知</h1>
-        <p>新規申込を受け付けました</p>
-    </div>
+<body style="margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #333333; background-color: #f0f4f8;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0f4f8;">
+<tr><td style="padding: 24px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+{{-- ヘッダー --}}
+<tr>
+<td style="background-color: #00B4A1; color: #ffffff; padding: 24px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="text-align: center;">
+<div style="font-size: 20px; font-weight: bold; margin: 0 0 6px 0;">申込受付通知</div>
+<div style="font-size: 13px; opacity: 0.95;">新規申込を受け付けました</div>
+</td></tr></table>
+</td>
+</tr>
 
-    <div class="content">
-        {{-- 契約情報 --}}
-        <div class="section">
-            <div class="section-title">契約情報</div>
-            <div class="info-row">
-                <div class="info-label">契約ID</div>
-                <div class="info-value">{{ $contract->id }}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">代表製品</div>
-                <div class="info-value">{{ optional($contract->representative_plan)->name ?? '—' }}</div>
-            </div>
-            @if($contract->contractItems->isNotEmpty())
-            <div class="info-row">
-                <div class="info-label">選択された商品・合計</div>
-                <div class="info-value">{{ number_format($contract->contractItems->sum('subtotal')) }}円（税込）</div>
-            </div>
-            @endif
-            <div class="info-row">
-                <div class="info-label">契約ステータス</div>
-                <div class="info-value">{{ $contract->status_label }}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">利用開始希望日</div>
-                <div class="info-value">{{ $contract->desired_start_date->format('Y年m月d日') }}</div>
-            </div>
-            @if($contract->actual_start_date)
-            <div class="info-row">
-                <div class="info-label">実際の利用開始日</div>
-                <div class="info-value">{{ $contract->actual_start_date->format('Y年m月d日') }}</div>
-            </div>
-            @endif
-        </div>
+{{-- 契約情報 --}}
+<tr><td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">契約情報</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">契約ID：{{ $contract->id }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">代表製品：{{ optional($contract->representative_plan)->name ?? '—' }}</td></tr>
+@if($contract->contractItems->isNotEmpty())
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">選択された商品・合計：{{ number_format($contract->contractItems->sum('subtotal')) }}円（税込）</td></tr>
+@endif
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">契約ステータス：{{ $contract->status_label }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">利用開始希望日：{{ $contract->desired_start_date->format('Y年m月d日') }}</td></tr>
+@if($contract->actual_start_date)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">実際の利用開始日：{{ $contract->actual_start_date->format('Y年m月d日') }}</td></tr>
+@endif
+</table>
+</td></tr>
 
-        {{-- オプション商品 --}}
-        @if($optionItems && $optionItems->isNotEmpty())
-        <div class="section">
-            <div class="section-title">オプション商品</div>
-            @foreach($optionItems as $item)
-            <div class="info-row">
-                <div class="info-label">{{ $item->product_name ?? ($item->product->name ?? '') }}</div>
-                <div class="info-value">{{ number_format($item->subtotal ?? $item->unit_price ?? 0) }}円</div>
-            </div>
-            @endforeach
-            <div class="info-row">
-                <div class="info-label">オプション商品合計</div>
-                <div class="info-value"><strong>{{ number_format($optionTotalAmount) }}円</strong></div>
-            </div>
-            @php
-                $totalAmount = $contract->contractItems->sum('subtotal');
-            @endphp
-            <div class="info-row">
-                <div class="info-label">合計金額</div>
-                <div class="info-value"><strong style="color: #e53e3e; font-size: 18px;">{{ number_format($totalAmount) }}円</strong></div>
-            </div>
-        </div>
-        @endif
+@if($optionItems && $optionItems->isNotEmpty())
+{{-- オプション・合計 --}}
+<tr><td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">オプション商品・合計金額</td></tr>
+@foreach($optionItems as $item)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">{{ $item->product_name ?? ($item->product->name ?? '') }}：{{ number_format($item->subtotal ?? $item->unit_price ?? 0) }}円</td></tr>
+@endforeach
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748; font-weight: bold;">オプション商品合計：{{ number_format($optionTotalAmount) }}円</td></tr>
+@php $totalAmount = $contract->contractItems->sum('subtotal'); @endphp
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #c53030; font-size: 16px; font-weight: bold;">合計金額：{{ number_format($totalAmount) }}円（税込）</td></tr>
+</table>
+</td></tr>
+@endif
 
-        {{-- 申込企業情報 --}}
-        <div class="section">
-            <div class="section-title">申込企業情報</div>
-            <div class="info-row">
-                <div class="info-label">会社名</div>
-                <div class="info-value">{{ $contract->company_name }}</div>
-            </div>
-            @if($contract->company_name_kana)
-            <div class="info-row">
-                <div class="info-label">会社名（フリガナ）</div>
-                <div class="info-value">{{ $contract->company_name_kana }}</div>
-            </div>
-            @endif
-            @if($contract->department)
-            <div class="info-row">
-                <div class="info-label">部署名</div>
-                <div class="info-value">{{ $contract->department }}</div>
-            </div>
-            @endif
-            @if($contract->position)
-            <div class="info-row">
-                <div class="info-label">役職</div>
-                <div class="info-value">{{ $contract->position }}</div>
-            </div>
-            @endif
-            <div class="info-row">
-                <div class="info-label">担当者名</div>
-                <div class="info-value">{{ $contract->contact_name }}</div>
-            </div>
-            @if($contract->contact_name_kana)
-            <div class="info-row">
-                <div class="info-label">担当者名（フリガナ）</div>
-                <div class="info-value">{{ $contract->contact_name_kana }}</div>
-            </div>
-            @endif
-            <div class="info-row">
-                <div class="info-label">メールアドレス</div>
-                <div class="info-value">{{ $contract->email }}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">電話番号</div>
-                <div class="info-value">{{ $contract->phone }}</div>
-            </div>
-            @if($contract->full_address)
-            <div class="info-row">
-                <div class="info-label">住所</div>
-                <div class="info-value">{{ $contract->full_address }}</div>
-            </div>
-            @endif
-        </div>
+{{-- 申込企業情報 --}}
+<tr><td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">申込企業情報</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">会社名：{{ $contract->company_name }}</td></tr>
+@if($contract->company_name_kana)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">会社名（フリガナ）：{{ $contract->company_name_kana }}</td></tr>
+@endif
+@if($contract->department)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">部署名：{{ $contract->department }}</td></tr>
+@endif
+@if($contract->position)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">役職：{{ $contract->position }}</td></tr>
+@endif
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">担当者名：{{ $contract->contact_name }}</td></tr>
+@if($contract->contact_name_kana)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">担当者名（フリガナ）：{{ $contract->contact_name_kana }}</td></tr>
+@endif
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">メールアドレス：{{ $contract->email }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">電話番号：{{ $contract->phone }}</td></tr>
+@if($contract->full_address)
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">住所：{{ $contract->full_address }}</td></tr>
+@endif
+</table>
+</td></tr>
 
-        {{-- ご利用情報 --}}
-        <div class="section">
-            <div class="section-title">ご利用情報</div>
-            <div class="info-row">
-                <div class="info-label">ご利用URL・ドメイン</div>
-                <div class="info-value">{{ $contract->usage_url_domain }}</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">体験版からのインポートを希望する</div>
-                <div class="info-value">{{ $contract->import_from_trial ? 'はい' : 'いいえ' }}</div>
-            </div>
-        </div>
+{{-- ご利用情報 --}}
+<tr><td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">ご利用情報</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">ご利用URL・ドメイン：{{ $contract->usage_url_domain }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">体験版からのインポート希望：{{ $contract->import_from_trial ? 'はい' : 'いいえ' }}</td></tr>
+</table>
+</td></tr>
 
-        <div class="footer">
-            <p>このメールは自動送信されています。</p>
-            <p>© 2026 DSchatbot. All rights reserved.</p>
-        </div>
-    </div>
+{{-- フッター --}}
+<tr><td style="text-align: center; padding: 20px 24px; color: #718096; font-size: 12px; border-top: 1px solid #e2e8f0;">
+このメールは自動送信されています。<br>© 2026 DSchatbot. All rights reserved.
+</td></tr>
+</table>
+</td></tr>
+</table>
 </body>
 </html>
