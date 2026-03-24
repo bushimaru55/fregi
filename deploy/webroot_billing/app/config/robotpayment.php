@@ -23,7 +23,8 @@ return [
 
     'company_id' => env('ROBOTPAYMENT_COMPANY_ID', 1),
 
-    'job_type' => 'CAPTURE',
+    // 決済種別: CAPTURE(即時売上) / AUTH(仮売上)
+    'job_type' => strtoupper((string) env('ROBOTPAYMENT_JOB_TYPE', 'CAPTURE')),
 
     'reply_type' => '0',
 

@@ -28,6 +28,11 @@ class BillingRoboBulkRegisterService
     /** 請求タイプ: 定期定額 */
     private const DEMAND_TYPE_RECURRING = 1;
 
+    /**
+     * API5（/api/demand/bulk_register）の jb は「仮実同時売上: CAPTURE」のみ有効。
+     * AUTH を送ると error 232 Invalid 'jb'. となる（公式: 07_api_05_bulk_register.md）。
+     * 仮売上は ROBOT PAYMENT 直送信経路（請求ロボ未使用時の gateway）では ROBOTPAYMENT_JOB_TYPE=AUTH で可能。
+     */
     public function __construct(
         private BillingRoboApiClient $client,
         private ContractToBillingLinesMapper $linesMapper

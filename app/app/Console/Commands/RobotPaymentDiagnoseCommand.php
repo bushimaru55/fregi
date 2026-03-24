@@ -80,7 +80,7 @@ class RobotPaymentDiagnoseCommand extends Command
                 if ($accessKey !== '') {
                     $testParams['access_key'] = $accessKey;
                 }
-                $testParams['jb'] = 'CAPTURE';
+                $testParams['jb'] = config('robotpayment.job_type', 'CAPTURE');
                 $testParams['cod'] = 'DIAG_TEST_' . time();
 
                 $response = Http::asForm()->timeout(15)->post($gatewayUrl, $testParams);

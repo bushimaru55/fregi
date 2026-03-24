@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContractRequest;
 use App\Models\Contract;
 use App\Models\ContractItem;
+use App\Models\ContractFormUrl;
 use App\Models\ContractPlan;
 use App\Models\Product;
 use App\Models\SiteSetting;
@@ -44,7 +45,26 @@ class ContractController extends Controller
             }
             
             $plans = $query->orderBy('display_order')->get();
-            
+
+            // plansパラメータがある場合、対応するContractFormUrlからjob_typeをセッションに保存
+            if ($hasPlanIdsParam && !empty($planIds)) {
+                $sortedIds = $planIds;
+                sort($sortedIds);
+                $formUrl = ContractFormUrl::where('is_active', true)
+                    ->whereNotNull('job_type')
+                    ->get()
+                    ->first(function ($f) use ($sortedIds) {
+                        $fIds = $f->plan_ids ?? [];
+                        sort($fIds);
+                        return $fIds === $sortedIds;
+                    });
+                if ($formUrl) {
+                    $request->session()->put('contract_form_job_type', $formUrl->job_type);
+                } else {
+                    $request->session()->forget('contract_form_job_type');
+                }
+            }
+
             // 製品IDが指定されているのに、該当する製品が見つからない場合は404
             if ($hasPlanIdsParam && $plans->isEmpty()) {
                 Log::channel('contract_payment')->warning('指定された製品が見つかりません', [
@@ -135,9 +155,15 @@ class ContractController extends Controller
 
             // ROBOT PAYMENT 有効時は決済ページへリダイレクト（契約・明細は決済実行時に作成）
             if (config('robotpayment.enabled', false)) {
+                // フォームURL発行時に設定された job_type をセッション経由で引き継ぐ
+                $formJobType = $request->session()->get('contract_form_job_type');
+                if ($formJobType) {
+                    $validated['form_job_type'] = $formJobType;
+                }
                 $request->session()->put('contract_confirm_data', $validated);
                 Log::channel('contract_payment')->info('確認送信→決済ページへリダイレクト', [
                     'base_plan_ids' => $basePlanIds,
+                    'form_job_type' => $formJobType ?? 'null (config fallback)',
                 ]);
                 return redirect()->route('contract.payment');
             }

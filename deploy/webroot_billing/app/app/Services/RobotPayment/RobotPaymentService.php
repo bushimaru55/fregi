@@ -53,7 +53,7 @@ class RobotPaymentService
 
         return DB::transaction(function () use ($sessionData, $token, $debugContext, $plans, $representativePlanId, $optionProductIds, $desiredStartDate, $amounts, $pattern, $correlationId) {
             $createData = $sessionData;
-            unset($createData['option_product_ids'], $createData['base_plan_ids'], $createData['terms_agreed']);
+            unset($createData['option_product_ids'], $createData['base_plan_ids'], $createData['terms_agreed'], $createData['form_job_type']);
             if (empty($createData['desired_start_date'])) {
                 $createData['desired_start_date'] = now()->format('Y-m-d');
             }
@@ -128,7 +128,13 @@ class RobotPaymentService
                 'pattern' => $pattern,
             ], $correlationId);
 
-            if ($billingRoboEnabled) {
+            // フォームURL発行時に設定された job_type を config より優先する
+            $jobType = strtoupper((string) (
+                $sessionData['form_job_type'] ?? config('robotpayment.job_type', 'CAPTURE')
+            ));
+
+            if ($billingRoboEnabled && $jobType !== 'AUTH') {
+                // CAPTURE モード: Billing Robo 経由で API1 → API2 → API5（トークンは API2 で使い切る）
                 try {
                     $executionService = app(BillingRoboExecutionService::class);
                     $result = $executionService->executeForContract($contract, $payment, $token, $debugContext);
@@ -155,7 +161,29 @@ class RobotPaymentService
                 }
             }
 
-            // 請求管理ロボ未使用時: gateway で決済
+            // AUTH（仮売上）モード: API1（請求先登録）のみ実行し、API2 はスキップ。
+            // API1 は CPToken を使わないため安全に呼べる。
+            // API2 はトークンを消費するのでスキップし、CPToken は gateway AUTH に温存する。
+            if ($billingRoboEnabled && $jobType === 'AUTH') {
+                try {
+                    $executionService = app(BillingRoboExecutionService::class);
+                    $api1Result = $executionService->executeApi1Only($contract, $payment, $debugContext);
+                    if (!$api1Result['success']) {
+                        PaymentStageLogger::warning(PaymentStageLogger::STAGE_API1_FAIL, 'AUTH モード API1 失敗（gateway 送信は続行）', [
+                            'contract_id' => $contract->id,
+                            'error' => mb_substr($api1Result['error'] ?? '', 0, 200),
+                        ], $correlationId);
+                    }
+                } catch (\Throwable $e) {
+                    PaymentStageLogger::warning(PaymentStageLogger::STAGE_EXEC_FAIL, 'AUTH モード API1 例外（gateway 送信は続行）', [
+                        'contract_id' => $contract->id,
+                        'error' => mb_substr($e->getMessage(), 0, 200),
+                    ], $correlationId);
+                }
+            }
+
+            // AUTH モード、または Billing Robo 未使用時: RP gateway に直接送信
+            // CPToken は gateway のみに渡す（API2 未使用のため未消費）。
             $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
             $gatewayUrl = config('robotpayment.gateway_url');
             PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_GATEWAY_SEND, 'ROBOT PAYMENT gateway 送信', [

@@ -38,27 +38,74 @@
 
             <div class="mb-6">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">登録する製品（紐付け）</label>
-                <p class="text-xs text-gray-500 mb-3">このフォームのURLで選択可能な製品を選んでください。1つ以上必須です。</p>
-                <div class="space-y-2 p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
+                <p class="text-xs text-gray-500 mb-3">このフォームのURLで選択可能な製品を選んでください。1つ以上必須です。オプションは商品・プラン管理でベースプランに紐付けたものが申込時に表示されます。</p>
+                <div class="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-72 overflow-y-auto">
                     @php
                         $currentPlanIds = old('plan_ids', $contractFormUrl->plan_ids ?? []);
                     @endphp
                     @foreach($plans as $plan)
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox"
-                                name="plan_ids[]"
-                                value="{{ $plan->id }}"
-                                {{ in_array($plan->id, $currentPlanIds) ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <span class="ml-2 text-sm text-gray-700">{{ $plan->name }}</span>
-                            <span class="ml-2 text-xs text-gray-500">（{{ $plan->formatted_price }}）</span>
-                        </label>
+                        @php $opts = $plan->optionProducts; @endphp
+                        <div class="border-b border-gray-200 last:border-0 pb-3 last:pb-0">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox"
+                                    name="plan_ids[]"
+                                    value="{{ $plan->id }}"
+                                    {{ in_array($plan->id, $currentPlanIds) ? 'checked' : '' }}
+                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mt-0.5">
+                                <span class="ml-2 flex-1">
+                                    <span class="text-sm text-gray-800 font-medium">{{ $plan->name }}</span>
+                                    <span class="text-xs text-gray-500">（{{ $plan->formatted_price }}）</span>
+                                    @if($opts->isEmpty())
+                                        <span class="block mt-1 text-[11px] text-gray-400"><i class="fas fa-minus-circle mr-0.5"></i>オプション設定なし</span>
+                                    @else
+                                        <span class="block mt-1 text-[11px] text-emerald-800">
+                                            <i class="fas fa-puzzle-piece mr-0.5"></i>オプションあり: {{ $opts->pluck('name')->implode('、') }}
+                                        </span>
+                                    @endif
+                                </span>
+                            </label>
+                        </div>
                     @endforeach
                 </div>
                 @error('plan_ids')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
                 @error('plan_ids.*')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- 決済処理方法 --}}
+            <div class="mb-6">
+                <p class="block text-sm font-semibold text-gray-700 mb-2">決済処理方法 <span class="text-red-500">*</span></p>
+                @php $currentJobType = old('job_type', $contractFormUrl->job_type ?? 'AUTH'); @endphp
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
+                        {{ $currentJobType === 'AUTH' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
+                        id="edit-label-auth">
+                        <input type="radio" name="job_type" value="AUTH"
+                            class="mt-1 w-4 h-4 text-indigo-600"
+                            {{ $currentJobType === 'AUTH' ? 'checked' : '' }}
+                            onchange="updateEditJobTypeStyle()">
+                        <span>
+                            <span class="font-bold text-gray-800 block">仮売上のみ（AUTH）</span>
+                            <span class="text-xs text-gray-500">カードを仮押さえし、ROBOT PAYMENT管理画面で手動売上確定。</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
+                        {{ $currentJobType === 'CAPTURE' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
+                        id="edit-label-capture">
+                        <input type="radio" name="job_type" value="CAPTURE"
+                            class="mt-1 w-4 h-4 text-indigo-600"
+                            {{ $currentJobType === 'CAPTURE' ? 'checked' : '' }}
+                            onchange="updateEditJobTypeStyle()">
+                        <span>
+                            <span class="font-bold text-gray-800 block">仮実同時売上（CAPTURE）</span>
+                            <span class="text-xs text-gray-500">申込時点で即時売上確定。請求管理ロボAPI5も同時実行。</span>
+                        </span>
+                    </label>
+                </div>
+                @error('job_type')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -86,4 +133,26 @@
             </div>
         </form>
     </div>
+@section('scripts')
+<script>
+function updateEditJobTypeStyle() {
+    const authRadio    = document.querySelector('input[name="job_type"][value="AUTH"]');
+    const captureRadio = document.querySelector('input[name="job_type"][value="CAPTURE"]');
+    const labelAuth    = document.getElementById('edit-label-auth');
+    const labelCapture = document.getElementById('edit-label-capture');
+    if (!authRadio || !captureRadio) return;
+
+    if (authRadio.checked) {
+        labelAuth.classList.add('border-indigo-500', 'bg-indigo-50');
+        labelAuth.classList.remove('border-gray-200');
+        labelCapture.classList.remove('border-indigo-500', 'bg-indigo-50');
+        labelCapture.classList.add('border-gray-200');
+    } else {
+        labelCapture.classList.add('border-indigo-500', 'bg-indigo-50');
+        labelCapture.classList.remove('border-gray-200');
+        labelAuth.classList.remove('border-indigo-500', 'bg-indigo-50');
+        labelAuth.classList.add('border-gray-200');
+    }
+}
+</script>
 @endsection

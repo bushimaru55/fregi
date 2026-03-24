@@ -95,4 +95,31 @@ class BillingRoboExecutionService
         PaymentStageLogger::info(PaymentStageLogger::STAGE_API3_OK, '請求管理ロボ API3 成功', ['contract_id' => $contract->id], $correlationId);
         return ['success' => true, 'error' => null];
     }
+
+    /**
+     * AUTH（仮売上）モード専用: API1（請求先登録）のみ実行する。
+     * API1 は CPToken を使わないため、gateway AUTH 前に安全に呼べる。
+     * API2（カード登録）はトークンを消費するためスキップ。
+     *
+     * @return array{success: bool, error: string|null}
+     */
+    public function executeApi1Only(Contract $contract, Payment $payment, array $debugContext = []): array
+    {
+        $correlationId = $debugContext['correlation_id'] ?? null;
+
+        $api1Result = $this->billingService->upsertBillingFromContract($contract, null);
+        if (!$api1Result['success']) {
+            PaymentStageLogger::warning(PaymentStageLogger::STAGE_API1_FAIL, '請求管理ロボ API1 失敗 (AUTH mode)', [
+                'contract_id' => $contract->id,
+                'error' => mb_substr($api1Result['error'] ?? '', 0, 200),
+            ], $correlationId);
+            return ['success' => false, 'error' => $api1Result['error'] ?? '請求先登録に失敗しました。'];
+        }
+        PaymentStageLogger::info(PaymentStageLogger::STAGE_API1_OK, '請求管理ロボ API1 成功 (AUTH mode)', [
+            'contract_id' => $contract->id,
+            'billing_code' => $api1Result['billing_code'] ?? null,
+        ], $correlationId);
+
+        return ['success' => true, 'error' => null];
+    }
 }

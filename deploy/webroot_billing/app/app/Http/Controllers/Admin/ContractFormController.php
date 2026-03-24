@@ -18,6 +18,9 @@ class ContractFormController extends Controller
     public function index(): View
     {
         $plans = ContractPlan::active()
+            ->with(['optionProducts' => function ($q) {
+                $q->orderBy('products.display_order');
+            }])
             ->orderBy('display_order')
             ->get();
         
@@ -38,32 +41,33 @@ class ContractFormController extends Controller
     public function generate(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'plan_ids' => 'required|array|min:1',
+            'plan_ids'  => 'required|array|min:1',
             'plan_ids.*' => 'required|integer|exists:contract_plans,id',
-            'name' => ['nullable', 'string', 'max:255'],
+            'name'      => ['nullable', 'string', 'max:255'],
+            'job_type'  => ['required', 'string', 'in:CAPTURE,AUTH'],
         ], [
-            'plan_ids.required' => '少なくとも1つの製品を選択してください。',
-            'plan_ids.min' => '少なくとも1つの製品を選択してください。',
-            'plan_ids.*.exists' => '選択された製品が存在しません。',
+            'plan_ids.required'  => '少なくとも1つの製品を選択してください。',
+            'plan_ids.min'       => '少なくとも1つの製品を選択してください。',
+            'plan_ids.*.exists'  => '選択された製品が存在しません。',
+            'job_type.required'  => '決済処理方法を選択してください。',
+            'job_type.in'        => '決済処理方法の値が不正です。',
         ]);
 
         $planIds = $validated['plan_ids'];
-        sort($planIds); // IDをソートしてURLを統一
-        
-        // 閲覧画面用URL（申込フォームの閲覧用）
-        // 選択されたプランIDをクエリパラメータに含めた申込フォームURLを生成
+        sort($planIds);
+
         $viewUrl = route('contract.create', ['plans' => implode(',', $planIds)]);
-        
-        // データベースに保存（有効期限は設定しないが、管理用に保存）
-        $contractFormUrl = ContractFormUrl::create([
-            'token' => null,
-            'url' => $viewUrl,
-            'plan_ids' => $planIds,
-            'name' => $validated['name'] ?? null,
+
+        ContractFormUrl::create([
+            'token'      => null,
+            'url'        => $viewUrl,
+            'plan_ids'   => $planIds,
+            'name'       => $validated['name'] ?? null,
             'expires_at' => now()->addYears(10),
-            'is_active' => true,
+            'is_active'  => true,
+            'job_type'   => $validated['job_type'],
         ]);
-        
+
         return redirect()->route('admin.contract-forms.index')
             ->with('generated_view_url', $viewUrl)
             ->with('success', 'フォームURLが発行されました。')
@@ -75,7 +79,13 @@ class ContractFormController extends Controller
      */
     public function edit(ContractFormUrl $contractFormUrl): View
     {
-        $plans = ContractPlan::active()->orderBy('display_order')->get();
+        $plans = ContractPlan::active()
+            ->with(['optionProducts' => function ($q) {
+                $q->orderBy('products.display_order');
+            }])
+            ->orderBy('display_order')
+            ->get();
+
         return view('admin.contract-forms.edit', compact('contractFormUrl', 'plans'));
     }
 
@@ -85,14 +95,17 @@ class ContractFormController extends Controller
     public function update(Request $request, ContractFormUrl $contractFormUrl): RedirectResponse
     {
         $validated = $request->validate([
-            'name' => ['nullable', 'string', 'max:255'],
-            'plan_ids' => ['required', 'array', 'min:1'],
+            'name'       => ['nullable', 'string', 'max:255'],
+            'plan_ids'   => ['required', 'array', 'min:1'],
             'plan_ids.*' => ['required', 'integer', 'exists:contract_plans,id'],
-            'is_active' => ['required', 'boolean'],
+            'is_active'  => ['required', 'boolean'],
+            'job_type'   => ['required', 'string', 'in:CAPTURE,AUTH'],
         ], [
             'plan_ids.required' => '少なくとも1つの製品を選択してください。',
-            'plan_ids.min' => '少なくとも1つの製品を選択してください。',
+            'plan_ids.min'      => '少なくとも1つの製品を選択してください。',
             'plan_ids.*.exists' => '選択された製品が存在しません。',
+            'job_type.required' => '決済処理方法を選択してください。',
+            'job_type.in'       => '決済処理方法の値が不正です。',
         ]);
 
         $planIds = $validated['plan_ids'];
@@ -100,10 +113,11 @@ class ContractFormController extends Controller
         $viewUrl = route('contract.create', ['plans' => implode(',', $planIds)]);
 
         $contractFormUrl->update([
-            'name' => $validated['name'] ?: null,
-            'plan_ids' => $planIds,
-            'url' => $viewUrl,
+            'name'      => $validated['name'] ?: null,
+            'plan_ids'  => $planIds,
+            'url'       => $viewUrl,
             'is_active' => (bool) $validated['is_active'],
+            'job_type'  => $validated['job_type'],
         ]);
 
         return redirect()->route('admin.contract-forms.index')
