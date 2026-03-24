@@ -53,13 +53,14 @@ CREATE TABLE `contract_form_urls` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'URL名（管理用メモ）',
   `expires_at` timestamp NOT NULL COMMENT '有効期限（申込フォームURLの場合は長期間有効）',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '有効フラグ',
+  `job_type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '決済処理方法: CAPTURE=仮実同時売上 / AUTH=仮売上のみ / null=サイト設定に従う',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `contract_form_urls_token_unique` (`token`),
   KEY `contract_form_urls_is_active_expires_at_index` (`is_active`,`expires_at`),
   KEY `contract_form_urls_token_index` (`token`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -90,7 +91,7 @@ CREATE TABLE `contract_items` (
   CONSTRAINT `contract_items_contract_id_foreign` FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE,
   CONSTRAINT `contract_items_contract_plan_id_foreign` FOREIGN KEY (`contract_plan_id`) REFERENCES `contract_plans` (`id`) ON DELETE CASCADE,
   CONSTRAINT `contract_items_product_id_foreign` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -208,7 +209,7 @@ CREATE TABLE `contracts` (
   KEY `contracts_contract_plan_id_foreign` (`contract_plan_id`),
   CONSTRAINT `contracts_contract_plan_id_foreign` FOREIGN KEY (`contract_plan_id`) REFERENCES `contract_plans` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `contracts_payment_id_foreign` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -243,7 +244,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `batch` int NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -327,7 +328,7 @@ CREATE TABLE `payments` (
   UNIQUE KEY `payments_fregi_unique` (`receiptno`,`slipno`),
   KEY `payments_company_id_status_index` (`company_id`,`status`),
   KEY `payments_created_at_index` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=58 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -436,4 +437,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-23 14:53:39
+-- Dump completed on 2026-03-24 14:14:33

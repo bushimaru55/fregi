@@ -97,13 +97,13 @@ class BillingRoboExecutionService
     }
 
     /**
-     * AUTH（仮売上）モード専用: API1 → API2 のみ実行する。
-     * API5 は CAPTURE 限定のため呼ばない。
-     * 呼び出し後、RP gateway に直接 jb=AUTH で送信することで仮売上を実現する。
+     * AUTH（仮売上）モード専用: API1（請求先登録）のみ実行する。
+     * API1 は CPToken を使わないため、gateway AUTH 前に安全に呼べる。
+     * API2（カード登録）はトークンを消費するためスキップ。
      *
      * @return array{success: bool, error: string|null}
      */
-    public function executeApi1AndApi2(Contract $contract, Payment $payment, string $token, array $debugContext = []): array
+    public function executeApi1Only(Contract $contract, Payment $payment, array $debugContext = []): array
     {
         $correlationId = $debugContext['correlation_id'] ?? null;
 
@@ -119,17 +119,6 @@ class BillingRoboExecutionService
             'contract_id' => $contract->id,
             'billing_code' => $api1Result['billing_code'] ?? null,
         ], $correlationId);
-
-        $payment->refresh();
-        $api2Result = $this->creditCardService->registerToken($contract, $payment, $token, $debugContext);
-        if (!$api2Result['success']) {
-            PaymentStageLogger::warning(PaymentStageLogger::STAGE_API2_FAIL, '請求管理ロボ API2 失敗 (AUTH mode)', [
-                'contract_id' => $contract->id,
-                'error' => mb_substr($api2Result['error'] ?? '', 0, 200),
-            ], $correlationId);
-            return ['success' => false, 'error' => $api2Result['error'] ?? 'クレジットカード登録に失敗しました。'];
-        }
-        PaymentStageLogger::info(PaymentStageLogger::STAGE_API2_OK, '請求管理ロボ API2 成功 (AUTH mode)', ['contract_id' => $contract->id], $correlationId);
 
         return ['success' => true, 'error' => null];
     }
