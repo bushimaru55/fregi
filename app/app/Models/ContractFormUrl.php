@@ -11,7 +11,6 @@ class ContractFormUrl extends Model
     use HasFactory;
 
     const JOB_TYPE_CAPTURE = 'CAPTURE';
-    const JOB_TYPE_AUTH    = 'AUTH';
 
     protected $fillable = [
         'token',
@@ -30,42 +29,11 @@ class ContractFormUrl extends Model
     ];
 
     /**
-     * フォームURLに設定された job_type を返す。
-     * 未設定（null）の場合はサイト設定（config）を使用する。
+     * フォームURLに設定された job_type を返す（常に CAPTURE）。
      */
     public function resolvedJobType(): string
     {
-        if ($this->job_type) {
-            return strtoupper($this->job_type);
-        }
-        return strtoupper(config('robotpayment.job_type', 'CAPTURE'));
-    }
-
-    /**
-     * 管理画面一覧用: 現在の決済方法の主ラベル（日本語）
-     */
-    public function jobTypeListPrimaryLabel(): string
-    {
-        return match (strtoupper((string) $this->job_type)) {
-            'AUTH' => '仮売上のみ',
-            'CAPTURE' => '仮実同時売上',
-            default => 'フォーム未指定',
-        };
-    }
-
-    /**
-     * 管理画面一覧用: 補足（コード・適用元・実際に効く値）
-     */
-    public function jobTypeListSecondaryLine(): string
-    {
-        $resolved = $this->resolvedJobType();
-        $resolvedJa = $resolved === 'AUTH' ? '仮売上' : '仮実同時';
-
-        if ($this->job_type) {
-            return strtoupper($this->job_type) . ' · このフォームで固定';
-        }
-
-        return '実際の適用: ' . $resolvedJa . '（' . $resolved . '）· サイト全体設定';
+        return 'CAPTURE';
     }
 
     /**

@@ -88,7 +88,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `contract_form_urls` WRITE;
 /*!40000 ALTER TABLE `contract_form_urls` DISABLE KEYS */;
-INSERT INTO `contract_form_urls` (`id`, `token`, `url`, `plan_ids`, `name`, `expires_at`, `is_active`, `job_type`, `created_at`, `updated_at`) VALUES (1,NULL,'https://dschatbot.ai/webroot/billing/contract/create?plans=3%2C4%2C5%2C6%2C7%2C8','[\"3\", \"4\", \"5\", \"6\", \"7\", \"8\"]',NULL,'2036-03-15 22:21:41',1,'AUTH','2026-03-15 22:21:41','2026-03-15 22:21:41');
+INSERT INTO `contract_form_urls` (`id`, `token`, `url`, `plan_ids`, `name`, `expires_at`, `is_active`, `job_type`, `created_at`, `updated_at`) VALUES (1,NULL,'https://dschatbot.ai/webroot/billing/contract/create?plans=3%2C4%2C5%2C6%2C7%2C8','[\"3\", \"4\", \"5\", \"6\", \"7\", \"8\"]',NULL,'2036-03-15 22:21:41',1,'CAPTURE','2026-03-15 22:21:41','2026-03-15 22:21:41');
 /*!40000 ALTER TABLE `contract_form_urls` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

@@ -141,9 +141,8 @@
     <!-- Footer -->
     <footer class="theme-footer mt-16">
         <div class="container mx-auto px-4 py-6">
-            <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="text-center">
                 <p class="text-sm opacity-90">© 2026 DSchatbot. All rights reserved.</p>
-                <p class="text-sm opacity-80">Powered by Laravel 10</p>
             </div>
         </div>
     </footer>

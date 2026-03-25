@@ -44,13 +44,10 @@ class ContractFormController extends Controller
             'plan_ids'  => 'required|array|min:1',
             'plan_ids.*' => 'required|integer|exists:contract_plans,id',
             'name'      => ['nullable', 'string', 'max:255'],
-            'job_type'  => ['required', 'string', 'in:CAPTURE,AUTH'],
         ], [
             'plan_ids.required'  => '少なくとも1つの製品を選択してください。',
             'plan_ids.min'       => '少なくとも1つの製品を選択してください。',
             'plan_ids.*.exists'  => '選択された製品が存在しません。',
-            'job_type.required'  => '決済処理方法を選択してください。',
-            'job_type.in'        => '決済処理方法の値が不正です。',
         ]);
 
         $planIds = $validated['plan_ids'];
@@ -65,7 +62,7 @@ class ContractFormController extends Controller
             'name'       => $validated['name'] ?? null,
             'expires_at' => now()->addYears(10),
             'is_active'  => true,
-            'job_type'   => $validated['job_type'],
+            'job_type'   => 'CAPTURE',
         ]);
 
         return redirect()->route('admin.contract-forms.index')
@@ -99,13 +96,10 @@ class ContractFormController extends Controller
             'plan_ids'   => ['required', 'array', 'min:1'],
             'plan_ids.*' => ['required', 'integer', 'exists:contract_plans,id'],
             'is_active'  => ['required', 'boolean'],
-            'job_type'   => ['required', 'string', 'in:CAPTURE,AUTH'],
         ], [
             'plan_ids.required' => '少なくとも1つの製品を選択してください。',
             'plan_ids.min'      => '少なくとも1つの製品を選択してください。',
             'plan_ids.*.exists' => '選択された製品が存在しません。',
-            'job_type.required' => '決済処理方法を選択してください。',
-            'job_type.in'       => '決済処理方法の値が不正です。',
         ]);
 
         $planIds = $validated['plan_ids'];
@@ -117,7 +111,7 @@ class ContractFormController extends Controller
             'plan_ids'  => $planIds,
             'url'       => $viewUrl,
             'is_active' => (bool) $validated['is_active'],
-            'job_type'  => $validated['job_type'],
+            'job_type'  => 'CAPTURE',
         ]);
 
         return redirect()->route('admin.contract-forms.index')

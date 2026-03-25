@@ -53,7 +53,7 @@ class RobotPaymentService
 
         return DB::transaction(function () use ($sessionData, $token, $debugContext, $plans, $representativePlanId, $optionProductIds, $desiredStartDate, $amounts, $pattern, $correlationId) {
             $createData = $sessionData;
-            unset($createData['option_product_ids'], $createData['base_plan_ids'], $createData['terms_agreed'], $createData['form_job_type']);
+            unset($createData['option_product_ids'], $createData['base_plan_ids'], $createData['terms_agreed']);
             if (empty($createData['desired_start_date'])) {
                 $createData['desired_start_date'] = now()->format('Y-m-d');
             }
@@ -97,7 +97,16 @@ class RobotPaymentService
                 ]);
             }
 
-            $cod = (string) $contract->id;
+            $jobType = 'CAPTURE';
+
+            // 案2: DS + 決済タイミング + YYMMDDHHMM + 契約ID(base36 6桁)
+            // 例: DSA260324154900001V（19文字）
+            // RP 店舗オーダー(cod) と 請求管理ロボ billing_code を同一規則に揃える。
+            $cod = $this->buildUnifiedOrderCode($contract->id, $jobType, $contract->created_at);
+            if (empty($contract->billing_code)) {
+                $contract->billing_code = $cod;
+                $contract->save();
+            }
             $paymentKind = $this->patternService->isAutoBillingInitial($pattern) ? 'auto_initial' : 'normal';
             $companyId = config('robotpayment.company_id', 1);
 
@@ -128,13 +137,7 @@ class RobotPaymentService
                 'pattern' => $pattern,
             ], $correlationId);
 
-            // フォームURL発行時に設定された job_type を config より優先する
-            $jobType = strtoupper((string) (
-                $sessionData['form_job_type'] ?? config('robotpayment.job_type', 'CAPTURE')
-            ));
-
-            if ($billingRoboEnabled && $jobType !== 'AUTH') {
-                // CAPTURE モード: Billing Robo 経由で API1 → API2 → API5（トークンは API2 で使い切る）
+            if ($billingRoboEnabled) {
                 try {
                     $executionService = app(BillingRoboExecutionService::class);
                     $result = $executionService->executeForContract($contract, $payment, $token, $debugContext);
@@ -161,29 +164,7 @@ class RobotPaymentService
                 }
             }
 
-            // AUTH（仮売上）モード: API1（請求先登録）のみ実行し、API2 はスキップ。
-            // API1 は CPToken を使わないため安全に呼べる。
-            // API2 はトークンを消費するのでスキップし、CPToken は gateway AUTH に温存する。
-            if ($billingRoboEnabled && $jobType === 'AUTH') {
-                try {
-                    $executionService = app(BillingRoboExecutionService::class);
-                    $api1Result = $executionService->executeApi1Only($contract, $payment, $debugContext);
-                    if (!$api1Result['success']) {
-                        PaymentStageLogger::warning(PaymentStageLogger::STAGE_API1_FAIL, 'AUTH モード API1 失敗（gateway 送信は続行）', [
-                            'contract_id' => $contract->id,
-                            'error' => mb_substr($api1Result['error'] ?? '', 0, 200),
-                        ], $correlationId);
-                    }
-                } catch (\Throwable $e) {
-                    PaymentStageLogger::warning(PaymentStageLogger::STAGE_EXEC_FAIL, 'AUTH モード API1 例外（gateway 送信は続行）', [
-                        'contract_id' => $contract->id,
-                        'error' => mb_substr($e->getMessage(), 0, 200),
-                    ], $correlationId);
-                }
-            }
-
-            // AUTH モード、または Billing Robo 未使用時: RP gateway に直接送信
-            // CPToken は gateway のみに渡す（API2 未使用のため未消費）。
+            // Billing Robo 未使用時: RP gateway に直接送信
             $params = $this->buildGatewayParams($contract, $amounts, $pattern, $token, $payment);
             $gatewayUrl = config('robotpayment.gateway_url');
             PaymentStageLogger::info(PaymentStageLogger::STAGE_SVC_GATEWAY_SEND, 'ROBOT PAYMENT gateway 送信', [
@@ -262,10 +243,10 @@ class RobotPaymentService
     {
         $cod = $payment && $payment->merchant_order_no
             ? $payment->merchant_order_no
-            : (string) $contract->id;
+            : $this->buildUnifiedOrderCode($contract->id, config('robotpayment.job_type', 'CAPTURE'), $contract->created_at);
         $params = [
             'aid' => config('robotpayment.store_id'),
-            'jb' => config('robotpayment.job_type', 'CAPTURE'),
+            'jb' => 'CAPTURE',
             'rt' => config('robotpayment.reply_type', '0'),
             'cod' => $cod,
         ];
@@ -327,5 +308,15 @@ class RobotPaymentService
             return '送信元IPの認証に失敗しました。';
         }
         return null;
+    }
+
+    private function buildUnifiedOrderCode(?int $contractId, ?string $jobType = null, $createdAt = null): string
+    {
+        $id = $contractId ?? 0;
+        $datePart = ($createdAt ?? now())->format('ymdHi');
+        $idBase36 = strtoupper(base_convert((string) $id, 10, 36));
+        $idPart = str_pad($idBase36, 6, '0', STR_PAD_LEFT);
+
+        return 'DSC' . $datePart . $idPart;
     }
 }

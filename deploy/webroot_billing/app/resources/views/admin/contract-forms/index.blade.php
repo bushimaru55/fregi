@@ -64,7 +64,7 @@
                 </h2>
                 <p class="text-sm text-blue-900/80 mt-2">
                     <i class="fas fa-info-circle mr-1"></i>
-                    「現在の決済設定」列では、<strong>仮売上のみ</strong> / <strong>仮実同時売上</strong>のどちらが有効か、および<strong>フォームで固定</strong>か<strong>サイト全体設定</strong>かを表示します。
+                    月額決済（自動課金）では仮実同時売上（CAPTURE）のみ利用可能です。
                 </p>
             </div>
             <div class="overflow-x-auto">
@@ -76,10 +76,6 @@
                             <th class="py-3 px-6 text-left">URL</th>
                             <th class="py-3 px-6 text-left">選択製品</th>
                             <th class="py-3 px-6 text-left">製品数</th>
-                            <th class="py-3 px-6 text-left min-w-[11rem]">
-                                <span class="block">現在の決済設定</span>
-                                <span class="normal-case text-[10px] font-normal text-gray-500 font-sans tracking-normal">仮売上 / 仮実同時</span>
-                            </th>
                             <th class="py-3 px-6 text-left">有効期限</th>
                             <th class="py-3 px-6 text-left">ステータス</th>
                             <th class="py-3 px-6 text-center">操作</th>
@@ -119,34 +115,6 @@
                                 </td>
                                 <td class="py-3 px-6 text-left">
                                     {{ count($savedUrl->plan_ids) }}件
-                                </td>
-                                <td class="py-3 px-6 text-left align-top">
-                                    @php
-                                        $primary = $savedUrl->jobTypeListPrimaryLabel();
-                                        $secondary = $savedUrl->jobTypeListSecondaryLine();
-                                    @endphp
-                                    @if($savedUrl->job_type === 'AUTH')
-                                        <div class="flex flex-col gap-1 max-w-xs">
-                                            <span class="inline-flex items-center gap-1.5 w-fit bg-amber-50 border border-amber-200 text-amber-900 py-1.5 px-2.5 rounded-lg text-xs font-bold shadow-sm">
-                                                <i class="fas fa-hand-paper text-amber-600" title="仮売上"></i>{{ $primary }}
-                                            </span>
-                                            <span class="text-[11px] text-gray-600 leading-snug pl-0.5">{{ $secondary }}</span>
-                                        </div>
-                                    @elseif($savedUrl->job_type === 'CAPTURE')
-                                        <div class="flex flex-col gap-1 max-w-xs">
-                                            <span class="inline-flex items-center gap-1.5 w-fit bg-blue-50 border border-blue-200 text-blue-900 py-1.5 px-2.5 rounded-lg text-xs font-bold shadow-sm">
-                                                <i class="fas fa-bolt text-blue-600" title="仮実同時"></i>{{ $primary }}
-                                            </span>
-                                            <span class="text-[11px] text-gray-600 leading-snug pl-0.5">{{ $secondary }}</span>
-                                        </div>
-                                    @else
-                                        <div class="flex flex-col gap-1 max-w-xs">
-                                            <span class="inline-flex items-center gap-1.5 w-fit bg-slate-100 border border-slate-300 text-slate-800 py-1.5 px-2.5 rounded-lg text-xs font-bold shadow-sm">
-                                                <i class="fas fa-cog text-slate-600" title="サイト設定"></i>{{ $primary }}
-                                            </span>
-                                            <span class="text-[11px] text-gray-600 leading-snug pl-0.5">{{ $secondary }}</span>
-                                        </div>
-                                    @endif
                                 </td>
                                 <td class="py-3 px-6 text-left">
                                     {{ $savedUrl->expires_at->format('Y/m/d H:i') }}
@@ -211,39 +179,7 @@
             @enderror
         </div>
 
-        {{-- 決済処理方法 --}}
-        <div class="mb-6">
-            <p class="block text-sm font-semibold text-gray-700 mb-2">決済処理方法 <span class="text-red-500">*</span></p>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
-                    {{ old('job_type', 'AUTH') === 'AUTH' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
-                    id="label-auth">
-                    <input type="radio" name="job_type" value="AUTH"
-                        class="mt-1 w-4 h-4 text-indigo-600"
-                        {{ old('job_type', 'AUTH') === 'AUTH' ? 'checked' : '' }}
-                        onchange="updateJobTypeStyle()">
-                    <span>
-                        <span class="font-bold text-gray-800 block">仮売上のみ（AUTH）</span>
-                        <span class="text-xs text-gray-500">カードを仮押さえし、ROBOT PAYMENT管理画面で手動売上確定。</span>
-                    </span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
-                    {{ old('job_type', 'AUTH') === 'CAPTURE' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
-                    id="label-capture">
-                    <input type="radio" name="job_type" value="CAPTURE"
-                        class="mt-1 w-4 h-4 text-indigo-600"
-                        {{ old('job_type', 'AUTH') === 'CAPTURE' ? 'checked' : '' }}
-                        onchange="updateJobTypeStyle()">
-                    <span>
-                        <span class="font-bold text-gray-800 block">仮実同時売上（CAPTURE）</span>
-                        <span class="text-xs text-gray-500">申込時点で即時売上確定。請求管理ロボAPI5も同時実行。</span>
-                    </span>
-                </label>
-            </div>
-            @error('job_type')
-                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-            @enderror
-        </div>
+        <input type="hidden" name="job_type" value="CAPTURE">
         
         <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
             <div class="p-4 bg-blue-50 border-b border-blue-200">
@@ -363,26 +299,6 @@
 
 @section('scripts')
 <script>
-function updateJobTypeStyle() {
-    const authRadio    = document.querySelector('input[name="job_type"][value="AUTH"]');
-    const captureRadio = document.querySelector('input[name="job_type"][value="CAPTURE"]');
-    const labelAuth    = document.getElementById('label-auth');
-    const labelCapture = document.getElementById('label-capture');
-    if (!authRadio || !captureRadio) return;
-
-    if (authRadio.checked) {
-        labelAuth.classList.add('border-indigo-500', 'bg-indigo-50');
-        labelAuth.classList.remove('border-gray-200');
-        labelCapture.classList.remove('border-indigo-500', 'bg-indigo-50');
-        labelCapture.classList.add('border-gray-200');
-    } else {
-        labelCapture.classList.add('border-indigo-500', 'bg-indigo-50');
-        labelCapture.classList.remove('border-gray-200');
-        labelAuth.classList.remove('border-indigo-500', 'bg-indigo-50');
-        labelAuth.classList.add('border-gray-200');
-    }
-}
-
 function selectAll() {
     document.querySelectorAll('.plan-checkbox').forEach(checkbox => {
         checkbox.checked = true;

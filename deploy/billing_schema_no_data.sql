@@ -53,7 +53,7 @@ CREATE TABLE `contract_form_urls` (
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'URL名（管理用メモ）',
   `expires_at` timestamp NOT NULL COMMENT '有効期限（申込フォームURLの場合は長期間有効）',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '有効フラグ',
-  `job_type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '決済処理方法: CAPTURE=仮実同時売上 / AUTH=仮売上のみ / null=サイト設定に従う',
+  `job_type` varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT 'CAPTURE' COMMENT '決済処理方法: CAPTURE=仮実同時売上（固定）',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),

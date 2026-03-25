@@ -23,8 +23,8 @@ return [
 
     'company_id' => env('ROBOTPAYMENT_COMPANY_ID', 1),
 
-    // 決済種別: CAPTURE(即時売上) / AUTH(仮売上)
-    'job_type' => strtoupper((string) env('ROBOTPAYMENT_JOB_TYPE', 'CAPTURE')),
+    // 月額決済（自動課金）は CAPTURE（仮実同時売上）のみ対応。AUTH は RP 仕様上不可。
+    'job_type' => 'CAPTURE',
 
     'reply_type' => '0',
 

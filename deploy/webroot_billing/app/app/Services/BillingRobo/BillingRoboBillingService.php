@@ -258,7 +258,12 @@ class BillingRoboBillingService
     private function generateBillingCode(Contract $contract): string
     {
         $id = $contract->id ?? 0;
-        return 'BC' . str_pad((string) $id, 8, '0', STR_PAD_LEFT);
+        $timing = strtoupper((string) config('robotpayment.job_type', 'CAPTURE')) === 'AUTH' ? 'A' : 'C';
+        $datePart = ($contract->created_at ?? now())->format('ymdHi');
+        $idBase36 = strtoupper(base_convert((string) $id, 10, 36));
+        $idPart = str_pad($idBase36, 6, '0', STR_PAD_LEFT);
+
+        return 'DS' . $timing . $datePart . $idPart;
     }
 
     private function buildAddress1(Contract $contract): string

@@ -75,40 +75,7 @@
                 @enderror
             </div>
 
-            {{-- 決済処理方法 --}}
-            <div class="mb-6">
-                <p class="block text-sm font-semibold text-gray-700 mb-2">決済処理方法 <span class="text-red-500">*</span></p>
-                @php $currentJobType = old('job_type', $contractFormUrl->job_type ?? 'AUTH'); @endphp
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
-                        {{ $currentJobType === 'AUTH' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
-                        id="edit-label-auth">
-                        <input type="radio" name="job_type" value="AUTH"
-                            class="mt-1 w-4 h-4 text-indigo-600"
-                            {{ $currentJobType === 'AUTH' ? 'checked' : '' }}
-                            onchange="updateEditJobTypeStyle()">
-                        <span>
-                            <span class="font-bold text-gray-800 block">仮売上のみ（AUTH）</span>
-                            <span class="text-xs text-gray-500">カードを仮押さえし、ROBOT PAYMENT管理画面で手動売上確定。</span>
-                        </span>
-                    </label>
-                    <label class="flex items-start gap-3 cursor-pointer p-4 border-2 rounded-lg transition-colors
-                        {{ $currentJobType === 'CAPTURE' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300' }}"
-                        id="edit-label-capture">
-                        <input type="radio" name="job_type" value="CAPTURE"
-                            class="mt-1 w-4 h-4 text-indigo-600"
-                            {{ $currentJobType === 'CAPTURE' ? 'checked' : '' }}
-                            onchange="updateEditJobTypeStyle()">
-                        <span>
-                            <span class="font-bold text-gray-800 block">仮実同時売上（CAPTURE）</span>
-                            <span class="text-xs text-gray-500">申込時点で即時売上確定。請求管理ロボAPI5も同時実行。</span>
-                        </span>
-                    </label>
-                </div>
-                @error('job_type')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+            <input type="hidden" name="job_type" value="CAPTURE">
 
             <div class="mb-6">
                 <label class="flex items-center">
@@ -133,26 +100,4 @@
             </div>
         </form>
     </div>
-@section('scripts')
-<script>
-function updateEditJobTypeStyle() {
-    const authRadio    = document.querySelector('input[name="job_type"][value="AUTH"]');
-    const captureRadio = document.querySelector('input[name="job_type"][value="CAPTURE"]');
-    const labelAuth    = document.getElementById('edit-label-auth');
-    const labelCapture = document.getElementById('edit-label-capture');
-    if (!authRadio || !captureRadio) return;
-
-    if (authRadio.checked) {
-        labelAuth.classList.add('border-indigo-500', 'bg-indigo-50');
-        labelAuth.classList.remove('border-gray-200');
-        labelCapture.classList.remove('border-indigo-500', 'bg-indigo-50');
-        labelCapture.classList.add('border-gray-200');
-    } else {
-        labelCapture.classList.add('border-indigo-500', 'bg-indigo-50');
-        labelCapture.classList.remove('border-gray-200');
-        labelAuth.classList.remove('border-indigo-500', 'bg-indigo-50');
-        labelAuth.classList.add('border-gray-200');
-    }
-}
-</script>
 @endsection
