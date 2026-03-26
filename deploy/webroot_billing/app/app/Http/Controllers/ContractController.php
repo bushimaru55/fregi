@@ -533,7 +533,6 @@ class ContractController extends Controller
 
         $customerPhone = $data['phone'] ?? '';
         $customerPhoneDigits = preg_replace('/\D/', '', $customerPhone);
-        $billingRoboEnabled = (bool) (config('billing_robo.base_url') && config('billing_robo.user_id'));
 
         return view('contracts.payment', [
             'amounts' => $amounts,
@@ -541,7 +540,7 @@ class ContractController extends Controller
             'customer_email' => $data['email'] ?? '',
             'customer_phone' => $customerPhoneDigits,
             'error' => $paymentError,
-            'use_zero_amount_for_3ds' => $billingRoboEnabled,
+            'use_zero_amount_for_3ds' => true,
         ]);
     }
 

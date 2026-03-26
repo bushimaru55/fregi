@@ -1,12 +1,12 @@
 @extends('layouts.public')
 
-@section('title', 'お支払い')
+@section('title', 'クレジットカード登録')
 
 @section('content')
 <div class="max-w-4xl mx-auto px-4 md:px-0 py-8">
     <div class="mb-6 md:mb-8 text-center">
-        <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2">お支払い</h1>
-        <p class="text-sm md:text-base text-gray-600">クレジットカード情報を入力し、送信してください。</p>
+        <h1 class="text-2xl md:text-4xl font-bold text-gray-800 mb-2">クレジットカード登録</h1>
+        <p class="text-sm md:text-base text-gray-600">お支払いに使用するクレジットカード情報をご登録ください。</p>
     </div>
 
     @if(isset($error) && $error)
@@ -20,11 +20,9 @@
 
     {{-- 金額サマリー --}}
     <div class="payment-card p-4 md:p-6 mb-4 md:mb-6">
-        <h2 class="text-xl font-bold text-gray-800 mb-3">ご請求金額</h2>
-        <p class="text-2xl font-bold" style="color: var(--color-primary);">{{ number_format($amounts['ta'] ?? 0) }}円（税込）</p>
-        @if(!empty($amounts['amount_recurring']))
-            <p class="text-sm text-gray-600 mt-2">初回お支払い後、毎月 {{ number_format($amounts['amount_recurring']) }}円（税込）が自動でお支払いされます。</p>
-        @endif
+        <h2 class="text-xl font-bold text-gray-800 mb-3">ご利用金額</h2>
+        <p class="text-2xl font-bold" style="color: var(--color-primary);">{{ number_format($amounts['ta'] ?? 0) }}円（税込）/月</p>
+        <p class="text-sm text-gray-600 mt-2">この画面ではカード情報の登録のみを行います。即時の課金は発生しません。</p>
     </div>
 
     {{-- カード入力フォーム（RP トークン方式 + 3DS2.0） --}}
@@ -77,7 +75,7 @@
 
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
                 <button type="button" id="btn-submit-payment" class="btn-cta px-6 py-3 font-bold rounded-lg shadow-sm">
-                    <i class="fas fa-lock mr-2"></i>支払いを実行する
+                    <i class="fas fa-lock mr-2"></i>カードを登録する
                 </button>
                 <a href="{{ route('contract.confirm.get') }}" class="btn-primary px-6 py-3 font-bold rounded-lg shadow-sm text-center">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
@@ -131,6 +129,8 @@
             btn.disabled = false;
             return;
         }
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>登録中...';
+
         if (cvv.length < 3 || cvv.length > 4) {
             alert('セキュリティコードは3桁または4桁で入力してください。');
             btn.disabled = false;

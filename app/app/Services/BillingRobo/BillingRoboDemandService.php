@@ -26,6 +26,9 @@ class BillingRoboDemandService
     /** 対象期間形式: ○年○月分 */
     private const PERIOD_FORMAT_MONTH = 0;
 
+    /** 請求書テンプレート: シンプル（API5 と共通） */
+    private const BILL_TEMPLATE_SIMPLE = 10010;
+
     public function __construct(
         private BillingRoboApiClient $client,
         private ContractToBillingLinesMapper $linesMapper
@@ -165,6 +168,7 @@ class BillingRoboDemandService
                 'tax_category' => $line['tax_category'],
                 'tax' => $line['tax'],
                 'billing_method' => self::BILLING_METHOD_AUTO_MAIL,
+                'bill_template_code' => self::BILL_TEMPLATE_SIMPLE,
                 'start_date' => $startDate,
                 'period_format' => self::PERIOD_FORMAT_MONTH,
                 'issue_month' => $issueMonth,

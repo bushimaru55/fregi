@@ -6,7 +6,7 @@
 <div class="max-w-4xl mx-auto px-4 md:px-0">
     {{-- タイトル（入力フォームと同様・背景は塗りつぶさない） --}}
     <div class="mb-6 md:mb-8 text-center">
-        <p class="text-sm md:text-base text-gray-600 mb-2">申込を受け付けました。ご登録のメールアドレスに確認メールをお送りしております。</p>
+        <p class="text-sm md:text-base text-gray-600 mb-2">お申し込みとクレジットカードの登録を受け付けました。ご登録のメールアドレスに確認メールをお送りしております。</p>
         <h1 class="text-2xl md:text-4xl font-bold text-gray-800">お申し込みありがとうございます！</h1>
         <div class="mt-3 inline-block">
             <i class="fas fa-check-circle text-3xl md:text-4xl theme-price"></i>
@@ -81,6 +81,7 @@
             </h3>
             <ol class="list-decimal list-inside space-y-2 text-gray-700">
                 <li>ご登録のメールアドレスに契約内容の確認メールをお送りします。</li>
+                <li>毎月のご利用料金は、登録されたクレジットカードへ請求いたします。</li>
                 <li>アカウント情報をメールでお知らせします。</li>
                 <li>サービスをご利用いただけます。</li>
             </ol>
