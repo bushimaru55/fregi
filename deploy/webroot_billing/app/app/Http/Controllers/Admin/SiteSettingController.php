@@ -251,19 +251,19 @@ class SiteSettingController extends Controller
     {
         return [
             'within' => [
-                'issue_month' => 0,
-                'issue_day' => 99,
-                'sending_month' => 0,
-                'sending_day' => 99,
-                'deadline_month' => 1,
-                'deadline_day' => 1,
-            ],
-            'after' => [
                 'issue_month' => 1,
                 'issue_day' => 99,
                 'sending_month' => 1,
                 'sending_day' => 99,
                 'deadline_month' => 2,
+                'deadline_day' => 1,
+            ],
+            'after' => [
+                'issue_month' => 0,
+                'issue_day' => 99,
+                'sending_month' => 0,
+                'sending_day' => 99,
+                'deadline_month' => 1,
                 'deadline_day' => 1,
             ],
         ];

@@ -16,19 +16,19 @@ class BillingScheduleService
 {
     private const TIMEZONE = 'Asia/Tokyo';
 
-    /** 月末5営業日以内: 当月末日で発行・送付・決済（0=当月, 99=末日） */
-    private const WITHIN_ISSUE_MONTH = 0;
+    /** 月末5営業日以内: 翌月末日で発行・送付、翌々月1日決済（1=翌月, 2=翌々月, 99=末日） */
+    private const WITHIN_ISSUE_MONTH = 1;
     private const WITHIN_ISSUE_DAY = 99;
-    private const WITHIN_SENDING_MONTH = 0;
+    private const WITHIN_SENDING_MONTH = 1;
     private const WITHIN_SENDING_DAY = 99;
-    private const WITHIN_DEADLINE_MONTH = 0;
-    private const WITHIN_DEADLINE_DAY = 99;
+    private const WITHIN_DEADLINE_MONTH = 2;
+    private const WITHIN_DEADLINE_DAY = 1;
 
-    /** 月末5営業日以降: 翌月1日で発行・送付・決済（1=翌月, 1=1日） */
-    private const AFTER_ISSUE_MONTH = 1;
-    private const AFTER_ISSUE_DAY = 1;
-    private const AFTER_SENDING_MONTH = 1;
-    private const AFTER_SENDING_DAY = 1;
+    /** 月末5営業日以前: 当月末日で発行・送付、翌月1日決済（0=当月, 1=翌月, 99=末日） */
+    private const AFTER_ISSUE_MONTH = 0;
+    private const AFTER_ISSUE_DAY = 99;
+    private const AFTER_SENDING_MONTH = 0;
+    private const AFTER_SENDING_DAY = 99;
     private const AFTER_DEADLINE_MONTH = 1;
     private const AFTER_DEADLINE_DAY = 1;
 
