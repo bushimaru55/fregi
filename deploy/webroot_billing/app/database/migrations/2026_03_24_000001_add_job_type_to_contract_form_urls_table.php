@@ -9,10 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contract_form_urls', function (Blueprint $table) {
-            // 決済処理方法: CAPTURE（仮実同時売上）/ AUTH（仮売上のみ）
-            // null はデフォルト（.env の ROBOTPAYMENT_JOB_TYPE に従う）
-            $table->string('job_type', 10)->nullable()->default(null)->after('is_active')
-                ->comment('決済処理方法: CAPTURE=仮実同時売上 / AUTH=仮売上のみ / null=サイト設定に従う');
+            // 月額決済（自動課金）は CAPTURE のみ対応（RP仕様制限）
+            $table->string('job_type', 10)->nullable()->default('CAPTURE')->after('is_active')
+                ->comment('決済処理方法: CAPTURE=仮実同時売上（固定）');
         });
     }
 

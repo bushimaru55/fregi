@@ -63,13 +63,16 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label for="fn" class="block text-sm font-medium text-gray-700 mb-1">名義（姓）</label>
-                    <input type="text" id="fn" name="fn" maxlength="50" class="w-full border border-gray-300 rounded-lg px-3 py-2" autocomplete="cc-given-name">
+                    <input type="text" id="fn" name="fn" maxlength="50" placeholder="DS"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2" autocomplete="cc-given-name">
                 </div>
                 <div>
                     <label for="ln" class="block text-sm font-medium text-gray-700 mb-1">名義（名）</label>
-                    <input type="text" id="ln" name="ln" maxlength="50" class="w-full border border-gray-300 rounded-lg px-3 py-2" autocomplete="cc-family-name">
+                    <input type="text" id="ln" name="ln" maxlength="50" placeholder="TAROU"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2" autocomplete="cc-family-name">
                 </div>
             </div>
+            <p class="text-xs text-gray-500 -mt-2 mb-4">入力例：名義（姓）<span class="font-mono">DS</span>　名義（名）<span class="font-mono">TAROU</span>（カードに刻印されたローマ字）</p>
 
             <div id="EMV3DS_INPUT_FORM"></div>
 
