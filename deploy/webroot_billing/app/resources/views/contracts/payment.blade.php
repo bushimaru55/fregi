@@ -80,7 +80,7 @@
                 <button type="button" id="btn-submit-payment" class="btn-cta px-6 py-3 font-bold rounded-lg shadow-sm">
                     <i class="fas fa-lock mr-2"></i>カードを登録する
                 </button>
-                <a href="{{ route('contract.confirm.get') }}" class="btn-primary px-6 py-3 font-bold rounded-lg shadow-sm text-center">
+                <a href="{{ route('contract.create', ['resume' => '1']) }}" class="btn-primary px-6 py-3 font-bold rounded-lg shadow-sm text-center">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
             </div>

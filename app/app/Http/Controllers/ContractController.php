@@ -58,7 +58,18 @@ class ContractController extends Controller
             }
             
             $termsOfService = SiteSetting::getValue('terms_of_service', '');
-            
+
+            // 決済ページ「戻る」からの再入力: セッションの申込内容をフォームの old() に載せる
+            if ($request->query('resume') === '1' && $request->session()->has('contract_confirm_data')) {
+                $confirm = $request->session()->get('contract_confirm_data');
+                if (is_array($confirm) && $confirm !== []) {
+                    $request->session()->put('_old_input', array_merge(
+                        $request->session()->get('_old_input', []),
+                        $confirm
+                    ));
+                }
+            }
+
             // オプション商品は後でJavaScriptで動的に取得（選択されたベース商品に応じて）
             // 初期表示時は空のコレクションを渡す
             $optionProducts = collect();

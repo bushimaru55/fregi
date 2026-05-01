@@ -63,10 +63,10 @@ class ContractRequest extends FormRequest
             'contact_name_kana' => ['nullable', 'string', 'max:255', 'regex:/^[ァ-ヶー\s]+$/u'],
             'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'regex:/^[0-9\-]+$/'],
-            'postal_code' => ['nullable', 'string', 'regex:/^\d{3}-?\d{4}$/'],
-            'prefecture' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'address_line1' => ['nullable', 'string', 'max:255'],
+            'postal_code' => ['required', 'string', 'regex:/^\d{3}-?\d{4}$/'],
+            'prefecture' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'],
+            'address_line1' => ['required', 'string', 'max:255'],
             'address_line2' => ['nullable', 'string', 'max:255'],
             
             // ご利用情報

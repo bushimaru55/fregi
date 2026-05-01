@@ -128,12 +128,12 @@
                 {{-- 郵便番号 --}}
                 <div class="md:col-span-2">
                     <label for="postal_code" class="block text-sm font-semibold text-gray-700 mb-2">
-                        郵便番号
+                        郵便番号 <span class="text-red-500">*</span>
                     </label>
                     <div class="flex gap-2">
                         <input type="text" name="postal_code" id="postal_code" maxlength="8"
                             class="flex-1 px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('postal_code') border-red-500 @enderror" 
-                            value="{{ old('postal_code') }}" placeholder="123-4567">
+                            value="{{ old('postal_code') }}" placeholder="123-4567" required inputmode="numeric" autocomplete="postal-code">
                         <button type="button" id="search_address_btn" 
                             class="btn-primary px-3 md:px-4 py-3 md:py-2 transition duration-300 text-sm md:text-base whitespace-nowrap">
                             <i class="fas fa-search mr-2"></i>検索
@@ -152,35 +152,44 @@
                 {{-- 都道府県 --}}
                 <div>
                     <label for="prefecture" class="block text-sm font-semibold text-gray-700 mb-2">
-                        都道府県
+                        都道府県 <span class="text-red-500">*</span>
                     </label>
-                    <select name="prefecture" id="prefecture" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base">
+                    <select name="prefecture" id="prefecture" required
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('prefecture') border-red-500 @enderror">
                         <option value="">選択してください</option>
                         @foreach(['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'] as $pref)
                             <option value="{{ $pref }}" {{ old('prefecture') == $pref ? 'selected' : '' }}>{{ $pref }}</option>
                         @endforeach
                     </select>
+                    @error('prefecture')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- 市区町村 --}}
                 <div>
                     <label for="city" class="block text-sm font-semibold text-gray-700 mb-2">
-                        市区町村
+                        市区町村 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="city" id="city" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
-                        value="{{ old('city') }}" placeholder="渋谷区">
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('city') border-red-500 @enderror" 
+                        value="{{ old('city') }}" placeholder="渋谷区" required autocomplete="address-level2">
+                    @error('city')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- 番地 --}}
                 <div>
                     <label for="address_line1" class="block text-sm font-semibold text-gray-700 mb-2">
-                        番地
+                        番地 <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="address_line1" id="address_line1" 
-                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base" 
-                        value="{{ old('address_line1') }}" placeholder="渋谷1-2-3">
+                        class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('address_line1') border-red-500 @enderror" 
+                        value="{{ old('address_line1') }}" placeholder="渋谷1-2-3" required autocomplete="street-address">
+                    @error('address_line1')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- 建物名 --}}
