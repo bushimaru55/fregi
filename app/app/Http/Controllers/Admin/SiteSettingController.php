@@ -249,24 +249,18 @@ class SiteSettingController extends Controller
      */
     private function getDefaultBillingCycleSchedule(): array
     {
-        return [
-            'within' => [
-                'issue_month' => 1,
-                'issue_day' => 99,
-                'sending_month' => 1,
-                'sending_day' => 99,
-                'deadline_month' => 2,
-                'deadline_day' => 1,
-            ],
-            'after' => [
-                'issue_month' => 0,
-                'issue_day' => 99,
-                'sending_month' => 0,
-                'sending_day' => 99,
-                'deadline_month' => 1,
-                'deadline_day' => 1,
-            ],
+        // start_date を「課金開始月の1日」で送る前提のオフセット。
+        // 請求書発行=start_dateの前月末日（-1/99）、決済期限=start_date月の1日（0/1）。
+        // within/after で同じ値（差分は start_date 側で吸収される）。
+        $block = [
+            'issue_month' => -1,
+            'issue_day' => 99,
+            'sending_month' => -1,
+            'sending_day' => 99,
+            'deadline_month' => 0,
+            'deadline_day' => 1,
         ];
+        return ['within' => $block, 'after' => $block];
     }
 
     /**
@@ -293,19 +287,21 @@ class SiteSettingController extends Controller
      */
     public function updateBillingCycle(Request $request)
     {
+        $monthIn = 'in:-2,-1,0,1,2';
+        $dayIn = 'in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99';
         $rules = [
-            'within_issue_month' => 'required|integer|in:0,1,2',
-            'within_issue_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
-            'within_sending_month' => 'required|integer|in:0,1,2',
-            'within_sending_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
-            'within_deadline_month' => 'required|integer|in:0,1,2',
-            'within_deadline_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
-            'after_issue_month' => 'required|integer|in:0,1,2',
-            'after_issue_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
-            'after_sending_month' => 'required|integer|in:0,1,2',
-            'after_sending_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
-            'after_deadline_month' => 'required|integer|in:0,1,2',
-            'after_deadline_day' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,99',
+            'within_issue_month' => "required|integer|{$monthIn}",
+            'within_issue_day' => "required|integer|{$dayIn}",
+            'within_sending_month' => "required|integer|{$monthIn}",
+            'within_sending_day' => "required|integer|{$dayIn}",
+            'within_deadline_month' => "required|integer|{$monthIn}",
+            'within_deadline_day' => "required|integer|{$dayIn}",
+            'after_issue_month' => "required|integer|{$monthIn}",
+            'after_issue_day' => "required|integer|{$dayIn}",
+            'after_sending_month' => "required|integer|{$monthIn}",
+            'after_sending_day' => "required|integer|{$dayIn}",
+            'after_deadline_month' => "required|integer|{$monthIn}",
+            'after_deadline_day' => "required|integer|{$dayIn}",
         ];
         $validator = Validator::make($request->all(), $rules, [
             'within_issue_month.required' => '月末5営業日以内の「発行日（月）」を選択してください。',

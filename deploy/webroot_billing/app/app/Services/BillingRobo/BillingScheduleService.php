@@ -16,25 +16,37 @@ class BillingScheduleService
 {
     private const TIMEZONE = 'Asia/Tokyo';
 
-    /** 月末5営業日以内: 翌月末日で発行・送付、翌々月1日決済（1=翌月, 2=翌々月, 99=末日） */
-    private const WITHIN_ISSUE_MONTH = 1;
+    /*
+     * 仕様（利用規約 第4条 4-5 項）
+     *   月末5営業日以前申込: 請求書発行=申込月末, 決済(=売上計上)=翌月1日
+     *   月末5営業日以内申込: 請求書発行=申込翌月末, 決済(=売上計上)=翌々月1日
+     *
+     * 実装方針
+     *   - start_date は「課金開始月の1日」(以前→翌月1日 / 以内→翌々月1日) を送る。
+     *     → Billing Robo の「対象期間開始日」設定により 売上計上日 が自動で start_date月の1日になる。
+     *   - 発行日・送付日は start_date の前月末日（issue_month=-1, day=99）。
+     *   - 決済期限は start_date 月の1日（deadline_month=0, day=1）。
+     *   - 上記オフセットは within/after で同じ。差分は start_date のみ。
+     *   - issue_month/deadline_month の値域: API 仕様 -60〜60 を許容。
+     */
+    private const WITHIN_ISSUE_MONTH = -1;
     private const WITHIN_ISSUE_DAY = 99;
-    private const WITHIN_SENDING_MONTH = 1;
+    private const WITHIN_SENDING_MONTH = -1;
     private const WITHIN_SENDING_DAY = 99;
-    private const WITHIN_DEADLINE_MONTH = 2;
+    private const WITHIN_DEADLINE_MONTH = 0;
     private const WITHIN_DEADLINE_DAY = 1;
 
-    /** 月末5営業日以前: 当月末日で発行・送付、翌月1日決済（0=当月, 1=翌月, 99=末日） */
-    private const AFTER_ISSUE_MONTH = 0;
+    private const AFTER_ISSUE_MONTH = -1;
     private const AFTER_ISSUE_DAY = 99;
-    private const AFTER_SENDING_MONTH = 0;
+    private const AFTER_SENDING_MONTH = -1;
     private const AFTER_SENDING_DAY = 99;
-    private const AFTER_DEADLINE_MONTH = 1;
+    private const AFTER_DEADLINE_MONTH = 0;
     private const AFTER_DEADLINE_DAY = 1;
 
     /**
-     * 指定日が当該月の「月末5営業日」に含まれるか。
-     * 営業日 = 土日を除く。月末から数えて営業日5日分のいずれかであれば true。
+     * 指定日が「月末最終5営業日から月末まで」の期間に含まれるか。
+     * 営業日 = 土日を除く。最終5営業日のうち最も早い日(=しきい値)以降、月末日までを true とする。
+     * しきい値日以降であれば、その後の土日も「以内」として扱う（利用規約 第4条 4-5 項）。
      */
     public function isWithinLast5BusinessDaysOfMonth(DateTimeInterface $date): bool
     {
@@ -42,8 +54,12 @@ class BillingScheduleService
         $year = (int) $carbon->format('Y');
         $month = (int) $carbon->format('n');
         $last5 = $this->getLast5BusinessDaysOfMonth($year, $month);
+        if ($last5 === []) {
+            return false;
+        }
+        $threshold = min($last5);
         $day = (int) $carbon->format('j');
-        return in_array($day, $last5, true);
+        return $day >= $threshold;
     }
 
     /**

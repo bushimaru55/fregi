@@ -40,31 +40,41 @@ class BillingScheduleServiceTest extends TestCase
         $this->assertTrue($this->service->isWithinLast5BusinessDaysOfMonth($date));
     }
 
+    public function test_is_within_last_5_business_days_returns_true_on_weekend_after_threshold(): void
+    {
+        // 2026/05 の最終5営業日は [25,26,27,28,29]、しきい値=25。
+        // 25以降の土日（30=Sat, 31=Sun）も「以内」扱い。
+        $sat = Carbon::create(2026, 5, 30, 12, 0, 0, 'Asia/Tokyo');
+        $sun = Carbon::create(2026, 5, 31, 12, 0, 0, 'Asia/Tokyo');
+        $this->assertTrue($this->service->isWithinLast5BusinessDaysOfMonth($sat));
+        $this->assertTrue($this->service->isWithinLast5BusinessDaysOfMonth($sun));
+    }
+
     public function test_is_within_last_5_business_days_returns_false_on_24th(): void
     {
         $date = Carbon::create(2026, 3, 24, 12, 0, 0, 'Asia/Tokyo');
         $this->assertFalse($this->service->isWithinLast5BusinessDaysOfMonth($date));
     }
 
-    public function test_get_schedule_for_date_within_last_5_uses_next_month_end_for_issue(): void
+    public function test_get_schedule_for_date_within_last_5_uses_prev_month_end_and_current_month_first(): void
     {
-        // 月末5営業日以内 → 翌月末発行・翌々月1日決済
+        // start_date は「課金開始月の1日」前提なので、
+        // 請求書発行=start_date前月末日(-1/99)、決済期限=start_date月1日(0/1)で within も after も同値
         $date = Carbon::create(2026, 3, 25, 12, 0, 0, 'Asia/Tokyo');
         $schedule = $this->service->getScheduleForDate($date);
-        $this->assertSame(1, $schedule['issue_month']);
+        $this->assertSame(-1, $schedule['issue_month']);
         $this->assertSame(99, $schedule['issue_day']);
-        $this->assertSame(2, $schedule['deadline_month']);
+        $this->assertSame(0, $schedule['deadline_month']);
         $this->assertSame(1, $schedule['deadline_day']);
     }
 
-    public function test_get_schedule_for_date_after_last_5_uses_current_month_end_for_issue(): void
+    public function test_get_schedule_for_date_after_last_5_uses_prev_month_end_and_current_month_first(): void
     {
-        // 月末5営業日以前 → 当月末発行・翌月1日決済
         $date = Carbon::create(2026, 3, 24, 12, 0, 0, 'Asia/Tokyo');
         $schedule = $this->service->getScheduleForDate($date);
-        $this->assertSame(0, $schedule['issue_month']);
+        $this->assertSame(-1, $schedule['issue_month']);
         $this->assertSame(99, $schedule['issue_day']);
-        $this->assertSame(1, $schedule['deadline_month']);
+        $this->assertSame(0, $schedule['deadline_month']);
         $this->assertSame(1, $schedule['deadline_day']);
     }
 
@@ -73,8 +83,7 @@ class BillingScheduleServiceTest extends TestCase
         $contract = new Contract;
         $contract->desired_start_date = Carbon::create(2026, 3, 31, 0, 0, 0, 'Asia/Tokyo');
         $schedule = $this->service->getScheduleForApplication($contract);
-        // 3/31 は月末5営業日以内 → within ブロック
-        $this->assertSame(1, $schedule['issue_month']);
+        $this->assertSame(-1, $schedule['issue_month']);
         $this->assertSame(99, $schedule['issue_day']);
     }
 
