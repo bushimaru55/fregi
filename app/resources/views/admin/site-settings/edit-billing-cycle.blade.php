@@ -45,7 +45,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">請求書発行日</label>
                         <div class="flex gap-2 items-center">
                             <select name="within_issue_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_issue_month', $schedule['within']['issue_month'] ?? 0) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_issue_month', $schedule['within']['issue_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="within_issue_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('within_issue_day', $schedule['within']['issue_day'] ?? 99) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
@@ -56,7 +56,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">請求書送付日</label>
                         <div class="flex gap-2 items-center">
                             <select name="within_sending_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_sending_month', $schedule['within']['sending_month'] ?? 0) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_sending_month', $schedule['within']['sending_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="within_sending_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('within_sending_day', $schedule['within']['sending_day'] ?? 99) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
@@ -67,7 +67,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">決済期限</label>
                         <div class="flex gap-2 items-center">
                             <select name="within_deadline_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_deadline_month', $schedule['within']['deadline_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('within_deadline_month', $schedule['within']['deadline_month'] ?? 2) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="within_deadline_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('within_deadline_day', $schedule['within']['deadline_day'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
@@ -87,7 +87,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">請求書発行日</label>
                         <div class="flex gap-2 items-center">
                             <select name="after_issue_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_issue_month', $schedule['after']['issue_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_issue_month', $schedule['after']['issue_month'] ?? 0) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="after_issue_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('after_issue_day', $schedule['after']['issue_day'] ?? 99) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
@@ -98,7 +98,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">請求書送付日</label>
                         <div class="flex gap-2 items-center">
                             <select name="after_sending_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_sending_month', $schedule['after']['sending_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_sending_month', $schedule['after']['sending_month'] ?? 0) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="after_sending_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('after_sending_day', $schedule['after']['sending_day'] ?? 99) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
@@ -109,7 +109,7 @@
                         <label class="block text-sm font-semibold text-gray-700 mb-2">決済期限</label>
                         <div class="flex gap-2 items-center">
                             <select name="after_deadline_month" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
-                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_deadline_month', $schedule['after']['deadline_month'] ?? 2) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
+                                @foreach($monthOptions as $v => $l) <option value="{{ $v }}" {{ old('after_deadline_month', $schedule['after']['deadline_month'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach
                             </select>
                             <select name="after_deadline_day" class="flex-1 rounded-lg border-gray-300 theme-input text-sm" required>
                                 @foreach($dayOptions as $v => $l) <option value="{{ $v }}" {{ old('after_deadline_day', $schedule['after']['deadline_day'] ?? 1) == $v ? 'selected' : '' }}>{{ $l }}</option> @endforeach

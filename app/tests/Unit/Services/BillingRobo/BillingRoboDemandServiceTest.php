@@ -4,6 +4,7 @@ namespace Tests\Unit\Services\BillingRobo;
 
 use App\Models\Contract;
 use App\Services\BillingRobo\BillingRoboDemandService;
+use App\Services\BillingRobo\BillingScheduleService;
 use App\Services\BillingRobo\ContractToBillingLinesMapper;
 use Tests\TestCase;
 
@@ -30,7 +31,7 @@ class BillingRoboDemandServiceTest extends TestCase
         ]);
 
         $client = $this->createMock(\App\Services\BillingRobo\BillingRoboApiClient::class);
-        $service = new BillingRoboDemandService($client, $mockMapper);
+        $service = new BillingRoboDemandService($client, $mockMapper, new BillingScheduleService);
 
         $schedule = [
             'issue_month' => 1,
@@ -72,7 +73,7 @@ class BillingRoboDemandServiceTest extends TestCase
         ]);
 
         $client = $this->createMock(\App\Services\BillingRobo\BillingRoboApiClient::class);
-        $service = new BillingRoboDemandService($client, $mockMapper);
+        $service = new BillingRoboDemandService($client, $mockMapper, new BillingScheduleService);
 
         $demands = $service->buildDemandArray($contract, null);
 

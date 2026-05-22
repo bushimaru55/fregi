@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\ContractItem;
 use App\Models\ContractPlan;
 use App\Models\Product;
+use App\Services\BillingRobo\BillingScheduleService;
 use Carbon\Carbon;
 
 /**
@@ -16,6 +17,10 @@ class PurchasePatternService
     public const PATTERN_MONTHLY_ONLY = 'monthly_only';           // A
     public const PATTERN_INITIAL_PLUS_RECURRING = 'initial_plus_recurring'; // B
     public const PATTERN_ONE_TIME_ONLY = 'one_time_only';        // C
+
+    public function __construct(
+        private BillingScheduleService $scheduleService
+    ) {}
 
     /**
      * 契約に紐づく明細からパターンを判定
@@ -131,15 +136,15 @@ class PurchasePatternService
     }
 
     /**
-     * 課金開始日 ac4（翌月1日を標準。申込日が1日なら翌月1日）
+     * 課金開始日 ac4（月末5営業日ルールに準拠）。
+     *   申込日が月末5営業日以内 → 翌々月1日
+     *   それ以外（=月末5営業日以前） → 翌月1日
+     * BillingRobo 側 API3 の start_date と整合させる。
      */
     private function computeAc4(Carbon $desiredDate): string
     {
-        $day = (int) $desiredDate->format('d');
-        if ($day === 1) {
-            return $desiredDate->copy()->addMonth()->format('Y/m/d');
-        }
-        return $desiredDate->copy()->addMonth()->startOfMonth()->format('Y/m/d');
+        $offsetMonths = $this->scheduleService->isWithinLast5BusinessDaysOfMonth($desiredDate) ? 2 : 1;
+        return $desiredDate->copy()->addMonthsNoOverflow($offsetMonths)->startOfMonth()->format('Y/m/d');
     }
 
     /**

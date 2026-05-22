@@ -35,7 +35,8 @@ class BillingRoboBulkRegisterService
      */
     public function __construct(
         private BillingRoboApiClient $client,
-        private ContractToBillingLinesMapper $linesMapper
+        private ContractToBillingLinesMapper $linesMapper,
+        private BillingScheduleService $scheduleService
     ) {}
 
     /**
@@ -174,13 +175,14 @@ class BillingRoboBulkRegisterService
         ];
     }
 
+    /**
+     * API5 の start_date も「課金開始月の1日」で組み立てる（API3 と整合）。
+     */
     private function formatStartDate(Contract $contract): string
     {
-        $date = $contract->desired_start_date ?? $contract->actual_start_date ?? now();
-        if (is_string($date)) {
-            $date = \Carbon\Carbon::parse($date);
-        }
-        return $date->format('Y/m/d');
+        return $this->scheduleService
+            ->getBillingStartDateForApplication($contract)
+            ->format('Y/m/d');
     }
 
     /** @return array{billing_individual_number?: int, billing_individual_code?: string} */

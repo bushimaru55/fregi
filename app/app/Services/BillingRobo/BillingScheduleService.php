@@ -47,6 +47,25 @@ class BillingScheduleService
     }
 
     /**
+     * 課金開始月の1日を返す。
+     * 利用規約 第4条 4-5 項のルール:
+     *   申込日が月末5営業日「以前」 → 翌月1日が課金開始日
+     *   申込日が月末5営業日「以内」 → 翌々月1日が課金開始日
+     * 申込日の基準は desired_start_date（無ければ actual_start_date / now()）。
+     */
+    public function getBillingStartDateForApplication(Contract $contract): Carbon
+    {
+        $base = $contract->desired_start_date ?? $contract->actual_start_date ?? null;
+        $date = $base instanceof DateTimeInterface
+            ? Carbon::instance($base)->timezone(self::TIMEZONE)
+            : ($base !== null
+                ? Carbon::parse((string) $base, self::TIMEZONE)
+                : Carbon::now(self::TIMEZONE));
+        $offsetMonths = $this->isWithinLast5BusinessDaysOfMonth($date) ? 2 : 1;
+        return $date->copy()->addMonthsNoOverflow($offsetMonths)->startOfMonth();
+    }
+
+    /**
      * 当該月の月末5営業日（日付のリスト）を返す。
      *
      * @return array<int>
