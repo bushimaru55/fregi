@@ -76,7 +76,7 @@
 {{-- ご利用情報 --}}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
 <tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">ご利用情報</td></tr>
-<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">ご利用URL・ドメイン：{{ $contract->usage_url_domain }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">ウェブサイトのURL：{{ $contract->usage_url_domain }}</td></tr>
 <tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">体験版からのインポート：{{ $contract->import_from_trial ? '希望する' : '希望しない' }}</td></tr>
 </table>
 

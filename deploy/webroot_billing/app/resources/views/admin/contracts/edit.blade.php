@@ -235,7 +235,7 @@
             <h2 class="text-xl font-bold text-gray-800 mb-4 pb-2 theme-section-border">その他</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
-                    <label for="usage_url_domain" class="block text-sm font-semibold text-gray-700 mb-2">ご利用URL・ドメイン</label>
+                    <label for="usage_url_domain" class="block text-sm font-semibold text-gray-700 mb-2">ウェブサイトのURL</label>
                     <input type="text" name="usage_url_domain" id="usage_url_domain" value="{{ old('usage_url_domain', $contract->usage_url_domain) }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('usage_url_domain') border-red-500 @enderror">
                     @error('usage_url_domain')

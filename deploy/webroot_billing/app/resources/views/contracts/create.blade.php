@@ -211,10 +211,10 @@
             </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {{-- ご利用URL・ドメイン --}}
+                {{-- ウェブサイトのURL --}}
                 <div class="md:col-span-2">
                     <label for="usage_url_domain" class="block text-sm font-semibold text-gray-700 mb-2">
-                        ご利用URL・ドメイン <span class="text-red-500">*</span>
+                        ウェブサイトのURL <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="usage_url_domain" id="usage_url_domain" 
                         class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('usage_url_domain') border-red-500 @enderror" 
@@ -1136,7 +1136,7 @@
         }
     })();
 
-    // ご利用URL・ドメインの全角英数字→半角英数字変換
+    // ウェブサイトのURLの全角英数字→半角英数字変換
     (function() {
         const usageUrlDomainInput = document.getElementById('usage_url_domain');
         

@@ -81,7 +81,7 @@
 <tr><td style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 <tr><td style="font-size: 15px; font-weight: bold; color: #2d3748; padding-bottom: 10px; border-bottom: 2px solid #4ecdc4;">ご利用情報</td></tr>
-<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">ご利用URL・ドメイン：{{ $contract->usage_url_domain }}</td></tr>
+<tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">ウェブサイトのURL：{{ $contract->usage_url_domain }}</td></tr>
 <tr><td style="padding: 6px 0; border-bottom: 1px solid #edf2f7; color: #2d3748;">体験版からのインポート希望：{{ $contract->import_from_trial ? 'はい' : 'いいえ' }}</td></tr>
 </table>
 </td></tr>

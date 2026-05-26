@@ -124,7 +124,7 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-                <p class="text-sm text-gray-600 mb-1">ご利用URL・ドメイン</p>
+                <p class="text-sm text-gray-600 mb-1">ウェブサイトのURL</p>
                 <p class="text-lg font-semibold text-gray-800">{{ $contract->usage_url_domain ?? '—' }}</p>
             </div>
             <div>

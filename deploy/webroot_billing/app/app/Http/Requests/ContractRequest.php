@@ -103,7 +103,7 @@ class ContractRequest extends FormRequest
             'city' => '市区町村',
             'address_line1' => '番地',
             'address_line2' => '建物名',
-            'usage_url_domain' => 'ご利用URL・ドメイン',
+            'usage_url_domain' => 'ウェブサイトのURL',
             'import_from_trial' => '体験版からのインポートを希望する',
             'terms_agreed' => '利用規約への同意',
         ];
