@@ -1,0 +1,5 @@
+# FTP アップロード対象（2026-06-01・宛名1 会社名+御中）
+# ローカル基準: deploy/webroot_billing/
+# 本番先: /var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/
+
+app/app/Services/BillingRobo/BillingRoboBillingService.php

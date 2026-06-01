@@ -268,11 +268,9 @@ class BillingRoboBillingService
 
     private function buildAddress1(Contract $contract): string
     {
-        $parts = array_filter([
-            $contract->contact_name,
-            $contract->department ? "({$contract->department})" : null,
-        ]);
-        return implode(' ', $parts) ?: ($contract->company_name ?? '');
+        $company = trim((string) ($contract->company_name ?? ''));
+
+        return $company !== '' ? $company . '御中' : '御中';
     }
 
     /**

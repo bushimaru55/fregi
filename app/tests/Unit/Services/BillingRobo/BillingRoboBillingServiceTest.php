@@ -16,12 +16,14 @@ class BillingRoboBillingServiceTest extends TestCase
         $contract = new Contract;
         $contract->id = 1;
         $contract->company_name = 'Test Co';
+        $contract->contact_name = '担当 太郎';
         $contract->department = 'Dept';
         $contract->email = 'test@example.com';
 
         $body = $service->buildBillingBody($contract, null);
 
         $individual = $body['billing'][0]['individual'][0];
+        $this->assertSame('Test Co御中', $individual['address1']);
         $this->assertArrayNotHasKey('issue_month', $individual);
         $this->assertArrayNotHasKey('deadline_day', $individual);
     }
