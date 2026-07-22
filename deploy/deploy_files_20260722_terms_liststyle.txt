@@ -1,0 +1,24 @@
+# FTP アップロード一覧（2026-07-22 hotfix）— 申込画面の利用規約番号表示
+# ローカル起点: deploy/webroot_billing/
+# 本番先ルート: /var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/
+#
+# 前提確認（実施済み・ローカル）:
+# - app/ と deploy/webroot_billing/app/ の create.blade.php は IDENTICAL（sha256一致）
+# - DB変更なし / .env変更なし / build再ビルド不要
+# - 本番公開面は HTTP 200、修正CSSは未反映（未デプロイ）
+
+## A. 必須（1ファイルのみ）
+
+app/resources/views/contracts/create.blade.php
+
+## B. アップロード禁止
+
+# app/.env
+# app/storage/
+# build/
+# app/database/migrations/
+# vendor/
+
+## C. デプロイ後（本番側で削除のみ）
+
+# app/storage/framework/views/*.php

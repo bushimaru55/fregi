@@ -19,6 +19,7 @@ class Contract extends Model
         'billing_individual_number',
         'billing_individual_code',
         'billing_robo_mode',
+        'payment_collection_method',
         'status',
         'company_name',
         'company_name_kana',
@@ -101,6 +102,20 @@ class Contract extends Model
 
     /** Billing-Robo 標準運用モード（API3） */
     public const BILLING_ROBO_MODE_API3_STANDARD = 'api3_standard';
+
+    /** 回収方法: クレジットカード */
+    public const PAYMENT_CARD = 'card';
+
+    /** 回収方法: 請求書払い（銀行振込） */
+    public const PAYMENT_BANK_TRANSFER = 'bank_transfer';
+
+    /**
+     * 請求書払い（銀行振込）契約かどうか
+     */
+    public function usesBankTransfer(): bool
+    {
+        return ($this->payment_collection_method ?? self::PAYMENT_CARD) === self::PAYMENT_BANK_TRANSFER;
+    }
 
     /**
      * 即時決済（API5）モードか。null の場合は後方互換のため API5 とみなす。

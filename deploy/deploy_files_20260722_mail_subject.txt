@@ -1,0 +1,25 @@
+# FTP アップロード一覧（2026-07-22 hotfix）— 申込受付メール件名統一
+# ローカル起点: deploy/webroot_billing/
+# 本番先ルート: /var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/
+#
+# 前提確認（ローカル）:
+# - app/ と deploy/webroot_billing/app/ の ContractNotificationMail.php は IDENTICAL
+# - DB変更なし / .env変更なし / build再ビルド不要
+# - 件名はクレジット／請求書払いとも「【申込受付】新規申込のお知らせ - {会社名}」
+
+## A. 必須（1ファイルのみ）
+
+app/app/Mail/ContractNotificationMail.php
+
+## B. アップロード禁止
+
+# app/.env
+# app/storage/
+# build/
+# app/database/migrations/
+# vendor/
+
+## C. デプロイ後
+
+# PHPクラスのため views 削除は必須ではない
+# 反映されない場合のみ Plesk で PHP/OPcache 再起動を検討

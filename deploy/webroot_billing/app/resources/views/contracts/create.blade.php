@@ -119,7 +119,7 @@
                     </label>
                     <input type="tel" name="phone" id="phone" 
                         class="w-full px-3 md:px-4 py-3 md:py-2 border border-gray-300 rounded-lg theme-input-focus text-base @error('phone') border-red-500 @enderror" 
-                        value="{{ old('phone') }}" placeholder="03-1234-5678" required>
+                        value="{{ old('phone') }}" placeholder="0312345678" required>
                     @error('phone')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -262,6 +262,9 @@
                                 <div class="text-center">
                                     <div class="text-base md:text-lg font-bold text-gray-800 mb-2">{{ $plan->name }}</div>
                                     <div class="text-2xl md:text-3xl font-bold theme-price mb-2">{{ $plan->formatted_price }}</div>
+                                    @if($plan->usesBankTransfer())
+                                        <div class="mb-2"><span class="inline-block bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-semibold">請求書払い（銀行振込）</span></div>
+                                    @endif
                                     <div class="text-xs md:text-sm text-gray-600">{{ $plan->description }}</div>
                                 </div>
                             </div>
@@ -294,22 +297,27 @@
             </div>
         </div>
 
-        {{-- 4. 利用規約 --}}
-        @if($termsOfService)
-        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8">
+        {{-- 4. 利用規約（選択中ベース製品の決済タイプに応じて差し替え） --}}
+        @if($hasAnyTerms)
+        <div class="bg-white shadow-lg rounded-lg p-4 md:p-6 mb-6 md:mb-8" id="terms-of-service-section"
+             data-terms-by-selection='@json($termsBySelection)'
+             data-plan-billing-selections='@json($planBillingSelections)'>
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6 pb-2 md:pb-3 theme-section-border">
                 <i class="fas fa-file-contract mr-2"></i>4. 利用規約
             </h2>
 
+            {{-- 製品未選択時の案内 --}}
+            <p id="terms-placeholder" class="text-sm text-gray-500 mb-4 md:mb-6" style="display: none;">
+                ベース製品を選択すると利用規約が表示されます。
+            </p>
+
             {{-- 利用規約の表示 --}}
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6" style="max-height: 300px; overflow-y: auto;">
-                <div class="quill-content text-gray-700 text-xs md:text-sm">
-                    {!! $termsOfService !!}
-                </div>
+            <div id="terms-content-wrap" class="bg-gray-50 border border-gray-200 rounded-lg p-3 md:p-4 mb-4 md:mb-6" style="max-height: 300px; overflow-y: auto;">
+                <div id="terms-content" class="quill-content text-gray-700 text-xs md:text-sm"></div>
             </div>
 
             {{-- 同意チェックボックス --}}
-            <div class="flex items-center justify-center flex-wrap">
+            <div id="terms-agree-wrap" class="flex items-center justify-center flex-wrap">
                 <input type="checkbox" name="terms_agreed" id="terms_agreed" value="1"
                     class="mr-2 md:mr-3 w-5 h-5 theme-checkbox-accent border-gray-300 rounded @error('terms_agreed') border-red-500 @enderror"
                     {{ old('terms_agreed') ? 'checked' : '' }} required>
@@ -335,6 +343,82 @@
         </div>
     </form>
 </div>
+
+<script>
+// 選択中ベース製品の決済タイプに応じて利用規約を差し替え
+(function() {
+    var section = document.getElementById('terms-of-service-section');
+    if (!section) return;
+
+    var termsBySelection = {};
+    var planBillingSelections = {};
+    try {
+        termsBySelection = JSON.parse(section.getAttribute('data-terms-by-selection') || '{}');
+        planBillingSelections = JSON.parse(section.getAttribute('data-plan-billing-selections') || '{}');
+    } catch (e) {
+        console.error('利用規約データのパースに失敗しました', e);
+    }
+
+    var contentEl = document.getElementById('terms-content');
+    var contentWrap = document.getElementById('terms-content-wrap');
+    var placeholder = document.getElementById('terms-placeholder');
+    var agreeWrap = document.getElementById('terms-agree-wrap');
+    var agreeCheckbox = document.getElementById('terms_agreed');
+    var basePlanRadios = document.querySelectorAll('input.base-plan-checkbox');
+
+    function getSelectedPlanId() {
+        for (var i = 0; i < basePlanRadios.length; i++) {
+            if (basePlanRadios[i].checked) {
+                return String(basePlanRadios[i].value);
+            }
+        }
+        return null;
+    }
+
+    function updateTerms() {
+        var planId = getSelectedPlanId();
+        if (!planId) {
+            if (placeholder) placeholder.style.display = '';
+            if (contentWrap) contentWrap.style.display = 'none';
+            if (agreeWrap) agreeWrap.style.display = 'none';
+            if (agreeCheckbox) {
+                agreeCheckbox.required = false;
+                agreeCheckbox.checked = false;
+            }
+            return;
+        }
+
+        var selection = planBillingSelections[planId] || 'one_time';
+        var html = termsBySelection[selection] || '';
+
+        if (!html) {
+            if (placeholder) {
+                placeholder.textContent = 'この決済タイプの利用規約はまだ設定されていません。';
+                placeholder.style.display = '';
+            }
+            if (contentWrap) contentWrap.style.display = 'none';
+            if (agreeWrap) agreeWrap.style.display = 'none';
+            if (agreeCheckbox) {
+                agreeCheckbox.required = false;
+                agreeCheckbox.checked = false;
+            }
+            return;
+        }
+
+        if (placeholder) placeholder.style.display = 'none';
+        if (contentWrap) contentWrap.style.display = '';
+        if (contentEl) contentEl.innerHTML = html;
+        if (agreeWrap) agreeWrap.style.display = '';
+        if (agreeCheckbox) agreeCheckbox.required = true;
+    }
+
+    basePlanRadios.forEach(function(radio) {
+        radio.addEventListener('change', updateTerms);
+    });
+
+    updateTerms();
+})();
+</script>
 
 <script>
 // オプション製品の動的表示（複数ベース製品対応）
@@ -883,65 +967,20 @@
         });
     })();
 
-    // 電話番号の自動ハイフン挿入と全角数字→半角数字変換
+    // 電話番号の全角数字→半角数字変換と数字のみ入力
     (function() {
         const phoneInput = document.getElementById('phone');
         if (phoneInput) {
-            // 全角数字を半角数字に変換する関数
             function toHalfWidthNumber(str) {
                 return str.replace(/[０-９]/g, function(s) {
                     return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
                 });
             }
-            
+
             phoneInput.addEventListener('input', function(e) {
-                // 全角数字を半角数字に変換
                 let value = toHalfWidthNumber(e.target.value);
-                // 数字とハイフンのみを残す
-                value = value.replace(/[^\d-]/g, '');
-                
-                // ハイフンを一旦削除してから再フォーマット
-                const digits = value.replace(/-/g, '');
-                
-                // 電話番号のフォーマット（携帯電話: 11桁、固定電話: 10桁）
-                if (digits.length <= 3) {
-                    value = digits;
-                } else if (digits.length <= 7) {
-                    // 市外局番-市内局番
-                    value = digits.slice(0, 3) + '-' + digits.slice(3);
-                } else if (digits.length <= 10) {
-                    // 固定電話: 03-1234-5678
-                    value = digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
-                } else if (digits.length <= 11) {
-                    // 携帯電話: 090-1234-5678
-                    value = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7);
-                } else {
-                    // 11桁を超える場合は切り詰め
-                    value = digits.slice(0, 3) + '-' + digits.slice(3, 7) + '-' + digits.slice(7, 11);
-                }
-                
-                e.target.value = value;
-            });
-            
-            // フォーカスアウト時にもフォーマット
-            phoneInput.addEventListener('blur', function(e) {
-                // 全角数字を半角数字に変換
-                let value = toHalfWidthNumber(e.target.value);
-                // 数字とハイフンのみを残す
-                value = value.replace(/[^\d-]/g, '');
-                const digits = value.replace(/-/g, '');
-                
-                if (digits.length > 0 && digits.length < 10) {
-                    // 10桁未満の場合は固定電話フォーマットを試行
-                    if (digits.length <= 3) {
-                        value = digits;
-                    } else if (digits.length <= 7) {
-                        value = digits.slice(0, 3) + '-' + digits.slice(3);
-                    } else {
-                        value = digits.slice(0, 2) + '-' + digits.slice(2, 6) + '-' + digits.slice(6);
-                    }
-                    e.target.value = value;
-                }
+                // 数字のみを残す（ハイフンは自動挿入しない）
+                e.target.value = value.replace(/\D/g, '');
             });
         }
     })();
@@ -1196,8 +1235,16 @@
     margin-bottom: 1em;
     padding-left: 1.5em;
 }
+/* Tailwind Preflight が list-style: none するため、管理画面と同様に番号/箇条書きを明示復元 */
+.quill-content ul {
+    list-style-type: disc;
+}
+.quill-content ol {
+    list-style-type: decimal;
+}
 .quill-content li {
     margin-bottom: 0.5em;
+    display: list-item;
 }
 .quill-content strong {
     font-weight: bold;

@@ -80,7 +80,7 @@
                 <button type="button" id="btn-submit-payment" class="btn-cta px-6 py-3 font-bold rounded-lg shadow-sm">
                     <i class="fas fa-lock mr-2"></i>カードを登録する
                 </button>
-                <a href="{{ route('contract.create', ['resume' => '1']) }}" class="btn-primary px-6 py-3 font-bold rounded-lg shadow-sm text-center">
+                <a href="{{ route('contract.create', array_filter(['resume' => '1', 'plans' => session('contract_form_plan_filter')])) }}" class="btn-primary px-6 py-3 font-bold rounded-lg shadow-sm text-center">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
             </div>
@@ -115,9 +115,6 @@
     document.getElementById('btn-submit-payment').addEventListener('click', function() {
         var btn = this;
         btn.disabled = true;
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H1',location:'payment.blade.php',message:'click_start',data:{},timestamp:Date.now()})}).catch(function(){});
-        // #endregion
         var cn = document.getElementById('cn').value.replace(/\s/g, '');
         var edYear = document.getElementById('ed_year').value.trim();
         var edMonth = document.getElementById('ed_month').value.trim();
@@ -167,11 +164,6 @@
             ln: ln,
             md: '10'
         }, function(resultCode, errMsg) {
-            // #region agent log
-            var tknEl = document.getElementById('tkn');
-            var tknLen = (tknEl && tknEl.value) ? tknEl.value.length : 0;
-            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H1_H2_H3',location:'payment.blade.php token_callback',message:'token_callback',data:{resultCode:resultCode,errMsg:(errMsg||'').slice(0,80),tknLen:tknLen},timestamp:Date.now()})}).catch(function(){});
-            // #endregion
             if (resultCode !== 'Success') {
                 var msg = errMsg || 'トークン作成に失敗しました。';
                 var form = document.getElementById('rp-payment-form');
@@ -191,11 +183,8 @@
                 btn.disabled = false;
                 return;
             }
-            // #region agent log
             var tokenCreatedMs = Date.now();
             document.getElementById('token_created_ms').value = String(tokenCreatedMs);
-            fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H3',location:'payment.blade.php token ready',message:'token_ready',data:{token_created_ms:tokenCreatedMs,tkn_len:(tkn||'').length},timestamp:Date.now()})}).catch(function(){});
-            // #endregion
             if (typeof ThreeDSAdapter === 'undefined') {
                 document.getElementById('er584_am').value = String(am);
                 document.getElementById('er584_tx').value = String(tx);
@@ -207,9 +196,6 @@
                 if (document.getElementById('cvv')) document.getElementById('cvv').value = '';
                 document.getElementById('fn').value = '';
                 document.getElementById('ln').value = '';
-                // #region agent log
-                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H5',location:'payment.blade.php',message:'form_submit_no3ds',data:{},timestamp:Date.now()})}).catch(function(){});
-                // #endregion
                 document.getElementById('rp-payment-form').submit();
                 return;
             }
@@ -223,9 +209,6 @@
                 em: em,
                 pn: pn
             }, function(resultCode, errMsg) {
-                // #region agent log
-                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'3DS',location:'payment.blade.php 3DS callback',message:'3ds_callback',data:{resultCode:resultCode,errMsg:(errMsg||'').slice(0,80)},timestamp:Date.now()})}).catch(function(){});
-                // #endregion
                 if (resultCode !== 'Success') {
                     var form = document.getElementById('rp-payment-form');
                     var csrf = form && form.querySelector('input[name="_token"]') ? form.querySelector('input[name="_token"]').value : '';
@@ -239,9 +222,6 @@
                     btn.disabled = false;
                     return;
                 }
-                // #region agent log
-                fetch('http://127.0.0.1:7244/ingest/ccd86c1d-58cb-4227-a2c1-85434b7ca10d',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'745ed8'},body:JSON.stringify({sessionId:'745ed8',hypothesisId:'H5',location:'payment.blade.php 3DS success',message:'form_submit_3ds',data:{},timestamp:Date.now()})}).catch(function(){});
-                // #endregion
                 document.getElementById('er584_am').value = String(am);
                 document.getElementById('er584_tx').value = String(tx);
                 document.getElementById('er584_sf').value = String(sf);

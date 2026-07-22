@@ -1,5 +1,28 @@
 <div>
     <form wire:submit="save">
+        {{-- 決済タイプタブ --}}
+        <div class="mb-6 border-b border-gray-200">
+            <p class="text-sm text-gray-600 mb-3">
+                <i class="fas fa-credit-card mr-1"></i>
+                決済タイプごとに利用規約を編集できます。タブを切り替えると内容が切り替わります（未保存の変更は失われます）。
+            </p>
+            <nav class="-mb-px flex flex-wrap gap-1" aria-label="決済タイプ">
+                @foreach($billingSelectionLabels as $selection => $label)
+                    <button type="button"
+                            wire:click="switchBillingSelection('{{ $selection }}')"
+                            @if($billingSelection !== $selection)
+                                wire:confirm="未保存の変更がある場合は失われます。タブを切り替えますか？"
+                            @endif
+                            class="px-3 py-2 text-sm font-medium border-b-2 transition whitespace-nowrap
+                                {{ $billingSelection === $selection
+                                    ? 'border-indigo-600 text-indigo-700'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                        {{ $label }}
+                    </button>
+                @endforeach
+            </nav>
+        </div>
+
         {{-- モード切り替えボタン --}}
         <div class="mb-4 flex items-center justify-between">
             <div class="flex items-center space-x-2">

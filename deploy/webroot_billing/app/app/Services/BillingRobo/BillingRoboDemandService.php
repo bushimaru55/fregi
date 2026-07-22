@@ -181,7 +181,7 @@ class BillingRoboDemandService
             ];
 
             if ($type === self::TYPE_RECURRING) {
-                $row['repetition_period_number'] = 1;
+                $row['repetition_period_number'] = (int) ($line['repetition_period_number'] ?? 1);
                 $row['repetition_period_unit'] = 1;
                 $row['repeat_count'] = 0;
             }

@@ -32,6 +32,7 @@ class ContractNotificationMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        // クレジット／請求書払いとも従来どおり会社名付き件名に統一する
         return new Envelope(
             subject: '【申込受付】新規申込のお知らせ - ' . $this->contract->company_name,
         );

@@ -46,9 +46,9 @@ class ProductController extends Controller
             'display_order' => ['required', 'integer', 'min:0'],
         ];
         if ($request->input('type') === 'option') {
-            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly'])];
+            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly', 'yearly'])];
         } else {
-            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly'])];
+            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly', 'yearly'])];
         }
         $validated = $request->validate($rules);
 
@@ -95,9 +95,9 @@ class ProductController extends Controller
             'display_order' => ['required', 'integer', 'min:0'],
         ];
         if ($request->input('type') === 'option') {
-            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly'])];
+            $rules['billing_type'] = ['required', Rule::in(['one_time', 'monthly', 'yearly'])];
         } else {
-            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly'])];
+            $rules['billing_type'] = ['nullable', Rule::in(['one_time', 'monthly', 'yearly'])];
         }
         $validated = $request->validate($rules);
 

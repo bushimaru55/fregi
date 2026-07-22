@@ -183,6 +183,8 @@
                             <p class="text-2xl md:text-3xl font-bold text-teal-600">{{ number_format($planItem->price ?? 0) }}円</p>
                             @if(isset($planItem->billing_type) && $planItem->billing_type === 'monthly')
                                 <p class="text-xs text-gray-500 mt-1">（税込・月額）</p>
+                            @elseif(isset($planItem->billing_type) && $planItem->billing_type === 'yearly')
+                                <p class="text-xs text-gray-500 mt-1">（税込・年額）</p>
                             @else
                                 <p class="text-xs text-gray-500 mt-1">（税込）</p>
                             @endif
@@ -246,13 +248,18 @@
         @endif
 
         {{-- ボタン --}}
+        @php
+            $createBackParams = array_filter([
+                'plans' => session('contract_form_plan_filter'),
+            ]);
+        @endphp
         <div class="flex flex-col sm:flex-row justify-center gap-3 md:gap-4 mb-6 md:mb-8">
             @if(isset($isViewOnly) && $isViewOnly)
-                <a href="{{ route('contract.create') }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
+                <a href="{{ route('contract.create', $createBackParams) }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
                     <i class="fas fa-file-alt mr-2"></i>申込フォームへ
                 </a>
             @else
-                <a href="{{ route('contract.create') }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
+                <a href="{{ route('contract.create', $createBackParams) }}" class="btn-primary px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-center text-base">
                     <i class="fas fa-arrow-left mr-2"></i>戻る
                 </a>
                 <button type="submit" class="btn-cta px-6 md:px-8 py-3 font-bold rounded-lg shadow-sm text-base">

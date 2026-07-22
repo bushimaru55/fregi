@@ -15,4 +15,8 @@ return [
 
     'access_key' => env('BILLING_ROBO_ACCESS_KEY', ''),
 
+    // 請求書払い（銀行振込）の請求元銀行口座パターンコード。
+    // 請求管理ロボ管理画面で登録済みのコードを設定する（API1 payment_method=0 時に送信）。
+    'bank_transfer_pattern_code' => env('BILLING_ROBO_BANK_TRANSFER_PATTERN_CODE', ''),
+
 ];

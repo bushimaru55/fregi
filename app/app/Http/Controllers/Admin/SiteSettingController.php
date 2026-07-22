@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Mews\Purifier\Facades\Purifier;
 
 class SiteSettingController extends Controller
@@ -17,8 +16,9 @@ class SiteSettingController extends Controller
      */
     public function index()
     {
-        // サニタイズ済みHTMLを取得（RichEditorで保存されたHTML）
-        $termsOfService = SiteSetting::getValue('terms_of_service', '');
+        // 決済タイプ別の利用規約（サニタイズ済みHTML）
+        $termsBySelection = SiteSetting::getAllTermsOfService();
+        $billingSelectionLabels = SiteSetting::billingSelectionLabels();
         // トップページのURLを取得
         $topPageUrl = SiteSetting::getTextValue('top_page_url', '');
         // 製品ページのURLを取得
@@ -27,7 +27,14 @@ class SiteSettingController extends Controller
         $replyMailHeader = SiteSetting::getTextValue('reply_mail_header', '');
         $replyMailFooter = SiteSetting::getTextValue('reply_mail_footer', '');
         
-        return view('admin.site-settings.index', compact('termsOfService', 'topPageUrl', 'productPageUrl', 'replyMailHeader', 'replyMailFooter'));
+        return view('admin.site-settings.index', compact(
+            'termsBySelection',
+            'billingSelectionLabels',
+            'topPageUrl',
+            'productPageUrl',
+            'replyMailHeader',
+            'replyMailFooter'
+        ));
     }
 
     /**
@@ -47,8 +54,11 @@ class SiteSettingController extends Controller
      */
     public function update(Request $request)
     {
+        $allowedSelections = array_keys(SiteSetting::billingSelectionLabels());
+
         $validator = Validator::make($request->all(), [
             'terms_of_service' => 'required|string',
+            'billing_selection' => 'nullable|string|in:' . implode(',', $allowedSelections),
         ], [
             'terms_of_service.required' => '利用規約の内容を入力してください。',
         ]);
@@ -61,26 +71,18 @@ class SiteSettingController extends Controller
 
         try {
             $html = $request->input('terms_of_service');
-            
+            $billingSelection = $request->input('billing_selection', 'one_time');
+
             // HTMLをサニタイズ（rich_htmlプロファイル使用）
             $cleanHtml = Purifier::clean($html, 'rich_html');
-            
-            // プレーンテキスト版を生成
-            $plainText = Str::squish(strip_tags($cleanHtml));
 
-            // DBに保存
-            SiteSetting::updateOrCreate(
-                ['key' => 'terms_of_service'],
-                [
-                    'value' => $cleanHtml,
-                    'value_text' => $plainText,
-                    'description' => '利用規約の本文',
-                ]
-            );
+            SiteSetting::setTermsOfService($billingSelection, $cleanHtml);
+
+            $label = SiteSetting::billingSelectionLabels()[$billingSelection] ?? $billingSelection;
 
             return redirect()
-                ->route('admin.site-settings.index')
-                ->with('success', '利用規約を更新しました。');
+                ->route('admin.site-settings.index', ['billing_selection' => $billingSelection])
+                ->with('success', "利用規約（{$label}）を更新しました。");
         } catch (\Exception $e) {
             return back()
                 ->withInput()

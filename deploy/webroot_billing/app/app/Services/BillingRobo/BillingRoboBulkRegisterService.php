@@ -154,7 +154,7 @@ class BillingRoboBulkRegisterService
                 'sales_recorded_date' => $today,
             ];
             if ($line['demand_type'] === self::DEMAND_TYPE_RECURRING) {
-                $detail['repetition_period_number'] = 1;
+                $detail['repetition_period_number'] = (int) ($line['repetition_period_number'] ?? 1);
                 $detail['repetition_period_unit'] = 1;
                 $detail['repeat_count'] = 0;
             }

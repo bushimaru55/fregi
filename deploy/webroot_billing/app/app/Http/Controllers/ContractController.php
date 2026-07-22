@@ -40,6 +40,16 @@ class ContractController extends Controller
                 if (!empty($planIds)) {
                     $query->whereIn('id', $planIds);
                     $hasPlanIdsParam = true;
+                    $request->session()->put('contract_form_plan_filter', implode(',', $planIds));
+                }
+            } elseif ($request->query('resume') === '1') {
+                // 決済ページ「戻る」など: セッションに保存した絞り込みを復元
+                $planIdsString = $request->session()->get('contract_form_plan_filter');
+                if (is_string($planIdsString) && $planIdsString !== '') {
+                    $planIds = array_filter(array_map('intval', explode(',', $planIdsString)));
+                    if (!empty($planIds)) {
+                        $query->whereIn('id', $planIds);
+                    }
                 }
             }
             
@@ -57,7 +67,11 @@ class ContractController extends Controller
                 abort(404, '指定された製品が見つかりません。製品が存在しないか、現在公開されていません。');
             }
             
-            $termsOfService = SiteSetting::getValue('terms_of_service', '');
+            $termsBySelection = SiteSetting::getAllTermsOfService();
+            $planBillingSelections = $plans->mapWithKeys(fn ($plan) => [
+                (string) $plan->id => $plan->billing_selection,
+            ])->all();
+            $hasAnyTerms = collect($termsBySelection)->contains(fn ($html) => $html !== '');
 
             // 決済ページ「戻る」からの再入力: セッションの申込内容をフォームの old() に載せる
             if ($request->query('resume') === '1' && $request->session()->has('contract_confirm_data')) {
@@ -84,7 +98,13 @@ class ContractController extends Controller
                 'timestamp' => now()->toIso8601String(),
             ]);
             
-            return view('contracts.create', compact('plans', 'termsOfService', 'optionProducts'));
+            return view('contracts.create', compact(
+                'plans',
+                'termsBySelection',
+                'planBillingSelections',
+                'hasAnyTerms',
+                'optionProducts'
+            ));
         } catch (\Exception $e) {
             // 詳細なエラーログを記録
             Log::channel('contract_payment')->error('申込フォーム表示エラー（詳細）', [
@@ -130,7 +150,10 @@ class ContractController extends Controller
             $validated = $request->validated();
             $basePlanIds = $validated['base_plan_ids'] ?? [];
             $plans = ContractPlan::whereIn('id', $basePlanIds)->orderBy('display_order')->get();
-            $termsOfService = SiteSetting::getValue('terms_of_service', '');
+            $selectedPlan = $plans->first();
+            $termsOfService = $selectedPlan
+                ? SiteSetting::getTermsOfService($selectedPlan->billing_selection)
+                : SiteSetting::getTermsOfService('one_time');
             $baseTotalAmount = $plans->sum('price');
 
             // ログ記録（個人情報はマスク）
@@ -144,8 +167,12 @@ class ContractController extends Controller
             ];
             Log::channel('contract_payment')->info('確認画面表示（POST）', $logData);
 
-            // ROBOT PAYMENT 有効時は決済ページへリダイレクト（契約・明細は決済実行時に作成）
-            if (config('robotpayment.enabled', false)) {
+            // 請求書払い（銀行振込）プランはクレジット決済ページを経由しない。
+            // 確認画面 → store（API1/API3）で申込を保存する。
+            $isBankTransfer = $plans->isNotEmpty() && $plans->contains(fn ($p) => $p->usesBankTransfer());
+
+            // ROBOT PAYMENT 有効時、かつクレジットプランの場合のみ決済ページへリダイレクト
+            if (config('robotpayment.enabled', false) && !$isBankTransfer) {
                 $request->session()->put('contract_confirm_data', $validated);
                 Log::channel('contract_payment')->info('確認送信→決済ページへリダイレクト', [
                     'base_plan_ids' => $basePlanIds,
@@ -234,7 +261,10 @@ class ContractController extends Controller
             }
             $plans = ContractPlan::whereIn('id', $basePlanIds)->orderBy('display_order')->get();
             $baseTotalAmount = $plans->sum('price');
-            $termsOfService = SiteSetting::getValue('terms_of_service', '');
+            $selectedPlan = $plans->first();
+            $termsOfService = $selectedPlan
+                ? SiteSetting::getTermsOfService($selectedPlan->billing_selection)
+                : SiteSetting::getTermsOfService('one_time');
 
             $optionProductIds = $viewData['option_product_ids'] ?? [];
             $optionProducts = collect();
@@ -281,7 +311,10 @@ class ContractController extends Controller
                         ->with('error', '選択された製品が見つかりませんでした。もう一度お試しください。');
                 }
                 $baseTotalAmount = $plans->sum('price');
-                $termsOfService = SiteSetting::getValue('terms_of_service', '');
+                $selectedPlan = $plans->first();
+                $termsOfService = $selectedPlan
+                    ? SiteSetting::getTermsOfService($selectedPlan->billing_selection)
+                    : SiteSetting::getTermsOfService('one_time');
 
                 $optionProductIds = $viewData['option_product_ids'] ?? [];
                 $optionProducts = collect();
@@ -362,10 +395,17 @@ class ContractController extends Controller
                     $createData['desired_start_date'] = now()->format('Y-m-d');
                 }
 
+                // 回収方法（クレジット / 請求書払い）をベースプランから引き継ぐ
+                $representativePlan = $representativePlanId ? ContractPlan::find($representativePlanId) : null;
+                $paymentCollectionMethod = $representativePlan && $representativePlan->usesBankTransfer()
+                    ? Contract::PAYMENT_BANK_TRANSFER
+                    : Contract::PAYMENT_CARD;
+
                 $contract = Contract::create([
                     ...$createData,
                     'status' => 'applied',
                     'billing_robo_mode' => Contract::BILLING_ROBO_MODE_API3_STANDARD,
+                    'payment_collection_method' => $paymentCollectionMethod,
                 ]);
 
                 Log::channel('contract_payment')->info('契約作成完了', [

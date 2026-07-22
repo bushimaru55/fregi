@@ -165,7 +165,7 @@ class BillingRoboBillingService
                     'orderid' => 'RP-' . $contract->id . '-' . now()->format('YmdHis'),
                     'amount' => 0,
                     'currency' => 'JPY',
-                    'payment_method' => 'card',
+                    'payment_method' => $contract->usesBankTransfer() ? 'bank_transfer' : 'card',
                     'status' => 'created',
                 ]);
             }
@@ -238,12 +238,26 @@ class BillingRoboBillingService
         }
 
         $paymentCode = 'PMT-' . ($contract->id ?? '0');
-        $payment = [
-            'code' => $paymentCode,
-            'name' => 'クレジットカード',
-            'payment_method' => 1,
-            'credit_card_regist_kind' => 1,
-        ];
+        if ($contract->usesBankTransfer()) {
+            // 請求書払い（銀行振込）: payment_method=0。クレジットカードは登録しない。
+            $payment = [
+                'code' => $paymentCode,
+                'name' => '銀行振込',
+                'payment_method' => 0,
+            ];
+            $bankTransferPatternCode = config('billing_robo.bank_transfer_pattern_code');
+            if (!empty($bankTransferPatternCode)) {
+                $payment['bank_transfer_pattern_code'] = $bankTransferPatternCode;
+            }
+        } else {
+            // クレジットカード: 既存挙動を維持
+            $payment = [
+                'code' => $paymentCode,
+                'name' => 'クレジットカード',
+                'payment_method' => 1,
+                'credit_card_regist_kind' => 1,
+            ];
+        }
 
         $billing = [
             'code' => $billingCode,

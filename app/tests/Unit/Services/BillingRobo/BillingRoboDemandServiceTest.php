@@ -82,4 +82,70 @@ class BillingRoboDemandServiceTest extends TestCase
         $this->assertSame(1, $demands[0]['issue_day']);
         $this->assertSame(1, $demands[0]['type']);
     }
+
+    public function test_build_demand_array_monthly_sets_repetition_period_number_1(): void
+    {
+        $contract = new Contract;
+        $contract->id = 1;
+        $contract->billing_code = 'BC00000001';
+        $contract->billing_individual_number = 1;
+        $contract->desired_start_date = now();
+
+        $mockMapper = $this->createMock(ContractToBillingLinesMapper::class);
+        $mockMapper->method('map')->willReturn([
+            [
+                'goods_name' => 'Monthly',
+                'price' => 5000,
+                'quantity' => 1,
+                'tax_category' => 1,
+                'tax' => 10,
+                'demand_type' => 1,
+                'repetition_period_number' => 1,
+            ],
+        ]);
+
+        $client = $this->createMock(\App\Services\BillingRobo\BillingRoboApiClient::class);
+        $service = new BillingRoboDemandService($client, $mockMapper, new BillingScheduleService);
+
+        $demands = $service->buildDemandArray($contract, null);
+
+        $this->assertCount(1, $demands);
+        $this->assertSame(1, $demands[0]['type']);
+        $this->assertSame(1, $demands[0]['repetition_period_number']);
+        $this->assertSame(1, $demands[0]['repetition_period_unit']);
+        $this->assertSame(0, $demands[0]['repeat_count']);
+    }
+
+    public function test_build_demand_array_yearly_sets_repetition_period_number_12(): void
+    {
+        $contract = new Contract;
+        $contract->id = 1;
+        $contract->billing_code = 'BC00000001';
+        $contract->billing_individual_number = 1;
+        $contract->desired_start_date = now();
+
+        $mockMapper = $this->createMock(ContractToBillingLinesMapper::class);
+        $mockMapper->method('map')->willReturn([
+            [
+                'goods_name' => 'Yearly',
+                'price' => 60000,
+                'quantity' => 1,
+                'tax_category' => 1,
+                'tax' => 10,
+                'demand_type' => 1,
+                'repetition_period_number' => 12,
+            ],
+        ]);
+
+        $client = $this->createMock(\App\Services\BillingRobo\BillingRoboApiClient::class);
+        $service = new BillingRoboDemandService($client, $mockMapper, new BillingScheduleService);
+
+        $demands = $service->buildDemandArray($contract, null);
+
+        $this->assertCount(1, $demands);
+        $this->assertSame(1, $demands[0]['type']);
+        $this->assertSame(12, $demands[0]['repetition_period_number']);
+        $this->assertSame(1, $demands[0]['repetition_period_unit']);
+        $this->assertSame(0, $demands[0]['repeat_count']);
+    }
 }

@@ -17,28 +17,61 @@
         <div class="space-y-6">
             <!-- Terms of Service Section -->
             <div class="border-b border-gray-200 pb-6">
+                @php
+                    $defaultTermsTab = 'one_time';
+                    $requestedTab = request()->query('billing_selection');
+                    if (is_string($requestedTab) && array_key_exists($requestedTab, $billingSelectionLabels)) {
+                        $defaultTermsTab = $requestedTab;
+                    } else {
+                        foreach ($billingSelectionLabels as $sel => $lbl) {
+                            if (!empty($termsBySelection[$sel] ?? '')) {
+                                $defaultTermsTab = $sel;
+                                break;
+                            }
+                        }
+                    }
+                @endphp
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h3 class="text-xl font-bold text-gray-800">
                             <i class="fas fa-file-contract theme-price mr-2"></i>利用規約
                         </h3>
-                        <p class="text-sm text-gray-600 mt-1">新規申込フォームに表示される利用規約の内容を管理します</p>
+                        <p class="text-sm text-gray-600 mt-1">決済タイプごとの利用規約を管理します。申込フォームでは選択製品の決済タイプに応じて表示されます</p>
                     </div>
-                    <a href="{{ route('admin.site-settings.edit') }}" 
+                    <a href="{{ route('admin.site-settings.edit', ['billing_selection' => $defaultTermsTab]) }}" 
+                       id="terms-edit-link"
                        class="theme-btn-primary inline-block px-6 py-3 rounded-lg hover:opacity-90 transition shadow-lg no-underline">
                         <i class="fas fa-edit mr-2"></i>編集
                     </a>
                 </div>
-                
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    @if($termsOfService)
-                        {{-- サニタイズ済みHTMLを表示（{!! !!}で出力） --}}
-                        <div class="prose prose-sm max-w-none terms-html-content">
-                            {!! $termsOfService !!}
+
+                <div id="terms-preview-tabs">
+                    <nav class="mb-3 flex flex-wrap gap-1 border-b border-gray-200" aria-label="決済タイプ">
+                        @foreach($billingSelectionLabels as $selection => $label)
+                            <button type="button"
+                                    data-terms-tab="{{ $selection }}"
+                                    class="terms-tab-btn px-3 py-2 text-sm font-medium border-b-2 transition whitespace-nowrap
+                                        {{ $selection === $defaultTermsTab
+                                            ? 'border-indigo-600 text-indigo-700'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
+                                {{ $label }}
+                            </button>
+                        @endforeach
+                    </nav>
+
+                    @foreach($billingSelectionLabels as $selection => $label)
+                        <div data-terms-panel="{{ $selection }}"
+                             class="terms-tab-panel bg-gray-50 rounded-lg p-4 border border-gray-200"
+                             style="{{ $selection === $defaultTermsTab ? '' : 'display: none;' }}">
+                            @if(!empty($termsBySelection[$selection] ?? ''))
+                                <div class="prose prose-sm max-w-none terms-html-content">
+                                    {!! $termsBySelection[$selection] !!}
+                                </div>
+                            @else
+                                <p class="text-gray-500 italic">「{{ $label }}」の利用規約が設定されていません。編集ボタンから設定してください。</p>
+                            @endif
                         </div>
-                    @else
-                        <p class="text-gray-500 italic">利用規約が設定されていません。編集ボタンから設定してください。</p>
-                    @endif
+                    @endforeach
                 </div>
             </div>
 
@@ -266,47 +299,35 @@
 @endpush
 
 @push('scripts')
-{{-- #region agent log --}}
 <script>
-(function() {
-    function log(payload) {
-        fetch('http://127.0.0.1:7244/ingest/b08cb211-1fd0-430c-99ee-57cc534497b6', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(Object.assign({timestamp: Date.now(), sessionId: 'debug-session'}, payload))
-        }).catch(function(){});
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-        var btns = document.querySelectorAll('a.theme-btn-primary');
-        btns.forEach(function(btn, i) {
-            var cs = window.getComputedStyle(btn);
-            log({
-                hypothesisId: 'A',
-                runId: 'post-fix',
-                location: 'site-settings/index:button-check',
-                message: 'theme-btn-primary button styles',
-                data: {
-                    index: i,
-                    innerHTML: btn.innerHTML,
-                    innerText: btn.innerText,
-                    textContent: btn.textContent,
-                    backgroundColor: cs.backgroundColor,
-                    color: cs.color
-                }
+document.addEventListener('DOMContentLoaded', function () {
+    var root = document.getElementById('terms-preview-tabs');
+    if (!root) return;
+
+    var buttons = root.querySelectorAll('.terms-tab-btn');
+    var panels = root.querySelectorAll('.terms-tab-panel');
+    var editLink = document.getElementById('terms-edit-link');
+    var editBaseUrl = @json(route('admin.site-settings.edit'));
+
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var target = btn.getAttribute('data-terms-tab');
+            buttons.forEach(function (b) {
+                var active = b.getAttribute('data-terms-tab') === target;
+                b.classList.toggle('border-indigo-600', active);
+                b.classList.toggle('text-indigo-700', active);
+                b.classList.toggle('border-transparent', !active);
+                b.classList.toggle('text-gray-500', !active);
             });
-        });
-        var faTest = document.querySelector('.fa, .fas, .far, .fab');
-        log({
-            hypothesisId: 'B',
-            location: 'site-settings/index:fontawesome-check',
-            message: 'Font Awesome loaded',
-            data: {
-                hasFaElement: !!faTest,
-                faFontFamily: faTest ? window.getComputedStyle(faTest).fontFamily : null
+            panels.forEach(function (panel) {
+                panel.style.display = panel.getAttribute('data-terms-panel') === target ? '' : 'none';
+            });
+            if (editLink) {
+                editLink.href = editBaseUrl + '?billing_selection=' + encodeURIComponent(target);
             }
         });
     });
-})();
+});
 </script>
-{{-- #endregion agent log --}}
 @endpush
+

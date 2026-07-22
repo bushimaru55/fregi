@@ -70,25 +70,31 @@ class ContractPlanController extends Controller
         if ($productType === 'base') {
             // ベース商品の場合（製品マスターは廃止のため使用しない）
             $rules['item'] = 'required|string|max:50|unique:contract_plans,item';
-            $rules['billing_type'] = 'required|in:one_time,monthly';
+            $rules['billing_type'] = 'required|in:one_time,monthly,yearly,monthly_invoice,yearly_invoice';
         } else {
             // オプション商品の場合
             $rules['item'] = 'required|string|max:50|unique:products,code';
             $rules['base_plan_ids'] = 'required|array|min:1';
             $rules['base_plan_ids.*'] = 'required|exists:contract_plans,id';
-            $rules['billing_type'] = 'required|in:one_time,monthly';
+            $rules['billing_type'] = 'required|in:one_time,monthly,yearly,monthly_invoice,yearly_invoice';
         }
 
         $validated = $request->validate($rules);
         $validated['is_active'] = $request->has('is_active');
 
-        DB::transaction(function () use ($validated, $productType, $request) {
+        // 決済タイプの複合値を billing_type と回収方法に分解する
+        $split = ContractPlan::splitBillingSelection($validated['billing_type']);
+        $validated['billing_type'] = $split['billing_type'];
+
+        DB::transaction(function () use ($validated, $split, $productType, $request) {
             // ベース商品の場合はcontract_plansに保存
             if ($productType === 'base') {
+                $validated['payment_collection_method'] = $split['payment_collection_method'];
                 ContractPlan::create($validated);
             } 
             // オプション商品の場合はproductsテーブルに保存し、ベース商品と関連付け
             elseif ($productType === 'option') {
+                // オプション商品は回収方法を持たず、billing_type のみ使用する
                 $product = Product::create([
                     'code' => $validated['item'],
                     'name' => $validated['name'],
@@ -149,7 +155,7 @@ class ContractPlanController extends Controller
             'item' => 'required|string|max:50|unique:contract_plans,item,' . $contractPlan->id,
             'name' => 'required|string|max:255',
             'price' => 'required|integer|min:0',
-            'billing_type' => 'required|in:one_time,monthly',
+            'billing_type' => 'required|in:one_time,monthly,yearly,monthly_invoice,yearly_invoice',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'display_order' => 'required|integer|min:0',
@@ -158,6 +164,11 @@ class ContractPlanController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
+
+        // 決済タイプの複合値を billing_type と回収方法に分解する
+        $split = ContractPlan::splitBillingSelection($validated['billing_type']);
+        $validated['billing_type'] = $split['billing_type'];
+        $validated['payment_collection_method'] = $split['payment_collection_method'];
 
         DB::transaction(function () use ($validated, $contractPlan, $request) {
             // ベース製品情報を更新

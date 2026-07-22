@@ -62,7 +62,7 @@ class ContractRequest extends FormRequest
             'contact_name' => ['required', 'string', 'max:255'],
             'contact_name_kana' => ['nullable', 'string', 'max:255', 'regex:/^[ァ-ヶー\s]+$/u'],
             'email' => ['required', 'email', 'max:255'],
-            'phone' => ['required', 'string', 'regex:/^[0-9\-]+$/'],
+            'phone' => ['required', 'string', 'regex:/^[0-9]+$/'],
             'postal_code' => ['required', 'string', 'regex:/^\d{3}-?\d{4}$/'],
             'prefecture' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
@@ -73,8 +73,26 @@ class ContractRequest extends FormRequest
             'usage_url_domain' => ['required', 'string', 'max:255'],
             'import_from_trial' => ['nullable', 'boolean'],
             
-            // 利用規約への同意
-            'terms_agreed' => ['required', 'accepted'],
+            // 利用規約への同意（選択プランの決済タイプに利用規約がある場合のみ必須）
+            'terms_agreed' => [
+                function ($attribute, $value, $fail) {
+                    $basePlanIds = $this->input('base_plan_ids', []);
+                    if (empty($basePlanIds)) {
+                        return;
+                    }
+                    $plan = \App\Models\ContractPlan::find($basePlanIds[0] ?? null);
+                    if (!$plan) {
+                        return;
+                    }
+                    $html = \App\Models\SiteSetting::getTermsOfService($plan->billing_selection);
+                    if ($html === '') {
+                        return;
+                    }
+                    if (!filter_var($value, FILTER_VALIDATE_BOOLEAN) && $value !== '1' && $value !== 1) {
+                        $fail('利用規約への同意が必要です。');
+                    }
+                },
+            ],
         ];
         
         return $rules;
@@ -118,7 +136,7 @@ class ContractRequest extends FormRequest
             'base_plan_ids.max' => 'ベース製品は1つのみ選択してください。',
             'company_name_kana.regex' => '会社名（フリガナ）は全角カタカナ・数字で入力してください。',
             'contact_name_kana.regex' => '担当者名（フリガナ）は全角カタカナで入力してください。',
-            'phone.regex' => '電話番号は数字とハイフンのみで入力してください。',
+            'phone.regex' => '電話番号は数字のみで入力してください。',
             'postal_code.regex' => '郵便番号は7桁の数字で入力してください（ハイフン有無可）。',
             'desired_start_date.after_or_equal' => '利用開始希望日は本日以降の日付を選択してください。',
             'terms_agreed.required' => '利用規約への同意が必要です。',

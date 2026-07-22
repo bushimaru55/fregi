@@ -77,20 +77,30 @@
         <label for="billing_type" class="block text-sm font-semibold text-gray-700 mb-2">
             決済タイプ <span class="text-red-500">*</span>
         </label>
+        @php $billingSelection = old('billing_type', optional($contractPlan)->billing_selection ?? 'one_time'); @endphp
         <select name="billing_type" id="billing_type" 
             class="native-select w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('billing_type') border-red-500 @enderror">
-            <option value="one_time" {{ old('billing_type', optional($contractPlan)->billing_type ?? 'one_time') === 'one_time' ? 'selected' : '' }}>
+            <option value="one_time" {{ $billingSelection === 'one_time' ? 'selected' : '' }}>
                 一回限り
             </option>
-            <option value="monthly" {{ old('billing_type', optional($contractPlan)->billing_type ?? 'one_time') === 'monthly' ? 'selected' : '' }}>
-                月額課金
+            <option value="monthly" {{ $billingSelection === 'monthly' ? 'selected' : '' }}>
+                月額課金（クレジット）
+            </option>
+            <option value="yearly" {{ $billingSelection === 'yearly' ? 'selected' : '' }}>
+                年額課金（クレジット）
+            </option>
+            <option value="monthly_invoice" {{ $billingSelection === 'monthly_invoice' ? 'selected' : '' }}>
+                月額課金（請求書払い）
+            </option>
+            <option value="yearly_invoice" {{ $billingSelection === 'yearly_invoice' ? 'selected' : '' }}>
+                年額課金（請求書払い）
             </option>
         </select>
         @error('billing_type')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
         <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-credit-card mr-1"></i>決済の種類を選択してください（一回限りまたは月額課金）
+            <i class="fas fa-credit-card mr-1"></i>決済の種類を選択してください。「請求書払い」はクレジット決済を行わず、請求管理ロボから請求書を発行して銀行振込で回収します。
         </p>
     </div>
 
@@ -181,6 +191,8 @@
                             <span class="text-sm text-gray-500 ml-2">
                                 @if($plan->billing_type === 'monthly')
                                     <span class="px-2 py-0.5 rounded text-xs theme-price" style="background-color: var(--color-primary-soft);">月額</span>
+                                @elseif($plan->billing_type === 'yearly')
+                                    <span class="px-2 py-0.5 rounded text-xs theme-price" style="background-color: var(--color-primary-soft);">年額</span>
                                 @else
                                     <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">一回限り</span>
                                 @endif
@@ -249,18 +261,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 決済タイプに応じて料金の単位表示を変更
     if (billingTypeSelect && priceUnit) {
-        billingTypeSelect.addEventListener('change', function() {
-            if (this.value === 'monthly') {
+        const updatePriceUnit = function(value) {
+            if (value === 'monthly') {
                 priceUnit.textContent = '円/月';
+            } else if (value === 'yearly') {
+                priceUnit.textContent = '円/年';
             } else {
                 priceUnit.textContent = '円';
             }
+        };
+        billingTypeSelect.addEventListener('change', function() {
+            updatePriceUnit(this.value);
         });
         
         // 初期状態を反映
-        if (billingTypeSelect.value === 'monthly') {
-            priceUnit.textContent = '円/月';
-        }
+        updatePriceUnit(billingTypeSelect.value);
     }
 });
 </script>

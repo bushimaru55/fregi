@@ -6,7 +6,11 @@
 <div class="max-w-4xl mx-auto px-4 md:px-0">
     {{-- タイトル（入力フォームと同様・背景は塗りつぶさない） --}}
     <div class="mb-6 md:mb-8 text-center">
+        @if($contract->usesBankTransfer())
+        <p class="text-sm md:text-base text-gray-600 mb-2">お申し込みを受け付けました。ご登録のメールアドレスに確認メールをお送りしております。請求書は追ってご案内いたします。</p>
+        @else
         <p class="text-sm md:text-base text-gray-600 mb-2">お申し込みとクレジットカードの登録を受け付けました。ご登録のメールアドレスに確認メールをお送りしております。</p>
+        @endif
         <h1 class="text-2xl md:text-4xl font-bold text-gray-800">お申し込みありがとうございます！</h1>
         <div class="mt-3 inline-block">
             <i class="fas fa-check-circle text-3xl md:text-4xl theme-price"></i>
@@ -79,12 +83,37 @@
             <h3 class="text-lg font-bold text-gray-800 mb-4">
                 <i class="fas fa-info-circle mr-2 theme-price"></i>今後の流れ
             </h3>
+            @if($contract->usesBankTransfer())
+            <ol class="list-none space-y-4 text-gray-700">
+                <li>
+                    <p class="font-semibold text-gray-800">1．お申込み内容のご確認</p>
+                    <p class="mt-1">ご入力いただいたメールアドレス宛に、お申込みいただいた契約内容をお送りします。</p>
+                </li>
+                <li>
+                    <p class="font-semibold text-gray-800">2．ご請求書の送付・お支払い</p>
+                    <p class="mt-1">ご請求書は別途メールにてお送りします。請求書に記載の期日までに、指定口座へお振込みをお願いいたします。</p>
+                </li>
+                <li>
+                    <p class="font-semibold text-gray-800">3．アカウント情報のご案内</p>
+                    <p class="mt-1">お申込みから5営業日以内に、弊社担当者より、サービスをご利用いただくためのアカウント情報をメールにてお送りします。</p>
+                </li>
+                <li>
+                    <p class="font-semibold text-gray-800">4．サービス利用開始</p>
+                    <p class="mt-1">お送りしたアカウント情報で管理画面にログインし、DSチャットボットをご利用ください。</p>
+                </li>
+            </ol>
+            <p class="mt-4 text-sm text-gray-600">
+                ※各種ご案内メールが届かない場合は、下記までお問い合わせください。<br>
+                <a href="mailto:contact-dm@ds-brand.jp" class="text-blue-600 underline">contact-dm@ds-brand.jp</a>
+            </p>
+            @else
             <ol class="list-decimal list-inside space-y-2 text-gray-700">
                 <li>ご登録のメールアドレスに契約内容の確認メールをお送りします。</li>
-                <li>毎月のご利用料金は、登録されたクレジットカードへ請求いたします。</li>
+                <li>ご利用料金は、登録されたクレジットカードへ請求いたします。</li>
                 <li>アカウント情報をメールでお知らせします。</li>
                 <li>サービスをご利用いただけます。</li>
             </ol>
+            @endif
         </div>
     </div>
 

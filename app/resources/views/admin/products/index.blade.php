@@ -64,6 +64,8 @@
                                 @if($product->type === 'option')
                                     @if(($product->billing_type ?? 'one_time') === 'monthly')
                                         <span class="px-2 py-0.5 rounded text-xs theme-price" style="background-color: var(--color-primary-soft);">月額課金</span>
+                                    @elseif(($product->billing_type ?? 'one_time') === 'yearly')
+                                        <span class="px-2 py-0.5 rounded text-xs theme-price" style="background-color: var(--color-primary-soft);">年額課金</span>
                                     @else
                                         <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">一回限り</span>
                                     @endif

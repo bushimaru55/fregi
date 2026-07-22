@@ -80,8 +80,13 @@ class Product extends Model
     public function getFormattedPriceAttribute(): string
     {
         $price = number_format($this->unit_price) . '円';
-        if ($this->type === 'option' && ($this->billing_type ?? 'one_time') === 'monthly') {
-            $price .= '/月額';
+        if ($this->type === 'option') {
+            $billingType = $this->billing_type ?? 'one_time';
+            if ($billingType === 'monthly') {
+                $price .= '/月額';
+            } elseif ($billingType === 'yearly') {
+                $price .= '/年額';
+            }
         }
         return $price;
     }
@@ -106,6 +111,7 @@ class Product extends Model
     {
         return match($this->billing_type ?? 'one_time') {
             'monthly' => '月額課金',
+            'yearly' => '年額課金',
             'one_time' => '一回限り',
             default => '一回限り',
         };

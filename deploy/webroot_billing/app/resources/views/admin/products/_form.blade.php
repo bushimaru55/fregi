@@ -98,12 +98,13 @@
             class="w-full px-4 py-2 border border-gray-300 rounded-lg theme-input @error('billing_type') border-red-500 @enderror">
             <option value="one_time" {{ old('billing_type', $product->billing_type ?? 'one_time') === 'one_time' ? 'selected' : '' }}>一回限り</option>
             <option value="monthly" {{ old('billing_type', $product->billing_type ?? 'one_time') === 'monthly' ? 'selected' : '' }}>月額課金</option>
+            <option value="yearly" {{ old('billing_type', $product->billing_type ?? 'one_time') === 'yearly' ? 'selected' : '' }}>年額課金</option>
         </select>
         @error('billing_type')
             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
         @enderror
         <p class="text-xs text-gray-600 mt-1">
-            <i class="fas fa-credit-card mr-1"></i>オプション製品の課金種別（一回限りまたは月額課金）。決済API連携は行いません。
+            <i class="fas fa-credit-card mr-1"></i>オプション製品の課金種別（一回限り・月額課金・年額課金）。決済API連携は行いません。
         </p>
     </div>
 

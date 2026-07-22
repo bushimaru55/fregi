@@ -63,6 +63,7 @@ class RobotPaymentService
                 ...$createData,
                 'status' => 'applied',
                 'billing_robo_mode' => Contract::BILLING_ROBO_MODE_API3_STANDARD,
+                'payment_collection_method' => Contract::PAYMENT_CARD,
             ]);
 
             foreach ($plans as $plan) {

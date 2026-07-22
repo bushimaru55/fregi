@@ -17,10 +17,18 @@ class ContractToBillingLinesMapper
     /** 請求タイプ: 定期定額 */
     public const DEMAND_TYPE_RECURRING = 1;
 
+    /** 繰返し周期: 月額（毎月） */
+    public const REPETITION_PERIOD_MONTHLY = 1;
+
+    /** 繰返し周期: 年額（12ヶ月ごと。請求管理ロボは周期単位が「月」のみのため月数で表現） */
+    public const REPETITION_PERIOD_YEARLY = 12;
+
     /**
      * 契約の明細から請求用の行配列を返す。
+     * demand_type が定期定額(1)の場合、repetition_period_number に繰返し周期（月数）を格納する。
+     * 単発(0)の場合は repetition_period_number は null。
      *
-     * @return array<int, array{goods_name: string, price: int, quantity: int, tax_category: int, tax: int, demand_type: int}>
+     * @return array<int, array{goods_name: string, price: int, quantity: int, tax_category: int, tax: int, demand_type: int, repetition_period_number: int|null}>
      */
     public function map(Contract $contract): array
     {
@@ -31,9 +39,16 @@ class ContractToBillingLinesMapper
 
         $lines = [];
         foreach ($items as $item) {
-            $demandType = strtolower($item->billing_type ?? 'one_time') === 'monthly'
-                ? self::DEMAND_TYPE_RECURRING
-                : self::DEMAND_TYPE_ONE_TIME;
+            $billingType = strtolower($item->billing_type ?? 'one_time');
+            $demandType = self::DEMAND_TYPE_ONE_TIME;
+            $repetitionPeriodNumber = null;
+            if ($billingType === 'monthly') {
+                $demandType = self::DEMAND_TYPE_RECURRING;
+                $repetitionPeriodNumber = self::REPETITION_PERIOD_MONTHLY;
+            } elseif ($billingType === 'yearly') {
+                $demandType = self::DEMAND_TYPE_RECURRING;
+                $repetitionPeriodNumber = self::REPETITION_PERIOD_YEARLY;
+            }
             $taxCategory = 1;
             $tax = 10;
             if ($item->product_id && $item->product) {
@@ -47,6 +62,7 @@ class ContractToBillingLinesMapper
                 'tax_category' => $taxCategory,
                 'tax' => $tax,
                 'demand_type' => $demandType,
+                'repetition_period_number' => $repetitionPeriodNumber,
             ];
         }
         return $lines;

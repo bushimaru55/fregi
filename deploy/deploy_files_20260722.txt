@@ -1,0 +1,64 @@
+# FTP アップロード一覧（2026-07-22 改訂・既存影響最小化）
+# ローカル起点: deploy/webroot_billing/
+# 本番先: /var/www/vhosts/dschatbot.ai/httpdocs/webroot/billing/
+#
+# 前提:
+# - DB: sql_20260722_safe_additive_columns.sql が必要な場合は先に適用済み
+# - DB: sql_20260722_copy_terms_of_service_keys.sql（INSERT only）推奨
+# - .env / build / storage / migrations は上げない
+
+## A. 必須（決済タイプ別利用規約）— 本番本命
+# 前提: phpMyAdmin で payment_collection_method が contract_plans / contracts にあること
+# （公開面では請求書払いプラン表示済み＝概ね適用済み。SHOW で最終確認）
+
+app/app/Models/SiteSetting.php
+app/app/Livewire/Admin/TermsOfServiceEditor.php
+app/app/Http/Controllers/Admin/SiteSettingController.php
+app/app/Http/Controllers/ContractController.php
+app/app/Http/Requests/ContractRequest.php
+app/resources/views/livewire/admin/terms-of-service-editor.blade.php
+app/resources/views/admin/site-settings/index.blade.php
+app/resources/views/admin/site-settings/edit.blade.php
+app/resources/views/contracts/create.blade.php
+
+## A2. 差分がある場合のみ（モデル）
+# 本番で請求書払いが既に動いているなら必須ではない。ローカルと差分があるときだけ。
+
+# app/app/Models/ContractPlan.php
+# app/app/Models/Contract.php
+
+## B. 任意（請求書払い／年額の追加改修を同時に載せる場合のみ）
+# 公開確認では既に稼働済み。利用規約だけなら不要。
+
+app/app/Http/Controllers/Admin/ContractPlanController.php
+app/app/Http/Controllers/Admin/ProductController.php
+app/app/Mail/ContractNotificationMail.php
+app/app/Models/Product.php
+app/app/Services/BillingRobo/BillingRoboBillingService.php
+app/app/Services/BillingRobo/BillingRoboBulkRegisterService.php
+app/app/Services/BillingRobo/BillingRoboDemandService.php
+app/app/Services/BillingRobo/ContractToBillingLinesMapper.php
+app/app/Services/RobotPayment/RobotPaymentService.php
+app/app/Services/RobotPayment/PurchasePatternService.php
+app/config/billing_robo.php
+app/resources/views/contracts/confirm.blade.php
+app/resources/views/contracts/payment.blade.php
+app/resources/views/contracts/complete.blade.php
+app/resources/views/admin/contract-plans/_form.blade.php
+app/resources/views/admin/contract-plans/index.blade.php
+app/resources/views/admin/contract-forms/index.blade.php
+app/resources/views/admin/products/_form.blade.php
+app/resources/views/admin/products/index.blade.php
+
+## C. アップロード禁止
+
+# app/.env
+# app/storage/
+# build/
+# app/database/migrations/
+# vendor/（今回不要）
+
+## D. デプロイ後（本番側で削除のみ・再生成）
+
+# app/storage/framework/views/*.php
+# （Bで config/billing_robo.php を上げた場合のみ）app/bootstrap/cache/config.php

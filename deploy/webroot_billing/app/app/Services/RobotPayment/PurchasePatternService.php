@@ -27,13 +27,15 @@ class PurchasePatternService
      */
     public function detectPatternFromItems(\Illuminate\Support\Collection $items): string
     {
-        $hasMonthly = $items->contains('billing_type', 'monthly');
+        // 継続課金 = 月額(monthly) または 年額(yearly)
+        $hasRecurring = $items->contains('billing_type', 'monthly')
+            || $items->contains('billing_type', 'yearly');
         $hasOneTime = $items->contains('billing_type', 'one_time');
 
-        if ($hasMonthly && !$hasOneTime) {
+        if ($hasRecurring && !$hasOneTime) {
             return self::PATTERN_MONTHLY_ONLY;
         }
-        if ($hasMonthly && $hasOneTime) {
+        if ($hasRecurring && $hasOneTime) {
             return self::PATTERN_INITIAL_PLUS_RECURRING;
         }
         return self::PATTERN_ONE_TIME_ONLY;
@@ -106,12 +108,13 @@ class PurchasePatternService
     private function computeAmounts(\Illuminate\Support\Collection $items, string $pattern, Carbon $desiredDate): array
     {
         $total = $items->sum('subtotal');
-        $monthlyTotal = $items->where('billing_type', 'monthly')->sum('subtotal');
+        // 継続課金(月額+年額)の合計。amount_recurring 用のメタ情報。
+        $recurringTotal = $items->whereIn('billing_type', ['monthly', 'yearly'])->sum('subtotal');
 
         $am = $total;
         $tx = 0;
         $sf = 0;
-        $acam = $pattern !== self::PATTERN_ONE_TIME_ONLY ? $monthlyTotal : null;
+        $acam = $pattern !== self::PATTERN_ONE_TIME_ONLY ? $recurringTotal : null;
         $actx = 0;
         $acsf = 0;
         $actp = $pattern !== self::PATTERN_ONE_TIME_ONLY ? 4 : null; // 4 = 毎月

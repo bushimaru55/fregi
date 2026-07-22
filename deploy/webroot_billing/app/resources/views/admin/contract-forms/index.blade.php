@@ -245,6 +245,8 @@
                                 <td class="py-3 px-6 text-left">
                                     @if($plan->billing_type === 'monthly')
                                         <span class="bg-blue-200 text-blue-600 py-1 px-3 rounded-full text-xs font-semibold">月額課金</span>
+                                    @elseif($plan->billing_type === 'yearly')
+                                        <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs font-semibold">年額課金</span>
                                     @else
                                         <span class="bg-gray-200 text-gray-600 py-1 px-3 rounded-full text-xs font-semibold">一回限り</span>
                                     @endif
