@@ -87,6 +87,43 @@ class BillingScheduleServiceTest extends TestCase
         $this->assertSame(99, $schedule['issue_day']);
     }
 
+    public function test_get_schedule_for_application_card_keeps_deadline_first_of_start_date_month(): void
+    {
+        $contract = new Contract;
+        $contract->payment_collection_method = Contract::PAYMENT_CARD;
+        $contract->desired_start_date = Carbon::create(2026, 7, 10, 0, 0, 0, 'Asia/Tokyo');
+        $schedule = $this->service->getScheduleForApplication($contract);
+        $this->assertSame(-1, $schedule['issue_month']);
+        $this->assertSame(99, $schedule['issue_day']);
+        $this->assertSame(-1, $schedule['sending_month']);
+        $this->assertSame(99, $schedule['sending_day']);
+        $this->assertSame(0, $schedule['deadline_month']);
+        $this->assertSame(1, $schedule['deadline_day']);
+    }
+
+    public function test_get_schedule_for_application_unset_payment_method_keeps_credit_deadline(): void
+    {
+        $contract = new Contract;
+        $contract->desired_start_date = Carbon::create(2026, 7, 10, 0, 0, 0, 'Asia/Tokyo');
+        $schedule = $this->service->getScheduleForApplication($contract);
+        $this->assertSame(0, $schedule['deadline_month']);
+        $this->assertSame(1, $schedule['deadline_day']);
+    }
+
+    public function test_get_schedule_for_application_bank_transfer_sets_deadline_end_of_start_date_month(): void
+    {
+        $contract = new Contract;
+        $contract->payment_collection_method = Contract::PAYMENT_BANK_TRANSFER;
+        $contract->desired_start_date = Carbon::create(2026, 7, 10, 0, 0, 0, 'Asia/Tokyo');
+        $schedule = $this->service->getScheduleForApplication($contract);
+        $this->assertSame(-1, $schedule['issue_month']);
+        $this->assertSame(99, $schedule['issue_day']);
+        $this->assertSame(-1, $schedule['sending_month']);
+        $this->assertSame(99, $schedule['sending_day']);
+        $this->assertSame(0, $schedule['deadline_month']);
+        $this->assertSame(99, $schedule['deadline_day']);
+    }
+
     public function test_billing_start_date_for_application_after_cutoff_returns_next_month_first(): void
     {
         // 2026/05/22 (Fri) は May の月末5営業日(25-29)に含まれない → 翌月1日 = 2026/06/01

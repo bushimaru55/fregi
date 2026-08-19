@@ -25,7 +25,9 @@ class BillingScheduleService
      *   - start_date は「課金開始月の1日」(以前→翌月1日 / 以内→翌々月1日) を送る。
      *     → Billing Robo の「対象期間開始日」設定により 売上計上日 が自動で start_date月の1日になる。
      *   - 発行日・送付日は start_date の前月末日（issue_month=-1, day=99）。
-     *   - 決済期限は start_date 月の1日（deadline_month=0, day=1）。
+     *   - クレジットの決済期限は start_date 月の1日（deadline_month=0, day=1）。カード決済日。
+     *   - 銀行振込の支払期限は start_date 月の末日（deadline_month=0, day=99）。
+     *     通常=申込翌月末、最終5営業日以内=翌々月末。サイト設定の deadline は使わない。
      *   - 上記オフセットは within/after で同じ。差分は start_date のみ。
      *   - issue_month/deadline_month の値域: API 仕様 -60〜60 を許容。
      */
@@ -42,6 +44,10 @@ class BillingScheduleService
     private const AFTER_SENDING_DAY = 99;
     private const AFTER_DEADLINE_MONTH = 0;
     private const AFTER_DEADLINE_DAY = 1;
+
+    /** 銀行振込の支払期限: start_date 月の末日（クレジットの day=1 には上書きしない） */
+    private const BANK_TRANSFER_DEADLINE_MONTH = 0;
+    private const BANK_TRANSFER_DEADLINE_DAY = 99;
 
     /**
      * 指定日が「月末最終5営業日から月末まで」の期間に含まれるか。
@@ -114,7 +120,15 @@ class BillingScheduleService
         } else {
             $date = Carbon::now(self::TIMEZONE);
         }
-        return $this->getScheduleForDate($date);
+        $schedule = $this->getScheduleForDate($date);
+
+        // 銀行振込のみ支払期限を課金開始月末日にする。発行・送付とクレジットの期限は変えない。
+        if ($contract->usesBankTransfer()) {
+            $schedule['deadline_month'] = self::BANK_TRANSFER_DEADLINE_MONTH;
+            $schedule['deadline_day'] = self::BANK_TRANSFER_DEADLINE_DAY;
+        }
+
+        return $schedule;
     }
 
     /**
